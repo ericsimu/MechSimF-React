@@ -1,0 +1,340 @@
+/* ── Page Layout ── */
+.case-page {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.split-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* ── Case List Table Area ── */
+.case-list {
+  flex-shrink: 0;
+  overflow: auto;
+}
+
+.case-list .page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid #f0f0f0;
+  background: #fafafa;
+}
+
+.case-list .page-header h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+/* ── Split Resize Handle (Vertical) ── */
+.resize-handle {
+  height: 6px;
+  background: #f0f0f0;
+  cursor: row-resize;
+  flex-shrink: 0;
+  border-top: 1px solid #e8e8e8;
+  border-bottom: 1px solid #e8e8e8;
+  transition: background 0.15s;
+}
+.resize-handle:hover {
+  background: #d9d9d9;
+}
+
+/* ── Edit Panel ── */
+.edit-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.edit-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 16px;
+  background: #fafafa;
+  border-bottom: 1px solid #f0f0f0;
+  flex-shrink: 0;
+}
+.edit-toolbar h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.edit-body {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* ── Left Panel ── */
+.edit-left {
+  flex-shrink: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  border-right: 1px solid #f0f0f0;
+  background: #fafafa;
+  padding-bottom: 12px;
+}
+
+/* ── Horizontal Resize Handle ── */
+.h-resize-handle {
+  width: 4px;
+  background: #f0f0f0;
+  cursor: col-resize;
+  flex-shrink: 0;
+  border-left: 1px solid #e8e8e8;
+  border-right: 1px solid #e8e8e8;
+  transition: background 0.15s;
+}
+.h-resize-handle:hover {
+  background: #d9d9d9;
+}
+
+/* ── Right Panel ── */
+.edit-right {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 12px 16px;
+  min-width: 0;
+}
+
+/* ── Tree Sections ── */
+.tree-section {
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.tree-section-header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  color: #333;
+  transition: background 0.12s;
+  user-select: none;
+}
+.tree-section-header:hover {
+  background: #e6f4ff;
+}
+
+.tree-section-arrow {
+  font-size: 10px;
+  width: 14px;
+  text-align: center;
+  color: #999;
+  flex-shrink: 0;
+}
+
+.section-active > .tree-section-header {
+  background: #e6f4ff;
+  color: #1677ff;
+}
+
+.tree-content {
+  padding: 2px 0 4px 0;
+}
+
+.tree-empty {
+  padding: 8px 16px;
+  color: #999;
+  font-size: 12px;
+}
+
+/* ── Tree Nodes ── */
+.tree-node {
+  white-space: nowrap;
+}
+
+.tree-node label {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 12px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background 0.1s;
+  user-select: none;
+}
+.tree-node label:hover {
+  background: #e6f4ff;
+}
+.tree-node label.selected {
+  background: #bae0ff;
+  color: #1677ff;
+  font-weight: 500;
+}
+
+.tree-toggle {
+  font-size: 9px;
+  width: 14px;
+  text-align: center;
+  color: #999;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.tree-children {
+  padding-left: 16px;
+}
+
+/* ── Model Select Panel ── */
+.model-select-panel {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  max-width: 720px;
+}
+
+.select-group {
+  flex: 1;
+  min-width: 0;
+}
+.select-label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #555;
+}
+
+/* ── Param Edit ── */
+.param-group {
+  margin-bottom: 16px;
+}
+.param-group-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 4px;
+  padding: 4px 8px;
+  background: #fafafa;
+  border-radius: 4px;
+}
+
+/* ── uPlot Chart ── */
+.chart-container {
+  margin-bottom: 12px;
+}
+
+.var-checkboxes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+.var-checkboxes label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #555;
+  cursor: pointer;
+}
+
+/* ── Inline Editable Cells ── */
+.editable-cell {
+  cursor: pointer;
+  display: inline-block;
+  min-width: 40px;
+  padding: 2px 4px;
+  border-radius: 2px;
+  transition: background 0.15s;
+}
+.editable-cell:hover {
+  background: #e6f4ff;
+}
+
+/* ── Table Row Highlight ── */
+.row-selected td {
+  background: #e6f4ff !important;
+}
+
+/* ── Form (Modal) ── */
+.form-group {
+  margin-bottom: 12px;
+}
+.form-label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #333;
+}
+
+/* ── Share ── */
+.share-subtitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: #555;
+  margin-bottom: 8px;
+}
+.share-list {
+  margin-bottom: 12px;
+}
+.share-user-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 8px;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 13px;
+}
+.share-empty {
+  color: #999;
+  font-size: 12px;
+  margin-bottom: 12px;
+}
+.share-add-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* ── Diff Table ── */
+.diff-section-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 8px;
+}
+.diff-path {
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 12px;
+}
+.diff-old {
+  color: #ff4d4f;
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 12px;
+}
+.diff-new {
+  color: #52c41a;
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 12px;
+}
+.diff-empty {
+  color: #999;
+  font-size: 13px;
+  padding: 24px;
+  text-align: center;
+}
+
+/* ── Delete ── */
+.delete-hint {
+  color: #999;
+  font-size: 12px;
+}

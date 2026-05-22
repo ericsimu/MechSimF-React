@@ -1,0 +1,40 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #333;
+  background: #fff;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* antd overrides */
+.ant-table-wrapper {
+  height: 100%;
+}
+.ant-table {
+  font-size: 13px !important;
+}
+.ant-btn-sm {
+  font-size: 12px !important;
+}
+.ant-input-sm {
+  font-size: 12px !important;
+}
+.ant-select-sm {
+  font-size: 12px !important;
+}
