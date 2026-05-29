@@ -276,13 +276,14 @@ const CaseList: React.FC = () => {
     const r = await updateCase(c.id!, body)
     if (r.success) {
       (c as any)[field] = val
+      setEditDraft(prev => ({ ...prev, [field]: val }))
       setCases(prev => [...prev])
     }
   }
 
   // ── Add Case ──
   async function handleAdd() {
-    if (!addName.trim() || !addDesc.trim()) return
+    if (!addName.trim()) return
     setSubmitting(true)
     try {
       const r = await addCase({
@@ -312,9 +313,12 @@ const CaseList: React.FC = () => {
   }
 
   // ── Delete ──
+  const [deleting, setDeleting] = useState(false)
+
   function confirmDelete(c: CaseModel) { setDeleteTarget(c) }
   async function handleDelete() {
     if (!deleteTarget) return
+    setDeleting(true)
     try {
       const body: any = { ...buildCaseBody(deleteTarget), is_deleted: true }
       const r = await updateCase(deleteTarget.id!, body)
@@ -325,6 +329,7 @@ const CaseList: React.FC = () => {
         message.success('删除成功')
       }
     } catch { message.error('删除失败') }
+    finally { setDeleting(false) }
   }
 
   // ── Share ──
@@ -573,8 +578,7 @@ const CaseList: React.FC = () => {
     try {
       await handleSave()
       if (!editCase) return
-      const diffJson = diffRows.length > 0 ? JSON.stringify(diffRows) : ''
-      const r = await addTasks(editCase.id!, diffJson)
+      const r = await addTasks(editCase.id!)
       if (!r.success) return
       const taskIds = r.data!.task_ids
       const runR = await runTasks(taskIds)
@@ -809,6 +813,20 @@ const CaseList: React.FC = () => {
                           options={VERSION_OPTIONS.map(o => ({ value: o, label: o }))}
                         />
                       </div>
+                      <div className="select-group">
+                        <label className="select-label">仿真时间 (s)</label>
+                        <Input type="number" placeholder="留空使用默认值"
+                          value={editDraft.sim_time ?? ''}
+                          onChange={e => setEditDraft(prev => ({ ...prev, sim_time: e.target.value ? Number(e.target.value) : null }))}
+                        />
+                      </div>
+                      <div className="select-group">
+                        <label className="select-label">仿真步长 (s)</label>
+                        <Input type="number" placeholder="留空使用默认值"
+                          value={editDraft.sim_step ?? ''}
+                          onChange={e => setEditDraft(prev => ({ ...prev, sim_step: e.target.value ? Number(e.target.value) : null }))}
+                        />
+                      </div>
                     </div>
                   )}
 
@@ -859,6 +877,10 @@ const CaseList: React.FC = () => {
                         ))}
                       </div>
                     </>
+                  )}
+
+                  {!activeSection && (
+                    <div className="edit-right-empty">选择左侧节点查看详情</div>
                   )}
                 </div>
               </div>
@@ -934,7 +956,7 @@ const CaseList: React.FC = () => {
       <Modal title="确认删除" open={!!deleteTarget} onCancel={() => setDeleteTarget(null)}
         footer={[
           <Button key="cancel" onClick={() => setDeleteTarget(null)}>取消</Button>,
-          <Button key="confirm" danger type="primary" onClick={handleDelete}>确认</Button>,
+          <Button key="confirm" danger type="primary" loading={deleting} onClick={handleDelete}>确认</Button>,
         ]}
       >
         <p>确定要删除用例 <b>{deleteTarget?.name}</b> 吗？</p>
