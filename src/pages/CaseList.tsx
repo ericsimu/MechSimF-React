@@ -26,8 +26,10 @@ function isObject(v: unknown): v is Record<string, unknown> {
 }
 function isLastLayer(v: unknown): boolean {
   if (!isObject(v)) return false
-  return Object.values(v).every(cv => !isObject(cv))
+  return Object.entries(v).filter(([k]) => k !== '_labels').every(([, cv]) => !isObject(cv))
 }
+
+type ParamRow = { key: string; label: string; value: string; orig: unknown }
 function normalizeTypes(obj: unknown): unknown {
   if (obj === null || obj === undefined) return obj
   if (Array.isArray(obj)) return obj.map(normalizeTypes)
@@ -89,7 +91,7 @@ const CaseList: React.FC = () => {
   const [selParamPath, setSelParamPath] = useState('')
   const [paramExpanded, setParamExpanded] = useState<Record<string, boolean>>({})
   const [paramEditGroups, setParamEditGroups] = useState<Array<{
-    name: string; path: string; rows: Array<{ key: string; value: string; orig: unknown }>
+    name: string; path: string; rows: ParamRow[]
   }>>([])
 
   // ── Disturb Tree ──
@@ -129,23 +131,66 @@ const CaseList: React.FC = () => {
     }
   }
 
+  /** 构建包含所有系统参数的 model_param JSON 字符串。
+   *  - currentVars: 当前系统的编辑参数（默认取 paramVars state）
+   *  - savedParam: 上次保存的全量参数（默认取 editCase.model_param）
+   *  - sysName: 当前系统名（默认取 editDraft.sys_name）
+   *  显式传入可避免 setState 后立即调用时读到旧 state。 */
+  function buildFullModelParam(opts?: { currentVars?: Record<string, any>; savedParam?: string; sysName?: string }): string {
+    const full: Record<string, any> = {}
+    for (const [sys, info] of Object.entries(modelInfo)) {
+      if (info.variables) full[sys] = JSON.parse(JSON.stringify(info.variables))
+    }
+    const saved = opts?.savedParam ?? editCase?.model_param
+    if (saved) {
+      try {
+        for (const [sys, vars] of Object.entries(JSON.parse(saved))) {
+          full[sys] = vars
+        }
+      } catch { /* */ }
+    }
+    const name = opts?.sysName ?? editDraft.sys_name ?? editCase?.sys_name
+    const vars = opts?.currentVars ?? paramVars
+    if (name && Object.keys(vars).length > 0) {
+      full[name] = JSON.parse(JSON.stringify(vars))
+    }
+    return JSON.stringify(full)
+  }
+
+  /** 从 modelInfo 全量或已保存 model_param 中提取当前系统参数子树。 */
+  function extractSystemParams(draft: Record<string, any>): Record<string, any> | null {
+    const sysName = draft.sys_name
+    if (!sysName) return null
+    if (draft.model_param) {
+      try {
+        const parsed = JSON.parse(draft.model_param)
+        if (parsed[sysName] && typeof parsed[sysName] === 'object' && !Array.isArray(parsed[sysName]) && Object.keys(parsed[sysName] as object).length > 0) {
+          return normalizeTypes(parsed[sysName]) as Record<string, any>
+        }
+      } catch { /* */ }
+    }
+    if (modelInfo[sysName]?.variables && Object.keys(modelInfo[sysName].variables!).length > 0) {
+      return JSON.parse(JSON.stringify(modelInfo[sysName].variables!))
+    }
+    return null
+  }
+
   function initParamVars(draft: Record<string, any>) {
     let src: Record<string, any> = {}
     let fromDefaults = false
-    if (draft.model_param) {
-      try { src = normalizeTypes(JSON.parse(draft.model_param)) as Record<string, any> } catch { /* */ }
+    const extracted = extractSystemParams(draft)
+    if (extracted) {
+      src = extracted
     } else if (draft.sys_name && modelInfo[draft.sys_name]?.variables) {
       src = modelInfo[draft.sys_name].variables!
-      fromDefaults = true
-    } else if (Object.keys(modelInfo).length > 0) {
-      for (const [sys, info] of Object.entries(modelInfo)) {
-        if (info.variables) src[sys] = info.variables as Record<string, any>
-      }
       fromDefaults = true
     }
     setParamVars(src)
     if (fromDefaults) {
-      setEditDraft(prev => ({ ...prev, model_param: JSON.stringify(src) }))
+      setEditDraft(prev => ({
+        ...prev,
+        model_param: buildFullModelParam({ currentVars: src, savedParam: draft.model_param || undefined, sysName: draft.sys_name || undefined }),
+      }))
     }
   }
 
@@ -166,31 +211,33 @@ const CaseList: React.FC = () => {
     setDisturbColumns([])
     if (chartInst.current) { chartInst.current.destroy(); chartInst.current = null }
 
-    if (Object.keys(modelInfo).length === 0) {
-      try {
-        const r = await queueModelInfo()
-        if (r.success && r.data) {
-          setModelInfo(r.data)
-          initParamVarsFilter(draft, r.data)
-          return
-        }
-      } catch { /* */ }
-    }
+    try {
+      const r = await queueModelInfo()
+      if (r.success && r.data) {
+        setModelInfo(r.data)
+        initParamVarsFilter(draft, r.data)
+        return
+      }
+    } catch { /* */ }
     initParamVars(draft)
   }
 
   function initParamVarsFilter(draft: Record<string, any>, mi: ModelInfoMap) {
     let src: Record<string, any> = {}
     let fromDefaults = false
-    if (draft.model_param) {
-      try { src = normalizeTypes(JSON.parse(draft.model_param)) as Record<string, any> } catch { /* */ }
+    const extracted = extractSystemParams(draft)
+    if (extracted) {
+      src = extracted
     } else if (draft.sys_name && mi[draft.sys_name]?.variables) {
       src = mi[draft.sys_name].variables!
       fromDefaults = true
     }
     setParamVars(src)
     if (fromDefaults) {
-      setEditDraft(prev => ({ ...prev, model_param: JSON.stringify(src) }))
+      setEditDraft(prev => ({
+        ...prev,
+        model_param: buildFullModelParam({ currentVars: src, savedParam: draft.model_param || undefined, sysName: draft.sys_name || undefined }),
+      }))
     }
   }
 
@@ -199,7 +246,7 @@ const CaseList: React.FC = () => {
     if (!editCase) return
     setSaving(true)
     try {
-      const body = buildCaseBody({ ...editCase, ...editDraft })
+      const body = buildCaseBody({ ...editCase, ...editDraft, model_param: buildFullModelParam() })
       const r = await updateCase(editCase.id!, body)
       if (r.success) {
         const updated = { ...editCase, ...editDraft }
@@ -363,9 +410,20 @@ const CaseList: React.FC = () => {
 
   // ── Param Tree Interactions ──
   function onSystemChange(sys: string) {
-    const vars = modelInfo[sys]?.variables as Record<string, any> | undefined
-    setEditDraft(prev => ({ ...prev, sys_name: sys, model_name: sys, model_param: vars ? JSON.stringify(vars) : prev.model_param }))
-    if (vars) setParamVars(vars)
+    const fullModelParam = buildFullModelParam()
+    setEditDraft(prev => ({ ...prev, sys_name: sys, model_name: sys, model_param: fullModelParam }))
+    // 从全量 model_param 或 modelInfo 加载新系统参数
+    let src: Record<string, any> | null = null
+    try {
+      const full = JSON.parse(fullModelParam)
+      if (full[sys] && typeof full[sys] === 'object' && !Array.isArray(full[sys]) && Object.keys(full[sys] as object).length > 0) {
+        src = normalizeTypes(full[sys]) as Record<string, any>
+      }
+    } catch { /* */ }
+    if (!src && modelInfo[sys]?.variables && Object.keys(modelInfo[sys].variables!).length > 0) {
+      src = JSON.parse(JSON.stringify(modelInfo[sys].variables!))
+    }
+    if (src) setParamVars(src)
   }
 
   function onParamSelect(path: string) {
@@ -375,7 +433,8 @@ const CaseList: React.FC = () => {
     let node: any = paramVars
     for (const p of parts) { if (!isObject(node)) { node = undefined; break } node = node[p] }
     if (!isObject(node)) { setParamEditGroups([]); return }
-    const entries = Object.entries(node)
+    const labelMap: Record<string, string> = (node as any)._labels || {}
+    const entries = Object.entries(node).filter(([k]) => k !== '_labels')
     const hasNested = entries.some(([, v]) => isObject(v))
 
     function fmt(v: unknown): string {
@@ -384,17 +443,21 @@ const CaseList: React.FC = () => {
       return String(v)
     }
 
+    function mkRow(k: string, v: unknown, labels: Record<string, string>): ParamRow {
+      return { key: k, label: labels[k] || '', value: fmt(v), orig: v }
+    }
+
     if (!hasNested) {
       setParamEditGroups([{
         name: parts[parts.length - 1], path,
-        rows: entries.map(([k, v]) => ({ key: k, value: fmt(v), orig: v })),
+        rows: entries.map(([k, v]) => mkRow(k, v, labelMap)),
       }])
       return
     }
     if (entries.every(([, v]) => isLastLayer(v))) {
       setParamEditGroups(entries.map(([cn, cv]) => ({
         name: cn, path: `${path}.${cn}`,
-        rows: Object.entries(cv as Record<string, unknown>).map(([k, v]) => ({ key: k, value: fmt(v), orig: v })),
+        rows: Object.entries(cv as Record<string, unknown>).filter(([k]) => k !== '_labels').map(([k, v]) => mkRow(k, v, (cv as any)._labels || {})),
       })))
       return
     }
@@ -409,14 +472,14 @@ const CaseList: React.FC = () => {
     return val
   }
 
-  function saveParamGroup(group: { name: string; path: string; rows: Array<{ key: string; value: string; orig: unknown }> }) {
+  function saveParamGroup(group: { name: string; path: string; rows: ParamRow[] }) {
     const parts = group.path.split('.')
     const nv = JSON.parse(JSON.stringify(paramVars))
     let node = nv
     for (const p of parts) node = node[p]
     group.rows.forEach(r => { node[r.key] = coerceByType(r.value, r.orig) })
     setParamVars(nv)
-    setEditDraft(prev => ({ ...prev, model_param: JSON.stringify(nv) }))
+    setEditDraft(prev => ({ ...prev, model_param: buildFullModelParam({ currentVars: nv }) }))
   }
 
   // ── Disturb Interactions ──
@@ -469,7 +532,7 @@ const CaseList: React.FC = () => {
     try {
       chartInst.current = new (uPlot as any)({
         width: chartRef.current.offsetWidth, height: 400,
-        cursor: { show: true }, legend: { show: true },
+        cursor: { show: true }, legend: { show: false },
         scales: { x: { time: false } },
         axes: [{}, { stroke: '#888', grid: { stroke: '#e8e8e8' } }],
         series,
@@ -481,7 +544,7 @@ const CaseList: React.FC = () => {
   async function openTaskModal() {
     await handleSave()
     if (!editCase) return
-    const body = buildCaseBody({ ...editCase, ...editDraft })
+    const body = buildCaseBody({ ...editCase, ...editDraft, model_param: buildFullModelParam() })
     try {
       const r = await diffCase(editCase.id!, body)
       if (r.success && r.data) {
@@ -510,7 +573,8 @@ const CaseList: React.FC = () => {
     try {
       await handleSave()
       if (!editCase) return
-      const r = await addTasks(editCase.id!)
+      const diffJson = diffRows.length > 0 ? JSON.stringify(diffRows) : ''
+      const r = await addTasks(editCase.id!, diffJson)
       if (!r.success) return
       const taskIds = r.data!.task_ids
       const runR = await runTasks(taskIds)
@@ -595,11 +659,11 @@ const CaseList: React.FC = () => {
     {
       title: '操作', key: 'actions',
       render: (_: unknown, record: CaseModel) => (
-        <div style={{ display: 'flex', gap: 6 }}>
-          <Button size="small" onClick={() => openEdit(record)}>编辑</Button>
-          <Button size="small" onClick={() => handleCopy(record)}>复制</Button>
-          <Button size="small" onClick={() => openShare(record)}>共享</Button>
-          <Button size="small" danger onClick={() => confirmDelete(record)}>删除</Button>
+        <div className="actions-cell">
+          <Button type="text" size="small" className="action-btn" onClick={() => openEdit(record)}>编辑</Button>
+          <Button type="text" size="small" className="action-btn" onClick={() => handleCopy(record)}>复制</Button>
+          <Button type="text" size="small" className="action-btn" onClick={() => openShare(record)}>共享</Button>
+          <Button type="text" size="small" className="action-btn" onClick={() => confirmDelete(record)}>删除</Button>
         </div>
       ),
     },
@@ -613,7 +677,7 @@ const CaseList: React.FC = () => {
         <div className="case-list" style={editCase ? { height: `${splitRatio * 100}%`, overflow: 'auto' } : {}}>
           <div className="page-header">
             <h2>用例列表</h2>
-            <Button type="primary" onClick={() => setAddModalOpen(true)}>创建用例</Button>
+            <Button className="btn-outline" onClick={() => setAddModalOpen(true)}>创建用例</Button>
           </div>
           <Table
             columns={columns}
@@ -635,8 +699,8 @@ const CaseList: React.FC = () => {
               <div className="edit-toolbar">
                 <h3>{editCase.name}</h3>
                 <div style={{ display: 'flex', gap: 8 }}>
-                  <Button onClick={openTaskModal}>创建任务</Button>
-                  <Button type="primary" loading={saving} onClick={handleSave}>保存</Button>
+                  <Button className="btn-outline" size="small" onClick={openTaskModal}>创建任务</Button>
+                  <Button className="btn-outline" size="small" loading={saving} onClick={handleSave}>保存</Button>
                 </div>
               </div>
 
@@ -760,16 +824,17 @@ const CaseList: React.FC = () => {
                             dataSource={g.rows.map((r, i) => ({ ...r, _key: i }))}
                             rowKey="_key"
                             columns={[
-                              { title: '参数名', dataIndex: 'key', width: 160 },
+                              {
+                                title: '参数名', dataIndex: 'key', width: 200,
+                                render: (k: string, r: any) => (
+                                  <span>{k}{r.label ? <span style={{ color: '#888', marginLeft: 4 }}>({r.label})</span> : null}</span>
+                                ),
+                              },
                               {
                                 title: '参数值', dataIndex: 'value',
                                 render: (_v: string, r: any) => (
                                   <Input size="small" value={r.value}
-                                    onChange={e => {
-                                      const orig = g.rows.find(row => row.key === r.key)
-                                      if (orig) orig.value = e.target.value
-                                      saveParamGroup(g)
-                                    }}
+                                    onChange={e => { r.value = e.target.value; saveParamGroup(g) }}
                                   />
                                 ),
                               },
@@ -783,11 +848,12 @@ const CaseList: React.FC = () => {
                   {activeSection === 'disturb' && disturbColumns.length > 0 && (
                     <>
                       <div ref={chartRef} className="chart-container" />
-                      <div className="var-checkboxes">
-                        {disturbColumns.map(c => (
-                          <label key={c.name}>
+                      <div className="chart-legend">
+                        {disturbColumns.map((c, i) => (
+                          <label key={c.name} className="chart-legend-item">
                             <input type="checkbox" checked={disturbVisible[c.name] !== false}
                               onChange={() => setDisturbVisible(prev => ({ ...prev, [c.name]: !prev[c.name] }))} />
+                            <span className="legend-dot" style={{ backgroundColor: `hsl(${(i * 60) % 360},70%,50%)` }} />
                             {c.name}
                           </label>
                         ))}
@@ -866,7 +932,10 @@ const CaseList: React.FC = () => {
 
       {/* Delete Confirm */}
       <Modal title="确认删除" open={!!deleteTarget} onCancel={() => setDeleteTarget(null)}
-        onOk={handleDelete} okText="确认" cancelText="取消"
+        footer={[
+          <Button key="cancel" onClick={() => setDeleteTarget(null)}>取消</Button>,
+          <Button key="confirm" danger type="primary" onClick={handleDelete}>确认</Button>,
+        ]}
       >
         <p>确定要删除用例 <b>{deleteTarget?.name}</b> 吗？</p>
         <p className="delete-hint">此操作不可撤销</p>

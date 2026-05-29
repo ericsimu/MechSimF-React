@@ -16,7 +16,7 @@ function isObject(v: unknown): v is Record<string, unknown> {
 
 function isLastLayer(v: unknown): boolean {
   if (!isObject(v)) return false
-  return Object.values(v).every(cv => !isObject(cv))
+  return Object.entries(v).filter(([k]) => k !== '_labels').every(([, cv]) => !isObject(cv))
 }
 
 const TreeNode: React.FC<TreeNodeProps> = ({ name, value, path, selPath, expanded, onToggle, onSelect }) => {

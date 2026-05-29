@@ -37,6 +37,8 @@ export interface AddCaseRequest {
   model_productivity: string
   model_param: string
   disturbance: string
+  sim_time?: number
+  sim_step?: number
 }
 
 export interface UpdateCaseRequest extends AddCaseRequest {}
@@ -46,16 +48,22 @@ export interface UpdateCaseRequest extends AddCaseRequest {}
 export interface SimTask extends BaseModel {
   name: string
   case_id: number
-  model_version: string
-  workspace_path: string
   status: string
-  sys_name?: string
-  model_productivity?: string
-  result?: unknown
+  result: string
+  error: string
+  model_version: string
+  model_productivity: string
+  sys_name: string
+  model_name: string
+  param_diff: string
+  disturbance: string
+  sim_time: number | null
+  sim_step: number | null
 }
 
 export interface AddTasksRequest {
   case_id: number
+  param_diff?: string
 }
 
 export interface SimRunRequest {
@@ -99,8 +107,8 @@ export interface DisturbanceInfo {
 
 export interface DiffRow {
   path: string
-  old_value: unknown
-  new_value: unknown
+  old: string
+  new: string
 }
 
 // ── Model Info ──
