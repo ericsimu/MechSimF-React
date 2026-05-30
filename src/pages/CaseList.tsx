@@ -128,6 +128,7 @@ const CaseList: React.FC = () => {
       sys_name: src.sys_name || '', model_name: src.model_name || '',
       model_verison: src.model_verison || '', model_productivity: src.model_productivity || '',
       model_param: src.model_param || '', disturbance: src.disturbance || '',
+      sim_time: src.sim_time ?? null, sim_step: src.sim_step ?? null,
     }
   }
 

@@ -211,9 +211,14 @@ const DataViewer: React.FC = () => {
       timeBuildAt.current = Date.now()
       const checkedNames = Object.keys(checkedRef.current).filter(k => checkedRef.current[k])
       if (checkedNames.length > 0) {
-        setColumns(prev => prev.map(c =>
-          (checkedNames.includes(c.name) || c.name.toLowerCase() === 'time') ? { ...c, data: [] as (number | null)[] } : c
-        ))
+        // Sync-clear ref so fetchSignals sees empty data immediately (matching Vue behavior)
+        for (const name of checkedNames) {
+          const col = columnsRef.current.find(c => c.name === name)
+          if (col) col.data = []
+        }
+        const timeCol = columnsRef.current.find(c => c.name.toLowerCase() === 'time')
+        if (timeCol) timeCol.data = []
+        setColumns([...columnsRef.current])
         fetchSignals(checkedNames, 'time')
       }
     } else {
@@ -221,12 +226,17 @@ const DataViewer: React.FC = () => {
       freqBuildAt.current = Date.now()
       const checkedNames = Object.keys(checkedRef.current).filter(k => checkedRef.current[k])
       if (checkedNames.length > 0) {
-        setFftColumns(prev => prev.map(c =>
-          (checkedNames.includes(c.name) || c.name.toLowerCase() === 'frequency') ? { ...c, data: [] as (number | null)[] } : c
-        ))
+        for (const name of checkedNames) {
+          const col = fftColumnsRef.current.find(c => c.name === name)
+          if (col) col.data = []
+        }
+        const freqCol = fftColumnsRef.current.find(c => c.name.toLowerCase() === 'frequency')
+        if (freqCol) freqCol.data = []
+        setFftColumns([...fftColumnsRef.current])
         fetchSignals(checkedNames, 'fft')
       }
     }
+  }, [tid])
   }, [tid])
 
   useEffect(() => {
