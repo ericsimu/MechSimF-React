@@ -237,7 +237,6 @@ const DataViewer: React.FC = () => {
       }
     }
   }, [tid])
-  }, [tid])
 
   useEffect(() => {
     if (isNaN(tid)) { message.error('无效的任务 ID'); return }
