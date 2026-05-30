@@ -88,6 +88,7 @@ const CaseList: React.FC = () => {
 
   // ── Param Tree ──
   const [paramVars, setParamVars] = useState<Record<string, any>>({})
+  const paramVarsRef = useRef(paramVars); paramVarsRef.current = paramVars
   const [selParamPath, setSelParamPath] = useState('')
   const [paramExpanded, setParamExpanded] = useState<Record<string, boolean>>({})
   const [paramEditGroups, setParamEditGroups] = useState<Array<{
@@ -147,7 +148,7 @@ const CaseList: React.FC = () => {
     }
     // Merge currentVars (or paramVars state) for current system
     const name = editDraft.sys_name || editCase?.sys_name
-    const vars = currentVars ?? paramVars
+    const vars = currentVars ?? paramVarsRef.current
     if (name && Object.keys(vars).length > 0) {
       full[name] = JSON.parse(JSON.stringify(vars))
     }
@@ -450,7 +451,7 @@ const CaseList: React.FC = () => {
     setSelParamPath(path)
     setActiveSection('param')
     const parts = path.split('.')
-    let node: any = paramVars
+    let node: any = paramVarsRef.current
     for (const p of parts) { if (!isObject(node)) { node = undefined; break } node = node[p] }
     if (!isObject(node)) { setParamEditGroups([]); return }
     const labelMap: Record<string, string> = (node as any)._labels || {}
@@ -494,7 +495,7 @@ const CaseList: React.FC = () => {
 
   function saveParamGroup(group: { name: string; path: string; rows: ParamRow[] }) {
     const parts = group.path.split('.')
-    const nv = JSON.parse(JSON.stringify(paramVars))
+    const nv = JSON.parse(JSON.stringify(paramVarsRef.current))
     let node = nv
     for (const p of parts) node = node[p]
     group.rows.forEach(r => { node[r.key] = coerceByType(r.value, r.orig) })
