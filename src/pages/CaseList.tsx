@@ -244,8 +244,16 @@ const CaseList: React.FC = () => {
   // ── Save ──
   async function handleSave(silent = false) {
     if (!editCase) return
-    // Flush all pending param edits before building body
+    // Flush pending param edits: read current DOM values back into row objects
     for (const g of paramEditGroups) {
+      const inputs = document.querySelectorAll<HTMLInputElement>('.param-table input')
+      inputs.forEach(inp => {
+        const rowKey = inp.getAttribute('data-key')
+        if (rowKey) {
+          const row = g.rows.find(r => r.key === rowKey)
+          if (row) row.value = inp.value
+        }
+      })
       saveParamGroup(g)
     }
     setSaving(true)
@@ -878,10 +886,21 @@ const CaseList: React.FC = () => {
                               {
                                 title: '参数值', dataIndex: 'value',
                                 render: (_v: string, r: any) => (
-                                  <Input size="small" value={r.value}
-                                    onChange={e => { r.value = e.target.value }}
-                                    onBlur={() => saveParamGroup(g)}
-                                    onPressEnter={() => saveParamGroup(g)}
+                                  <input
+                                    className="ant-input css-var-R1a ant-input-sm"
+                                    style={{ width: '100%' }}
+                                    defaultValue={String(r.orig ?? '')}
+                                    data-key={r.key}
+                                    onBlur={e => {
+                                      r.value = e.target.value
+                                      saveParamGroup(g)
+                                    }}
+                                    onKeyDown={e => {
+                                      if (e.key === 'Enter') {
+                                        r.value = (e.target as HTMLInputElement).value
+                                        saveParamGroup(g)
+                                      }
+                                    }}
                                   />
                                 ),
                               },
