@@ -242,6 +242,8 @@ const CaseList: React.FC = () => {
   // ── Save ──
   async function handleSave(silent = false) {
     if (!editCase) return
+    // Flush any pending param edits (Input uses onBlur, may not have fired)
+    if (document.activeElement instanceof HTMLInputElement) document.activeElement.blur()
     setSaving(true)
     try {
       const body = buildCaseBody({ ...editCase, ...editDraft, model_param: buildFullModelParam() })
