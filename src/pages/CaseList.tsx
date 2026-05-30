@@ -244,8 +244,10 @@ const CaseList: React.FC = () => {
   // ── Save ──
   async function handleSave(silent = false) {
     if (!editCase) return
-    // Flush any pending param edits (Input uses onBlur, may not have fired)
-    if (document.activeElement instanceof HTMLInputElement) document.activeElement.blur()
+    // Flush all pending param edits before building body
+    for (const g of paramEditGroups) {
+      saveParamGroup(g)
+    }
     setSaving(true)
     try {
       const body = buildCaseBody({ ...editCase, ...editDraft, model_param: buildFullModelParam() })
@@ -876,15 +878,10 @@ const CaseList: React.FC = () => {
                               {
                                 title: '参数值', dataIndex: 'value',
                                 render: (_v: string, r: any) => (
-                                  <Input size="small" defaultValue={String(r.orig ?? '')}
-                                    onBlur={e => {
-                                      r.value = e.target.value
-                                      saveParamGroup(g)
-                                    }}
-                                    onPressEnter={e => {
-                                      r.value = (e.target as HTMLInputElement).value
-                                      saveParamGroup(g)
-                                    }}
+                                  <Input size="small" value={r.value}
+                                    onChange={e => { r.value = e.target.value }}
+                                    onBlur={() => saveParamGroup(g)}
+                                    onPressEnter={() => saveParamGroup(g)}
                                   />
                                 ),
                               },
