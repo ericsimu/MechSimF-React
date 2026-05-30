@@ -240,7 +240,7 @@ const CaseList: React.FC = () => {
   }
 
   // ── Save ──
-  async function handleSave() {
+  async function handleSave(silent = false) {
     if (!editCase) return
     setSaving(true)
     try {
@@ -250,6 +250,7 @@ const CaseList: React.FC = () => {
         const updated = { ...editCase, ...editDraft }
         setEditCase(updated)
         setCases(prev => prev.map(c => c.id === updated.id ? updated : c))
+        if (!silent) message.success('保存成功')
       } else {
         message.error(r.message || '保存失败')
       }
@@ -562,7 +563,7 @@ const CaseList: React.FC = () => {
 
   // ── Task ──
   async function openTaskModal() {
-    await handleSave()
+    await handleSave(true)
     if (!editCase) return
     const body = buildCaseBody({ ...editCase, ...editDraft, model_param: buildFullModelParam() })
     try {
@@ -591,7 +592,7 @@ const CaseList: React.FC = () => {
   async function handleRunTask() {
     setTaskSubmitting(true)
     try {
-      await handleSave()
+      await handleSave(true)
       if (!editCase) return
       const r = await addTasks(editCase.id!)
       if (!r.success) return
