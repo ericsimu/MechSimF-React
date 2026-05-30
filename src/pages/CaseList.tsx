@@ -380,6 +380,24 @@ const CaseList: React.FC = () => {
       if (!editDraft.model_verison) setEditDraft(prev => ({ ...prev, model_verison: VERSION_OPTIONS[0] }))
     }
 
+    if (key === 'param') {
+      // Auto-expand all param tree nodes
+      function expandAllParams(node: Record<string, any>, path = ''): Record<string, boolean> {
+        const keys: Record<string, boolean> = {}
+        if (isObject(node)) {
+          for (const [k, v] of Object.entries(node)) {
+            if (k === '_labels') continue
+            const p = path ? `${path}.${k}` : k
+            keys[p] = true
+            if (isObject(v) && !isLastLayer(v)) Object.assign(keys, expandAllParams(v, p))
+          }
+        }
+        return keys
+      }
+      // Use setTimeout to ensure paramVars is populated from latest state
+      setTimeout(() => setParamExpanded(expandAllParams(paramVars)), 0)
+    }
+
     if (key === 'disturb') {
       if (Object.keys(disturbTree).length === 0) {
         try {
@@ -851,8 +869,15 @@ const CaseList: React.FC = () => {
                               {
                                 title: '参数值', dataIndex: 'value',
                                 render: (_v: string, r: any) => (
-                                  <Input size="small" value={r.value}
-                                    onChange={e => { r.value = e.target.value; saveParamGroup(g) }}
+                                  <Input size="small" defaultValue={String(r.orig ?? '')}
+                                    onBlur={e => {
+                                      r.value = e.target.value
+                                      saveParamGroup(g)
+                                    }}
+                                    onPressEnter={e => {
+                                      r.value = (e.target as HTMLInputElement).value
+                                      saveParamGroup(g)
+                                    }}
                                   />
                                 ),
                               },
