@@ -250,7 +250,6 @@ const CaseList: React.FC = () => {
         const updated = { ...editCase, ...editDraft }
         setEditCase(updated)
         setCases(prev => prev.map(c => c.id === updated.id ? updated : c))
-        message.success('保存成功')
       } else {
         message.error(r.message || '保存失败')
       }
