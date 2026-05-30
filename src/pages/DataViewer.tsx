@@ -24,13 +24,14 @@ function fmtNum(v: number): string {
 
 type CursorLabels = {
   hook: (u: any) => void
-  clear: () => void
+  destroy: () => void
 }
 
 function makeCursorLabels(container: HTMLElement, xUnit: string): CursorLabels {
   const labels: HTMLDivElement[] = []
   function removeAll() { labels.forEach(l => l.remove()); labels.length = 0 }
-  container.addEventListener('mouseleave', removeAll)
+  function onLeave() { removeAll() }
+  container.addEventListener('mouseleave', onLeave)
   return {
     hook(u: any) {
       try {
@@ -57,7 +58,10 @@ function makeCursorLabels(container: HTMLElement, xUnit: string): CursorLabels {
         }
       } catch { /* keep cursor working */ }
     },
-    clear() { removeAll() },
+    destroy() {
+      removeAll()
+      container.removeEventListener('mouseleave', onLeave)
+    },
   }
 }
 
@@ -86,6 +90,8 @@ const DataViewer: React.FC = () => {
   const freqInst = useRef<any>(null)
   const timeDblCleanup = useRef<(() => void) | null>(null)
   const freqDblCleanup = useRef<(() => void) | null>(null)
+  const timeLabels = useRef<CursorLabels | null>(null)
+  const freqLabels = useRef<CursorLabels | null>(null)
 
   const columnsRef = useRef(columns); columnsRef.current = columns
   const fftColumnsRef = useRef(fftColumns); fftColumnsRef.current = fftColumns
@@ -235,6 +241,7 @@ const DataViewer: React.FC = () => {
   // Build time-domain chart
   useEffect(() => {
     if (timeDblCleanup.current) { timeDblCleanup.current(); timeDblCleanup.current = null }
+    if (timeLabels.current) { timeLabels.current.destroy(); timeLabels.current = null }
     if (timeInst.current) { timeInst.current.destroy(); timeInst.current = null }
 
     const el = timeChartRef.current
@@ -247,6 +254,7 @@ const DataViewer: React.FC = () => {
     const timeDataArr = timeCol && timeCol.data.length > 0 ? timeCol.data.map(v => v ?? 0) : activeSigs[0].data.map((_, i) => i)
     const w = el.offsetWidth || 800
     const labels = makeCursorLabels(el, 's')
+    timeLabels.current = labels
 
     const series: Array<object> = [{}]
     const signalArrays: Array<Array<number | null>> = []
@@ -284,6 +292,7 @@ const DataViewer: React.FC = () => {
   // Build freq-domain chart
   useEffect(() => {
     if (freqDblCleanup.current) { freqDblCleanup.current(); freqDblCleanup.current = null }
+    if (freqLabels.current) { freqLabels.current.destroy(); freqLabels.current = null }
     if (freqInst.current) { freqInst.current.destroy(); freqInst.current = null }
 
     const el = freqChartRef.current
@@ -294,6 +303,7 @@ const DataViewer: React.FC = () => {
 
     const w = el.offsetWidth || 800
     const labels = makeCursorLabels(el, 'Hz')
+    freqLabels.current = labels
 
     const series: Array<object> = [{}]
     activeSigs.forEach((c) => {
@@ -335,6 +345,8 @@ const DataViewer: React.FC = () => {
   useEffect(() => () => {
     if (timeDblCleanup.current) timeDblCleanup.current()
     if (freqDblCleanup.current) freqDblCleanup.current()
+    if (timeLabels.current) timeLabels.current.destroy()
+    if (freqLabels.current) freqLabels.current.destroy()
     if (timeInst.current) timeInst.current.destroy()
     if (freqInst.current) freqInst.current.destroy()
   }, [])
