@@ -249,9 +249,9 @@ const CaseList: React.FC = () => {
       const body = buildCaseBody({ ...editCase, ...editDraft, model_param: buildFullModelParam() })
       const r = await updateCase(editCase.id!, body)
       if (r.success) {
-        const updated = { ...editCase, ...editDraft }
-        setEditCase(updated)
-        setCases(prev => prev.map(c => c.id === updated.id ? updated : c))
+        // Sync update editCase for immediate reads after handleSave (matching Vue Object.assign)
+        Object.assign(editCase, editDraft)
+        setCases(prev => prev.map(c => c.id === editCase.id ? { ...editCase } : c))
         if (!silent) message.success('保存成功')
       } else {
         message.error(r.message || '保存失败')
