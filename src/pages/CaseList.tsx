@@ -501,6 +501,7 @@ const CaseList: React.FC = () => {
     let node = nv
     for (const p of parts) node = node[p]
     group.rows.forEach(r => { node[r.key] = coerceByType(r.value, r.orig) })
+    paramVarsRef.current = nv  // Sync ref so buildFullModelParam sees latest value
     setParamVars(nv)
     setEditDraft(prev => ({ ...prev, model_param: buildFullModelParam(nv) }))
   }
