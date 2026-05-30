@@ -132,26 +132,22 @@ const CaseList: React.FC = () => {
     }
   }
 
-  /** 构建包含所有系统参数的 model_param JSON 字符串。
-   *  - currentVars: 当前系统的编辑参数（默认取 paramVars state）
-   *  - savedParam: 上次保存的全量参数（默认取 editCase.model_param）
-   *  - sysName: 当前系统名（默认取 editDraft.sys_name）
-   *  显式传入可避免 setState 后立即调用时读到旧 state。 */
-  function buildFullModelParam(opts?: { currentVars?: Record<string, any>; savedParam?: string; sysName?: string }): string {
+  /** 构建包含所有系统参数的 model_param JSON 字符串（与 Vue 版一致）。 */
+  function buildFullModelParam(currentVars?: Record<string, any>): string {
     const full: Record<string, any> = {}
     for (const [sys, info] of Object.entries(modelInfo)) {
       if (info.variables) full[sys] = JSON.parse(JSON.stringify(info.variables))
     }
-    const saved = opts?.savedParam ?? editCase?.model_param
-    if (saved) {
+    // Merge saved params from editCase
+    if (editCase?.model_param) {
       try {
-        for (const [sys, vars] of Object.entries(JSON.parse(saved))) {
-          full[sys] = vars
-        }
+        const saved = JSON.parse(editCase.model_param)
+        for (const [sys, vars] of Object.entries(saved)) { full[sys] = vars }
       } catch { /* */ }
     }
-    const name = opts?.sysName ?? editDraft.sys_name ?? editCase?.sys_name
-    const vars = opts?.currentVars ?? paramVars
+    // Merge currentVars (or paramVars state) for current system
+    const name = editDraft.sys_name || editCase?.sys_name
+    const vars = currentVars ?? paramVars
     if (name && Object.keys(vars).length > 0) {
       full[name] = JSON.parse(JSON.stringify(vars))
     }
@@ -190,7 +186,7 @@ const CaseList: React.FC = () => {
     if (fromDefaults) {
       setEditDraft(prev => ({
         ...prev,
-        model_param: buildFullModelParam({ currentVars: src, savedParam: draft.model_param || undefined, sysName: draft.sys_name || undefined }),
+        model_param: buildFullModelParam(src),
       }))
     }
   }
@@ -237,7 +233,7 @@ const CaseList: React.FC = () => {
     if (fromDefaults) {
       setEditDraft(prev => ({
         ...prev,
-        model_param: buildFullModelParam({ currentVars: src, savedParam: draft.model_param || undefined, sysName: draft.sys_name || undefined }),
+        model_param: buildFullModelParam(src),
       }))
     }
   }
@@ -503,7 +499,7 @@ const CaseList: React.FC = () => {
     for (const p of parts) node = node[p]
     group.rows.forEach(r => { node[r.key] = coerceByType(r.value, r.orig) })
     setParamVars(nv)
-    setEditDraft(prev => ({ ...prev, model_param: buildFullModelParam({ currentVars: nv }) }))
+    setEditDraft(prev => ({ ...prev, model_param: buildFullModelParam(nv) }))
   }
 
   // ── Disturb Interactions ──
