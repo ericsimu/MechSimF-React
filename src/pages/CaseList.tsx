@@ -245,8 +245,11 @@ const CaseList: React.FC = () => {
   async function handleSave(silent = false) {
     if (!editCase) return
     // Flush pending param edits: read current DOM values back into row objects
+    console.log('[handleSave] paramEditGroups:', paramEditGroups.length, 'activeSection:', activeSection)
     for (const g of paramEditGroups) {
+      console.log('[handleSave] group:', g.name, 'rows:', g.rows.length)
       const inputs = document.querySelectorAll<HTMLInputElement>('.param-table input')
+      console.log('[handleSave] DOM inputs found:', inputs.length)
       inputs.forEach(inp => {
         const rowKey = inp.getAttribute('data-key')
         if (rowKey) {
@@ -517,7 +520,7 @@ const CaseList: React.FC = () => {
     for (const p of parts) node = node[p]
     group.rows.forEach(r => { node[r.key] = coerceByType(r.value, r.orig) })
     paramVarsRef.current = nv  // Sync ref so buildFullModelParam sees latest value
-    console.log('[saveParamGroup] path:', group.path, 'rows:', group.rows.length, 'vars keys:', Object.keys(nv).length)
+    console.log('[saveParamGroup] path:', group.path, 'rows:', group.rows.length, 'row vals:', group.rows.map(r => r.key + '=' + r.value).slice(0,5))
     setParamVars(nv)
     setEditDraft(prev => ({ ...prev, model_param: buildFullModelParam(nv) }))
   }
