@@ -288,7 +288,7 @@ const CaseList: React.FC = () => {
     try {
       const r = await addCase({
         name: addName.trim(), description: addDesc.trim(), create_by: getCurrentUser(),
-        sys_name: '', model_name: '', model_verison: '', model_productivity: '', model_param: '', disturbance: '',
+        sys_name: '', model_name: '', model_verison: '3X', model_productivity: '100WPH', model_param: '', disturbance: '',
       })
       if (r.success) {
         const newId = r.data!.id

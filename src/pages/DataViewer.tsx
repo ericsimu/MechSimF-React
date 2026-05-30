@@ -211,7 +211,9 @@ const DataViewer: React.FC = () => {
       timeBuildAt.current = Date.now()
       const checkedNames = Object.keys(checkedRef.current).filter(k => checkedRef.current[k])
       if (checkedNames.length > 0) {
-        setColumns(prev => prev.map(c => checkedNames.includes(c.name) ? { ...c, data: [] as (number | null)[] } : c))
+        setColumns(prev => prev.map(c =>
+          (checkedNames.includes(c.name) || c.name.toLowerCase() === 'time') ? { ...c, data: [] as (number | null)[] } : c
+        ))
         fetchSignals(checkedNames, 'time')
       }
     } else {
@@ -219,7 +221,9 @@ const DataViewer: React.FC = () => {
       freqBuildAt.current = Date.now()
       const checkedNames = Object.keys(checkedRef.current).filter(k => checkedRef.current[k])
       if (checkedNames.length > 0) {
-        setFftColumns(prev => prev.map(c => checkedNames.includes(c.name) ? { ...c, data: [] as (number | null)[] } : c))
+        setFftColumns(prev => prev.map(c =>
+          (checkedNames.includes(c.name) || c.name.toLowerCase() === 'frequency') ? { ...c, data: [] as (number | null)[] } : c
+        ))
         fetchSignals(checkedNames, 'fft')
       }
     }
