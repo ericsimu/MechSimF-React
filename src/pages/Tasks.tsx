@@ -43,7 +43,17 @@ const Tasks: React.FC = () => {
   function showDiff(task: SimTask) {
     if (!task.param_diff) return
     try {
-      const rows = JSON.parse(task.param_diff) as DiffRow[]
+      const parsed = JSON.parse(task.param_diff)
+      const rows: DiffRow[] = []
+      const fmt = (v: unknown): string => v == null ? '' : typeof v === 'object' ? JSON.stringify(v) : String(v)
+      const cleanPath = (raw: string) => raw.replace(/^root/, '').replace(/\['([^']*)'\]/g, '.$1').replace(/\["([^"]*)"\]/g, '.$1').replace(/^\./, '')
+      for (const [changeType, items] of Object.entries(parsed)) {
+        if (!items || typeof items !== 'object') continue
+        const prefix = changeType.includes('added') ? '+ ' : changeType.includes('removed') ? '- ' : ''
+        for (const [path, v] of Object.entries(items as Record<string, any>)) {
+          rows.push({ path: prefix + cleanPath(path), old: fmt(v.old_value), new: fmt(v.new_value) })
+        }
+      }
       setDiffRows(rows)
       setDiffOpen(true)
     } catch { /* */ }
@@ -73,6 +83,7 @@ const Tasks: React.FC = () => {
     },
     { title: '名称', dataIndex: 'name', key: 'name' },
     { title: '系统', dataIndex: 'sys_name', key: 'sys_name', render: (v: string) => v || '-' },
+    { title: '模型', dataIndex: 'model_name', key: 'model_name', render: (v: string) => v || '-' },
     { title: '版本', dataIndex: 'model_version', key: 'model_version', render: (v: string) => v || '-' },
     { title: '产率', dataIndex: 'model_productivity', key: 'model_productivity', render: (v: string) => v || '-' },
     { title: '状态', dataIndex: 'status', key: 'status', render: (s: string) => <span className={`dv-status status-${s}`}>{STATUS_LABELS[s] || s}</span> },
