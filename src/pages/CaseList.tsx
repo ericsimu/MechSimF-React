@@ -89,6 +89,7 @@ const CaseList: React.FC = () => {
   // ── Param Tree ──
   const [paramVars, setParamVars] = useState<Record<string, any>>({})
   const paramVarsRef = useRef(paramVars); paramVarsRef.current = paramVars
+  const dirtyValues = useRef<Map<string, string>>(new Map())  // "groupPath|rowKey" → current value
   const [selParamPath, setSelParamPath] = useState('')
   const [paramExpanded, setParamExpanded] = useState<Record<string, boolean>>({})
   const [paramEditGroups, setParamEditGroups] = useState<Array<{
@@ -199,6 +200,7 @@ const CaseList: React.FC = () => {
     setEditDraft(draft)
     setActiveSection('')
     setParamVars({})
+    dirtyValues.current.clear()
     setSelParamPath('')
     setParamExpanded({})
     setParamEditGroups([])
@@ -500,7 +502,11 @@ const CaseList: React.FC = () => {
     const nv = JSON.parse(JSON.stringify(paramVarsRef.current))
     let node = nv
     for (const p of parts) node = node[p]
-    group.rows.forEach(r => { node[r.key] = coerceByType(r.value, r.orig) })
+    group.rows.forEach(r => {
+      const dk = `${group.path}|${r.key}`
+      const val = dirtyValues.current.has(dk) ? dirtyValues.current.get(dk)! : r.value
+      node[r.key] = coerceByType(val, r.orig)
+    })
     paramVarsRef.current = nv  // Sync ref so buildFullModelParam sees latest value
     setParamVars(nv)
     setEditDraft(prev => ({ ...prev, model_param: buildFullModelParam(nv) }))
@@ -869,24 +875,26 @@ const CaseList: React.FC = () => {
                               },
                               {
                                 title: '参数值', dataIndex: 'value',
-                                render: (_v: string, r: any) => (
-                                  <input
-                                    className="ant-input css-var-R1a ant-input-sm"
-                                    style={{ width: '100%' }}
-                                    defaultValue={String(r.orig ?? '')}
-                                    data-key={r.key}
-                                    onBlur={e => {
-                                      r.value = e.target.value
-                                      saveParamGroup(g)
-                                    }}
-                                    onKeyDown={e => {
-                                      if (e.key === 'Enter') {
-                                        r.value = (e.target as HTMLInputElement).value
-                                        saveParamGroup(g)
-                                      }
-                                    }}
-                                  />
-                                ),
+                                render: (_v: string, r: any) => {
+                                  const dk = `${g.path}|${r.key}`
+                                  const val = dirtyValues.current.has(dk) ? dirtyValues.current.get(dk)! : String(r.orig ?? '')
+                                  return (
+                                    <input
+                                      className="ant-input css-var-R1a ant-input-sm"
+                                      style={{ width: '100%' }}
+                                      value={val}
+                                      onChange={e => {
+                                        dirtyValues.current.set(dk, e.target.value)
+                                        // Force re-render by updating a counter
+                                        setParamVars(prev => ({ ...prev }))
+                                      }}
+                                      onBlur={() => saveParamGroup(g)}
+                                      onKeyDown={e => {
+                                        if (e.key === 'Enter') (e.target as HTMLInputElement).blur()
+                                      }}
+                                    />
+                                  )
+                                },
                               },
                             ]}
                           />
