@@ -152,7 +152,9 @@ const CaseList: React.FC = () => {
     if (name && Object.keys(vars).length > 0) {
       full[name] = JSON.parse(JSON.stringify(vars))
     }
-    return JSON.stringify(full)
+    const result = JSON.stringify(full)
+    console.log('[buildFullModelParam] result len:', result.length, 'currentSys:', name, 'vars keys:', Object.keys(vars).length)
+    return result
   }
 
   /** 从 modelInfo 全量或已保存 model_param 中提取当前系统参数子树。 */
@@ -247,16 +249,19 @@ const CaseList: React.FC = () => {
     setSaving(true)
     try {
       const body = buildCaseBody({ ...editCase, ...editDraft, model_param: buildFullModelParam() })
+      console.log('[handleSave] body keys:', Object.keys(body), 'model_param len:', body.model_param?.length)
       const r = await updateCase(editCase.id!, body)
+      console.log('[handleSave] response:', r)
       if (r.success) {
         // Sync update editCase for immediate reads after handleSave (matching Vue Object.assign)
         Object.assign(editCase, editDraft)
         setCases(prev => prev.map(c => c.id === editCase.id ? { ...editCase } : c))
         if (!silent) message.success('保存成功')
       } else {
+        console.error('[handleSave] failed:', r.message)
         message.error(r.message || '保存失败')
       }
-    } catch { message.error('保存失败') }
+    } catch (e) { console.error('[handleSave] exception:', e); message.error('保存失败') }
     finally { setSaving(false) }
   }
 
@@ -502,6 +507,7 @@ const CaseList: React.FC = () => {
     for (const p of parts) node = node[p]
     group.rows.forEach(r => { node[r.key] = coerceByType(r.value, r.orig) })
     paramVarsRef.current = nv  // Sync ref so buildFullModelParam sees latest value
+    console.log('[saveParamGroup] path:', group.path, 'rows:', group.rows.length, 'vars keys:', Object.keys(nv).length)
     setParamVars(nv)
     setEditDraft(prev => ({ ...prev, model_param: buildFullModelParam(nv) }))
   }
