@@ -291,12 +291,12 @@ const CaseList: React.FC = () => {
         sys_name: '', model_name: '', model_verison: '', model_productivity: '', model_param: '', disturbance: '',
       })
       if (r.success) {
+        const newId = r.data!.id
         setAddName(''); setAddDesc(''); setAddModalOpen(false)
-        await loadCases()
         const fresh = await queueCases()
         if (fresh.success && fresh.data) {
           setCases(fresh.data)
-          const found = fresh.data.find(c => c.id === r.data!.id)
+          const found = fresh.data.find(c => c.id === newId)
           if (found) openEdit(found)
         }
       }
