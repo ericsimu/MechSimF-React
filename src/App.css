@@ -47,6 +47,21 @@
   border-radius: 4px;
 }
 
+.nav-group { margin: 4px 0; }
+.nav-parent {
+  display: flex; align-items: center; gap: 6px;
+  padding: 12px 20px; color: rgba(255,255,255,0.85);
+  cursor: pointer; font-size: 13px; user-select: none;
+}
+.nav-parent:hover, .nav-parent.active { color: #fff; background: rgba(255,255,255,0.12); }
+.nav-arrow { font-size: 10px; width: 12px; }
+.nav-sub { padding: 4px 0 4px 32px; }
+.nav-sub-item {
+  display: block; padding: 8px 12px;
+  color: rgba(255,255,255,0.7); text-decoration: none; font-size: 12px;
+}
+.nav-sub-item:hover, .nav-sub-item.active { color: #fff; background: rgba(255,255,255,0.1); }
+
 /* ── App Body ── */
 .app-body {
   flex: 1;

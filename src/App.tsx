@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route, Navigate, NavLink } from 'react-router-dom'
+import { useState } from 'react'
+import { BrowserRouter, Routes, Route, Navigate, NavLink, useLocation } from 'react-router-dom'
 import { ConfigProvider } from 'antd'
 import zhCN from 'antd/locale/zh_CN'
 import CaseList from './pages/CaseList'
@@ -6,9 +7,22 @@ import Tasks from './pages/Tasks'
 import DataViewer from './pages/DataViewer'
 import './App.css'
 
-const navItems = [
+interface NavChild { path: string; label: string }
+interface NavItem { path?: string; label: string; children?: NavChild[] }
+
+const navItems: NavItem[] = [
   { path: '/', label: '用例编排' },
-  { path: '/tasks', label: '任务列表' },
+  { path: '/tasks', label: '任务管理' },
+  {
+    label: '结果分析',
+    children: [
+      { path: '/data', label: '数据可视化' },
+      { path: '/data', label: '指标查看' },
+      { path: '/data', label: '报告查看' },
+      { path: '/data', label: '日志查看' },
+    ],
+  },
+  { path: '/tasks', label: '数据管理' },
 ]
 
 /**
@@ -38,6 +52,31 @@ export function setCurrentUser(name: string): void {
   localStorage.setItem('current_user', name)
 }
 
+function NavGroup({ item }: { item: NavItem }) {
+  const [open, setOpen] = useState(false)
+  const loc = useLocation()
+  const isChildActive = item.children?.some(c => loc.pathname.startsWith(c.path))
+  return (
+    <div className="nav-group">
+      <div className={`nav-parent ${isChildActive ? 'active' : ''}`}
+        onClick={() => setOpen(!open)}>
+        <span className="nav-arrow">{open ? '▼' : '▶'}</span>
+        {item.label}
+      </div>
+      {open && (
+        <div className="nav-sub">
+          {item.children!.map(c => (
+            <NavLink key={c.label} to={c.path}
+              className={({ isActive }) => `nav-sub-item${isActive ? ' active' : ''}`}>
+              {c.label}
+            </NavLink>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function App() {
   const user = getCurrentUser()
 
@@ -51,12 +90,16 @@ function App() {
           <aside className="sidebar">
             <div className="sidebar-brand">MechSim</div>
             <nav className="sidebar-nav">
-              {navItems.map(item => (
-                <NavLink key={item.path} to={item.path} end
-                  className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}>
-                  {item.label}
-                </NavLink>
-              ))}
+              {navItems.map((item, i) =>
+                item.path ? (
+                  <NavLink key={item.path} to={item.path} end
+                    className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}>
+                    {item.label}
+                  </NavLink>
+                ) : (
+                  <NavGroup key={i} item={item} />
+                )
+              )}
             </nav>
             <div className="sidebar-user" title="当前登录用户">{user}</div>
           </aside>
