@@ -98,6 +98,10 @@ export function deleteTask(id: number): Promise<ApiResponse> {
   return request(`/delete_task/${id}`, { method: 'DELETE' })
 }
 
+export function cancelTask(id: number): Promise<ApiResponse<{ task_id: number; cancelled: boolean }>> {
+  return request(`/cancel_task/${id}`, { method: 'POST' })
+}
+
 export function getTaskData(taskId: number): Promise<ApiResponse<{ columns: DisturbanceColumn[]; fft_columns?: DisturbanceColumn[]; task_status: string }>> {
   return request(`/task_data/${taskId}`)
 }

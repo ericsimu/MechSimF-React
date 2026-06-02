@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Table, Modal, Button, message } from 'antd'
 import type { TableColumnsType } from 'antd'
-import { queueTasks, deleteTask } from '../api/index'
+import { queueTasks, deleteTask, cancelTask } from '../api/index'
 import type { SimTask } from '../types/api'
 
 interface DiffRow {
@@ -74,6 +74,21 @@ const Tasks: React.FC = () => {
     })
   }
 
+  async function handleCancel(task: SimTask) {
+    Modal.confirm({
+      title: '确认取消',
+      content: `确定要取消任务 #${task.id}「${task.name}」吗？这将强制终止 MATLAB 进程。`,
+      okText: '确认取消', cancelText: '返回', okButtonProps: { danger: true },
+      onOk: async () => {
+        try {
+          const r = await cancelTask(task.id!)
+          if (r.success) { message.success('任务已取消'); loadTasks() }
+          else message.error(r.message || '取消失败')
+        } catch { message.error('取消失败') }
+      },
+    })
+  }
+
   const columns: TableColumnsType<SimTask> = [
     { title: 'ID', dataIndex: 'id', key: 'id' },
     { title: '名称', dataIndex: 'name', key: 'name' },
@@ -92,7 +107,10 @@ const Tasks: React.FC = () => {
       title: '操作', key: 'actions',
       render: (_: unknown, record: SimTask) => (
         <div style={{ display: 'flex', gap: 8 }}>
-          <Button size="small" onClick={() => navigate(`/data/${record.id}`)}>查看详情</Button>
+          <Button size="small" onClick={() => navigate(`/data/${record.id}`)}>详情</Button>
+          {(record.status === 'pending' || record.status === 'running') && (
+            <Button size="small" danger onClick={() => handleCancel(record)}>取消</Button>
+          )}
           <Button size="small" danger onClick={() => handleDelete(record)}>删除</Button>
         </div>
       ),
