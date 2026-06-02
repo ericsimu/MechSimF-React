@@ -57,7 +57,7 @@ const ModelSelectPanel: React.FC<Props> = ({ systems, draft, onSysChange, onDraf
     {draft.sys_name && (
       <img src={`/api/v1/sim/model_image/${draft.sys_name}`}
         alt={`${draft.sys_name} model`}
-        style={{ width: '100%', minHeight: 80, marginTop: 12, borderRadius: 6, border: '1px solid #e8e8e8' }}
+        style={{ width: '100%', minHeight: 120, marginTop: 12, borderRadius: 6, border: '1px solid #e8e8e8', objectFit: 'contain' }}
         onError={e => { (e.target as HTMLImageElement).style.display = 'none' }}
       />
     )}
