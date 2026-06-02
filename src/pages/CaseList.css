@@ -1,6 +1,6 @@
 /* ── Page Layout ── */
 .case-page {
-  height: calc(100vh - 49px);
+  height: 100%;
   display: flex;
   flex-direction: column;
   overflow: hidden;
