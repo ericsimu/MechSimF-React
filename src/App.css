@@ -70,9 +70,11 @@
   font-weight: 500;
 }
 
-.header-user {
-  font-size: 12px;
-  color: #888;
+.header-nav { display: flex; gap: 16px; margin-left: 24px; }
+.header-nav-item { color: #666; text-decoration: none; font-size: 13px; padding: 4px 8px; border-radius: 4px; }
+.header-nav-item:hover { color: #333; background: #f0f0f0; }
+.header-nav-item.active { color: #3b82f6; font-weight: 600; }
+.header-user { font-size: 12px; color: #888;
   margin-left: auto;
 }
 
