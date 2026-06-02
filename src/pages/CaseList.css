@@ -272,7 +272,7 @@
 
 .select-group {
   flex: 1;
-  min-width: 100px;
+  min-width: 140px;
   margin-bottom: 12px;
 }
 .select-row { display: flex; gap: 16px; }
