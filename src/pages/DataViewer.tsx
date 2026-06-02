@@ -383,9 +383,9 @@ const DataViewer: React.FC = () => {
       ) : taskStatus === 'cancelled' ? (
         <div className="dv-empty">该任务已被取消，无仿真数据</div>
       ) : taskStatus === 'failed' ? (
-        <div className="dv-empty">
-          <div>任务执行失败</div>
-          {taskError && <div style={{ marginTop: 8, fontSize: 12, color: '#999', maxWidth: 500, wordBreak: 'break-all' }}>{taskError}</div>}
+        <div style={{ textAlign: 'center', padding: '80px 0' }}>
+          <div style={{ fontSize: 16, fontWeight: 600, color: '#ef4444', marginBottom: 16 }}>任务执行失败</div>
+          <div style={{ fontSize: 13, color: '#666' }}>失败原因：{taskError || '未知错误'}</div>
         </div>
       ) : loading ? (
         <div style={{ textAlign: 'center', padding: 120 }}><Spin size="large" /></div>
