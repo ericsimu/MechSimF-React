@@ -13,16 +13,16 @@ interface Props {
 
 const ModelSelectPanel: React.FC<Props> = ({ systems, draft, onSysChange, onDraftChange }) => (
   <div className="model-select-panel">
-    <div className="select-group">
-      <label className="select-label">系统选择</label>
-      <Select style={{ width: '100%' }}
-        value={draft.sys_name || undefined}
-        onChange={onSysChange}
-        placeholder="请选择系统"
-        options={systems.map(s => ({ value: s, label: s }))}
-      />
-    </div>
     <div className="select-row">
+      <div className="select-group" style={{ flex: 1, minWidth: 0 }}>
+        <label className="select-label">系统选择</label>
+        <Select style={{ width: '100%' }}
+          value={draft.sys_name || undefined}
+          onChange={onSysChange}
+          placeholder="请选择系统"
+          options={systems.map(s => ({ value: s, label: s }))}
+        />
+      </div>
       <div className="select-group" style={{ flex: 1, minWidth: 0 }}>
         <label className="select-label">产率</label>
         <Select style={{ width: '100%' }}
