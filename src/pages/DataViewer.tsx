@@ -376,6 +376,8 @@ const DataViewer: React.FC = () => {
 
       {isNaN(tid) ? (
         <div className="dv-empty">请从任务列表中选择一个任务查看数据</div>
+      ) : taskStatus === 'cancelled' ? (
+        <div className="dv-empty">该任务已被取消，无仿真数据</div>
       ) : loading ? (
         <div style={{ textAlign: 'center', padding: 120 }}><Spin size="large" /></div>
       ) : columns.length === 0 ? (
