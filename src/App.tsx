@@ -112,7 +112,7 @@ function App() {
                 <Route path="/cases" element={<CaseList />} />
                 <Route path="/" element={<Navigate to="/cases" replace />} />
                 <Route path="/tasks" element={<Tasks />} />
-                <Route path="/data/:taskId" element={<DataViewer />} />
+                <Route path="/data/:taskId?" element={<DataViewer />} />
                 <Route path="/data-manage" element={<Placeholder />} />
                 <Route path="/tools" element={<Placeholder />} />
                 <Route path="/manual" element={<Placeholder />} />

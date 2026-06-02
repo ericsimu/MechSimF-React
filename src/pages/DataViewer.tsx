@@ -239,7 +239,7 @@ const DataViewer: React.FC = () => {
   }, [tid])
 
   useEffect(() => {
-    if (isNaN(tid)) { message.error('无效的任务 ID'); return }
+    if (isNaN(tid)) { setLoading(false); return }
     setLoading(true)
     getTaskDataColumns(tid).then(r => {
       if (r.success && r.data) {
@@ -370,11 +370,13 @@ const DataViewer: React.FC = () => {
     <div className="dataviewer-page">
       <div className="dv-header">
         <Button onClick={() => navigate(-1)}>返回</Button>
-        <h2>数据查看 — 任务 #{tid}</h2>
+        <h2>数据查看{!isNaN(tid) ? ` — 任务 #${tid}` : ''}</h2>
         {taskStatus && <span className={`dv-status status-${taskStatus}`}>{STATUS_MAP[taskStatus] || taskStatus}</span>}
       </div>
 
-      {loading ? (
+      {isNaN(tid) ? (
+        <div className="dv-empty">请从任务列表中选择一个任务查看数据</div>
+      ) : loading ? (
         <div style={{ textAlign: 'center', padding: 120 }}><Spin size="large" /></div>
       ) : columns.length === 0 ? (
         <div className="dv-empty">该任务暂无输出数据</div>
