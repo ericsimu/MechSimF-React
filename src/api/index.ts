@@ -102,6 +102,10 @@ export function cancelTask(id: number): Promise<ApiResponse<{ task_id: number; c
   return request(`/cancel_task/${id}`, { method: 'POST' })
 }
 
+export function getTaskStatus(id: number): Promise<ApiResponse<{ task_id: number; status: string; result: unknown; error?: string }>> {
+  return request(`/get_task_status/${id}`)
+}
+
 export function getTaskData(taskId: number): Promise<ApiResponse<{ columns: DisturbanceColumn[]; fft_columns?: DisturbanceColumn[]; task_status: string }>> {
   return request(`/task_data/${taskId}`)
 }

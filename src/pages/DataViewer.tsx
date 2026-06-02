@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Button, Spin, message } from 'antd'
-import { getTaskDataColumns, getTaskSignals } from '../api/index'
+import { getTaskDataColumns, getTaskSignals, getTaskStatus } from '../api/index'
 import type { DisturbanceColumn } from '../types/api'
 import uPlot from '../lib/uplot/uPlot.esm.js'
 import '../lib/uplot/uPlot.min.css'
@@ -74,6 +74,7 @@ const DataViewer: React.FC = () => {
   const [columns, setColumns] = useState<DisturbanceColumn[]>([])
   const [fftColumns, setFftColumns] = useState<DisturbanceColumn[]>([])
   const [taskStatus, setTaskStatus] = useState('')
+  const [taskError, setTaskError] = useState('')
   const [checked, setChecked] = useState<Record<string, boolean>>({})
 
   // Zoom state
@@ -241,13 +242,16 @@ const DataViewer: React.FC = () => {
   useEffect(() => {
     if (isNaN(tid)) { setLoading(false); return }
     setLoading(true)
-    getTaskDataColumns(tid).then(r => {
-      if (r.success && r.data) {
-        setColumns([{ name: 'time', data: [] }, ...r.data.column_names.map((n: string) => ({ name: n, data: [] }))])
-        setFftColumns([{ name: 'frequency', data: [] }, ...(r.data.fft_column_names || []).map((n: string) => ({ name: n, data: [] }))])
-        setTaskStatus(r.data.task_status)
+    Promise.all([getTaskDataColumns(tid), getTaskStatus(tid)]).then(([colsR, statusR]) => {
+      if (colsR.success && colsR.data) {
+        setColumns([{ name: 'time', data: [] }, ...colsR.data.column_names.map((n: string) => ({ name: n, data: [] }))])
+        setFftColumns([{ name: 'frequency', data: [] }, ...(colsR.data.fft_column_names || []).map((n: string) => ({ name: n, data: [] }))])
+        setTaskStatus(colsR.data.task_status)
         setChecked({})
-      } else { message.error(r.message || '获取数据失败') }
+      }
+      if (statusR.success && statusR.data) {
+        setTaskError(statusR.data.error || '')
+      }
     }).catch(() => message.error('获取数据失败')).finally(() => setLoading(false))
   }, [tid])
 
@@ -378,6 +382,11 @@ const DataViewer: React.FC = () => {
         <div className="dv-empty">请从任务列表中选择一个任务查看数据</div>
       ) : taskStatus === 'cancelled' ? (
         <div className="dv-empty">该任务已被取消，无仿真数据</div>
+      ) : taskStatus === 'failed' ? (
+        <div className="dv-empty">
+          <div>任务执行失败</div>
+          {taskError && <div style={{ marginTop: 8, fontSize: 12, color: '#999', maxWidth: 500, wordBreak: 'break-all' }}>{taskError}</div>}
+        </div>
       ) : loading ? (
         <div style={{ textAlign: 'center', padding: 120 }}><Spin size="large" /></div>
       ) : columns.length === 0 ? (
