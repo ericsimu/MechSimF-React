@@ -315,7 +315,7 @@ const DataViewer: React.FC = () => {
     if (activeSigs.length === 0 || !freqCol || freqCol.data.length === 0) return
 
     const w = el.offsetWidth || 800
-    const labels = makeCursorLabels(el, 'Hz')
+    const labels = makeCursorLabels(el, '')
     freqLabels.current = labels
 
     const series: Array<object> = [{}]

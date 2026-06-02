@@ -486,7 +486,12 @@ const CaseList: React.FC = () => {
       })))
       return
     }
-    setParamEditGroups([])
+    // Mixed: some leaf values + some nested nodes — show leaf values as param group
+    const leafEntries = entries.filter(([, v]) => !isObject(v))
+    setParamEditGroups(leafEntries.length > 0 ? [{
+      name: parts[parts.length - 1], path,
+      rows: leafEntries.map(([k, v]) => mkRow(k, v, labelMap)),
+    }] : [])
   }
 
   function coerceByType(val: string, orig: unknown) {
