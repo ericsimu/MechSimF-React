@@ -329,9 +329,9 @@ const DataViewer: React.FC = () => {
       width: w, height: 300,
       cursor: { show: true, drag: { setScale: true, x: true, y: false } },
       legend: { show: false },
-      scales: { x: { time: false, log: 10 } },
+      scales: { x: { time: false } },
       axes: [
-        { label: 'Frequency (Hz, log)', grid: { stroke: '#e8e8e8' }, stroke: '#888' },
+        { label: 'Frequency (log10 Hz)', grid: { stroke: '#e8e8e8' }, stroke: '#888' },
         { stroke: '#888', grid: { stroke: '#e8e8e8' } },
       ],
       series,
