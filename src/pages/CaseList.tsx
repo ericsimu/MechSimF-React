@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import {
-  Button, Select, Input, Modal, Table, message,
+  Button, Input, Modal, Table, message,
 } from 'antd'
 import {
   queueCases, addCase, updateCase, queueModelInfo, queueDisturbances,
@@ -13,6 +13,10 @@ import type {
 } from '../types/api'
 import TreeNode from '../components/TreeNode'
 import DistTreeNode from '../components/DistTreeNode'
+import CaseSidebar from '../components/CaseSidebar'
+import CaseDetail from '../components/CaseDetail'
+import ModelSelectPanel from '../components/ModelSelectPanel'
+import ParamEditor from '../components/ParamEditor'
 import uPlot from '../lib/uplot/uPlot.esm.js'
 import '../lib/uplot/uPlot.min.css'
 import './CaseList.css'
@@ -642,83 +646,21 @@ const CaseList: React.FC = () => {
   return (
     <div className="case-page">
       <div className="case-layout">
-        {/* Left Sidebar — case navigation */}
-        <div className="case-sidebar">
-          <div className="sidebar-header">
-            <span className="sidebar-title">用例列表</span>
-            <Button className="btn-create" onClick={() => setAddModalOpen(true)}>新建</Button>
-          </div>
-          {loading ? (
-            <div className="sidebar-loading">加载中...</div>
-          ) : cases.length === 0 ? (
-            <div className="sidebar-empty">暂无用例</div>
-          ) : (
-            <ul className="sidebar-list">
-              {cases.map(c => (
-                <li key={c.id}
-                  className={`sidebar-item ${editCase?.id === c.id ? 'sidebar-item-active' : ''}`}
-                  onClick={() => openEdit(c)}
-                >
-                  <span className="sidebar-item-text">{c.name || '未命名'}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+        <CaseSidebar
+          cases={cases} loading={loading} editCase={editCase}
+          onSelect={openEdit} onAdd={() => setAddModalOpen(true)}
+        />
 
         {/* Main Content */}
         <div className="case-main">
           <div className="split-container">
-            {/* Case Detail — single row for selected case */}
-            <div className="case-list">
-              <div className="page-header"><h2>用例详情</h2></div>
-              <table>
-                <thead><tr><th>名称</th><th>描述</th><th>创建者</th><th>创建时间</th><th>操作</th></tr></thead>
-                <tbody>
-                  {editCase ? (
-                    <tr>
-                      <td>
-                        {editingCell.id === editCase.id && editingCell.field === 'name' ? (
-                          <Input size="small" value={editValue}
-                            onChange={e => setEditValue(e.target.value)}
-                            onBlur={() => saveInline(editCase!, 'name')}
-                            onPressEnter={() => saveInline(editCase!, 'name')}
-                            onKeyDown={e => e.key === 'Escape' && cancelInline()}
-                            autoFocus className="inline-input"
-                          />
-                        ) : (
-                          <span className="editable-cell" onClick={() => startInline(editCase!, 'name')}>{editCase.name || '-'}</span>
-                        )}
-                      </td>
-                      <td>
-                        {editingCell.id === editCase.id && editingCell.field === 'description' ? (
-                          <Input size="small" value={editValue}
-                            onChange={e => setEditValue(e.target.value)}
-                            onBlur={() => saveInline(editCase!, 'description')}
-                            onPressEnter={() => saveInline(editCase!, 'description')}
-                            onKeyDown={e => e.key === 'Escape' && cancelInline()}
-                            autoFocus className="inline-input"
-                          />
-                        ) : (
-                          <span className="editable-cell" onClick={() => startInline(editCase!, 'description')}>{editCase.description || '-'}</span>
-                        )}
-                      </td>
-                      <td>{editCase.create_by}</td>
-                      <td>{editCase.create_time ? new Date(editCase.create_time).toLocaleString() : '-'}</td>
-                      <td>
-                        <div className="actions-cell">
-                          <Button className="btn-outline" size="small" onClick={() => handleCopy(editCase!)}>复制</Button>
-                          <Button className="btn-outline" size="small" onClick={() => openShare(editCase!)}>共享</Button>
-                          <Button className="btn-outline" size="small" onClick={() => confirmDelete(editCase!)}>删除</Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ) : (
-                    <tr><td colSpan={5} className="empty">请从左侧选择一个用例</td></tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+            <CaseDetail
+              editCase={editCase}
+              editingCell={editingCell} editValue={editValue}
+              onStartEdit={startInline} onSaveEdit={saveInline} onCancelEdit={cancelInline}
+              onValueChange={setEditValue}
+              onCopy={handleCopy} onShare={openShare} onDelete={confirmDelete}
+            />
 
             {editCase && (
               <div className="edit-panel">
@@ -803,87 +745,19 @@ const CaseList: React.FC = () => {
 
                   <div className="edit-right">
                   {activeSection === 'model' && (
-                    <div className="model-select-panel">
-                      <div className="select-group">
-                        <label className="select-label">系统选择</label>
-                        <Select
-                          style={{ width: '100%' }}
-                          value={editDraft.sys_name || undefined}
-                          onChange={(v) => onSystemChange(v)}
-                          placeholder="请选择系统"
-                          options={systems.map(s => ({ value: s, label: s }))}
-                        />
-                      </div>
-                      <div className="select-group">
-                        <label className="select-label">产率</label>
-                        <Select
-                          style={{ width: '100%' }}
-                          value={editDraft.model_productivity || undefined}
-                          onChange={(v) => setEditDraft(prev => ({ ...prev, model_productivity: v }))}
-                          options={PRODUCTIVITY_OPTIONS.map(o => ({ value: o, label: o }))}
-                        />
-                      </div>
-                      <div className="select-group">
-                        <label className="select-label">版本</label>
-                        <Select
-                          style={{ width: '100%' }}
-                          value={editDraft.model_verison || undefined}
-                          onChange={(v) => setEditDraft(prev => ({ ...prev, model_verison: v }))}
-                          options={VERSION_OPTIONS.map(o => ({ value: o, label: o }))}
-                        />
-                      </div>
-                      <div className="select-group">
-                        <label className="select-label">仿真时间 (s)</label>
-                        <Input type="number" placeholder="留空使用默认值"
-                          value={editDraft.sim_time ?? ''}
-                          onChange={e => setEditDraft(prev => ({ ...prev, sim_time: e.target.value ? Number(e.target.value) : null }))}
-                          onBlur={e => {
-                            const v = parseFloat(e.target.value)
-                            if (!isNaN(v) && v > 0 && v > 19.2) {
-                              setEditDraft(prev => ({ ...prev, sim_time: 19.2 }))
-                              message.error('仿真时间不能超过 19.2s，已自动修正')
-                            }
-                          }}
-                        />
-                      </div>
-                    </div>
+                    <ModelSelectPanel
+                      systems={systems} draft={editDraft}
+                      onSysChange={onSystemChange}
+                      onDraftChange={patch => setEditDraft(prev => ({ ...prev, ...patch }))}
+                    />
                   )}
 
                   {activeSection === 'param' && paramEditGroups.length > 0 && (
-                    <>
-                      {paramEditGroups.map(g => (
-                        <div className="param-group" key={g.path}>
-                          <div className="param-group-title">{g.name}</div>
-                          <table className="param-table">
-                            <thead><tr><th>参数名</th><th>参数值</th></tr></thead>
-                            <tbody>
-                              {g.rows.map(r => {
-                                const dk = `${g.path}|${r.key}`
-                                const val = dirtyValues.current.has(dk) ? dirtyValues.current.get(dk)! : String(r.orig ?? '')
-                                return (
-                                  <tr key={r.key}>
-                                    <td>{r.key}{r.label ? <span style={{ color: '#888', marginLeft: 4 }}>({r.label})</span> : null}</td>
-                                    <td>
-                                      <input className="param-input"
-                                        value={val}
-                                        onChange={e => {
-                                          dirtyValues.current.set(dk, e.target.value)
-                                          setParamVars(prev => ({ ...prev }))
-                                        }}
-                                        onBlur={() => saveParamGroup(g)}
-                                        onKeyDown={e => {
-                                          if (e.key === 'Enter') (e.target as HTMLInputElement).blur()
-                                        }}
-                                      />
-                                    </td>
-                                  </tr>
-                                )
-                              })}
-                            </tbody>
-                          </table>
-                        </div>
-                      ))}
-                    </>
+                    <ParamEditor
+                      groups={paramEditGroups} dirtyValues={dirtyValues}
+                      onSave={saveParamGroup}
+                      forceUpdate={() => setParamVars(prev => ({ ...prev }))}
+                    />
                   )}
 
                   {activeSection === 'disturb' && disturbColumns.length > 0 && (
