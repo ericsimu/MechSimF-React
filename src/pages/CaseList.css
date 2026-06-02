@@ -138,11 +138,11 @@
 }
 .edit-toolbar h3 {
   margin: 0;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
 }
 .toolbar-actions { display: flex; gap: 8px; }
-.page-header h2 { font-size: 16px; font-weight: 600; margin: 0; }
+.page-header h2 { font-size: 15px; font-weight: 600; margin: 0; }
 
 .edit-body {
   flex: 1;
