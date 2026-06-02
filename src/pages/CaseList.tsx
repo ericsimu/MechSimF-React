@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import {
-  Table, Button, Select, Input, Modal, message,
+  Button, Select, Input, Modal, Table, message,
 } from 'antd'
-import type { TableColumnsType } from 'antd'
 import {
   queueCases, addCase, updateCase, queueModelInfo, queueDisturbances,
   getDisturbanceInfo, shareCase, unshareCase, getCaseShares, diffCase, addTasks, runTasks,
@@ -67,7 +66,6 @@ const CaseList: React.FC = () => {
   const [activeSection, setActiveSection] = useState('')
 
   // ── Split Pane ──
-  const [splitRatio, setSplitRatio] = useState(0.5)
   const [leftWidth, setLeftWidth] = useState(280)
   const [editingCell, setEditingCell] = useState<{ id: number | null; field: string }>({ id: null, field: '' })
   const [editValue, setEditValue] = useState('')
@@ -621,24 +619,6 @@ const CaseList: React.FC = () => {
   }
 
   // ── Resize Handlers ──
-  function startResize(e: React.MouseEvent) {
-    const target = e.target as HTMLElement
-    const container = target.parentElement!
-    const containerTop = container.getBoundingClientRect().top
-    const containerH = container.offsetHeight
-    document.body.style.userSelect = 'none'
-    function onMove(ev: MouseEvent) {
-      setSplitRatio(Math.min(0.8, Math.max(0.2, (ev.clientY - containerTop) / containerH)))
-    }
-    function onUp() {
-      document.body.style.userSelect = ''
-      document.removeEventListener('mousemove', onMove)
-      document.removeEventListener('mouseup', onUp)
-    }
-    document.addEventListener('mousemove', onMove)
-    document.addEventListener('mouseup', onUp)
-  }
-
   function startResizeLeft(e: React.MouseEvent) {
     const target = e.target as HTMLElement
     const editBody = target.parentElement!
@@ -657,162 +637,171 @@ const CaseList: React.FC = () => {
     document.addEventListener('mouseup', onUp)
   }
 
-  // ── Table Columns ──
-  const columns: TableColumnsType<CaseModel> = [
-    {
-      title: '名称', dataIndex: 'name', key: 'name',
-      render: (text: string, record: CaseModel) =>
-        editingCell.id === record.id && editingCell.field === 'name' ? (
-          <Input size="small" value={editValue}
-            onChange={e => setEditValue(e.target.value)}
-            onBlur={() => saveInline(record, 'name')}
-            onPressEnter={() => saveInline(record, 'name')}
-            onKeyDown={e => e.key === 'Escape' && cancelInline()}
-            autoFocus
-          />
-        ) : <span className="editable-cell" onClick={() => startInline(record, 'name')}>{text || '-'}</span>,
-    },
-    {
-      title: '描述', dataIndex: 'description', key: 'description',
-      render: (text: string, record: CaseModel) =>
-        editingCell.id === record.id && editingCell.field === 'description' ? (
-          <Input size="small" value={editValue}
-            onChange={e => setEditValue(e.target.value)}
-            onBlur={() => saveInline(record, 'description')}
-            onPressEnter={() => saveInline(record, 'description')}
-            onKeyDown={e => e.key === 'Escape' && cancelInline()}
-            autoFocus
-          />
-        ) : <span className="editable-cell" onClick={() => startInline(record, 'description')}>{text || '-'}</span>,
-    },
-    { title: '创建者', dataIndex: 'create_by', key: 'create_by' },
-    {
-      title: '创建时间', dataIndex: 'create_time', key: 'create_time',
-      render: (t: string) => t ? new Date(t).toLocaleString() : '-',
-    },
-    {
-      title: '操作', key: 'actions',
-      render: (_: unknown, record: CaseModel) => (
-        <div className="actions-cell">
-          <Button type="text" size="small" className="action-btn" onClick={() => openEdit(record)}>编辑</Button>
-          <Button type="text" size="small" className="action-btn" onClick={() => handleCopy(record)}>复制</Button>
-          <Button type="text" size="small" className="action-btn" onClick={() => openShare(record)}>共享</Button>
-          <Button type="text" size="small" className="action-btn" onClick={() => confirmDelete(record)}>删除</Button>
-        </div>
-      ),
-    },
-  ]
 
   // ── Render ──
   return (
     <div className="case-page">
-      <div className="split-container">
-        {/* Case Table */}
-        <div className="case-list" style={editCase ? { height: `${splitRatio * 100}%`, overflow: 'auto' } : {}}>
-          <div className="page-header">
-            <h2>用例列表</h2>
-            <Button className="btn-outline" onClick={() => setAddModalOpen(true)}>创建用例</Button>
+      <div className="case-layout">
+        {/* Left Sidebar — case navigation */}
+        <div className="case-sidebar">
+          <div className="sidebar-header">
+            <span className="sidebar-title">用例列表</span>
+            <Button className="btn-create" onClick={() => setAddModalOpen(true)}>新建</Button>
           </div>
-          <Table
-            columns={columns}
-            dataSource={cases}
-            rowKey="id"
-            loading={loading}
-            size="small"
-            pagination={false}
-            locale={{ emptyText: '暂无数据' }}
-            rowClassName={(r) => editCase?.id === r.id ? 'row-selected' : ''}
-          />
+          {loading ? (
+            <div className="sidebar-loading">加载中...</div>
+          ) : cases.length === 0 ? (
+            <div className="sidebar-empty">暂无用例</div>
+          ) : (
+            <ul className="sidebar-list">
+              {cases.map(c => (
+                <li key={c.id}
+                  className={`sidebar-item ${editCase?.id === c.id ? 'sidebar-item-active' : ''}`}
+                  onClick={() => openEdit(c)}
+                >
+                  <span className="sidebar-item-text">{c.name || '未命名'}</span>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
 
-        {editCase && (
-          <>
-            <div className="resize-handle" onMouseDown={startResize} />
-
-            <div className="edit-panel">
-              <div className="edit-toolbar">
-                <h3>{editCase.name}</h3>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <Button className="btn-outline" size="small" onClick={openTaskModal}>创建任务</Button>
-                  <Button className="btn-outline" size="small" loading={saving} onClick={() => handleSave()}>保存</Button>
-                </div>
-              </div>
-
-              <div className="edit-body">
-                <div className="edit-left" style={{ width: leftWidth }}>
-                  <div className={`tree-section ${activeSection === 'model' ? 'section-active' : ''}`}
-                    onClick={() => activateSection('model')}>
-                    <div className="tree-section-header"><span>模型选择</span></div>
-                  </div>
-                  <div className={`tree-section ${activeSection === 'param' ? 'section-active' : ''}`}
-                    onClick={() => toggleTree('param')}>
-                    <div className="tree-section-header">
-                      <span className="tree-section-arrow">{activeSection === 'param' ? '▼' : '▶'}</span>
-                      <span>参数配置</span>
-                    </div>
-                    {activeSection === 'param' && (
-                      <div className="tree-content">
-                        {paramEntries.map(([k, v]) => (
-                          <TreeNode key={k} name={k} value={v} path={k}
-                            selPath={selParamPath} expanded={paramExpanded}
-                            onToggle={p => setParamExpanded(prev => ({ ...prev, [p]: !prev[p] }))}
-                            onSelect={onParamSelect}
+        {/* Main Content */}
+        <div className="case-main">
+          <div className="split-container">
+            {/* Case Detail — single row for selected case */}
+            <div className="case-list">
+              <div className="page-header"><h2>用例详情</h2></div>
+              <table>
+                <thead><tr><th>名称</th><th>描述</th><th>创建者</th><th>创建时间</th><th>操作</th></tr></thead>
+                <tbody>
+                  {editCase ? (
+                    <tr>
+                      <td>
+                        {editingCell.id === editCase.id && editingCell.field === 'name' ? (
+                          <Input size="small" value={editValue}
+                            onChange={e => setEditValue(e.target.value)}
+                            onBlur={() => saveInline(editCase!, 'name')}
+                            onPressEnter={() => saveInline(editCase!, 'name')}
+                            onKeyDown={e => e.key === 'Escape' && cancelInline()}
+                            autoFocus className="inline-input"
                           />
-                        ))}
-                        {paramEntries.length === 0 && <div className="tree-empty">暂无参数数据</div>}
-                      </div>
-                    )}
-                  </div>
-                  <div className={`tree-section ${activeSection === 'disturb' ? 'section-active' : ''}`}
-                    onClick={() => toggleTree('disturb')}>
-                    <div className="tree-section-header">
-                      <span className="tree-section-arrow">{activeSection === 'disturb' ? '▼' : '▶'}</span>
-                      <span>扰动分析</span>
-                    </div>
-                    {activeSection === 'disturb' && (
-                      <div className="tree-content">
-                        {disturbEntries.map(([k, v]) => (
-                          <DistTreeNode key={k} name={k} value={v} path={k}
-                            checked={disturbChecked} expanded={disturbExpanded} selFile={selDisturbFile}
-                            onToggle={p => setDisturbExpanded(prev => ({ ...prev, [p]: !prev[p] }))}
-                            onCheck={onDisturbCheck} onLeafClick={onDisturbLeafClick}
-                          />
-                        ))}
-                        {disturbTree.files?.length! > 0 && (
-                          <>
-                            {disturbTree.files!.map(f => (
-                              <div className="tree-node" key={f.path}>
-                                <label onClick={e => e.stopPropagation()}>
-                                  <span className="tree-toggle" style={{ visibility: 'hidden' }}>{'▶'}</span>
-                                  <input type="checkbox" checked={!!disturbChecked[f.path]}
-                                    onChange={() => onDisturbCheck(f.path)} />
-                                  <span style={{ cursor: 'pointer', color: selDisturbFile === f.path ? '#3b82f6' : undefined }}
-                                    onClick={() => onDisturbLeafClick(f.path)}>{f.name}</span>
-                                </label>
-                              </div>
-                            ))}
-                          </>
+                        ) : (
+                          <span className="editable-cell" onClick={() => startInline(editCase!, 'name')}>{editCase.name || '-'}</span>
                         )}
-                      </div>
-                    )}
-                  </div>
-                  <div className={`tree-section ${activeSection === 'indicator' ? 'section-active' : ''}`}
-                    onClick={() => setActiveSection(activeSection === 'indicator' ? '' : 'indicator')}>
-                    <div className="tree-section-header">
-                      <span className="tree-section-arrow">{activeSection === 'indicator' ? '▼' : '▶'}</span>
-                      <span>指标分析</span>
-                    </div>
-                    {activeSection === 'indicator' && (
-                      <div className="tree-content">
-                        <div className="tree-empty">此页面暂未填充内容</div>
-                      </div>
-                    )}
+                      </td>
+                      <td>
+                        {editingCell.id === editCase.id && editingCell.field === 'description' ? (
+                          <Input size="small" value={editValue}
+                            onChange={e => setEditValue(e.target.value)}
+                            onBlur={() => saveInline(editCase!, 'description')}
+                            onPressEnter={() => saveInline(editCase!, 'description')}
+                            onKeyDown={e => e.key === 'Escape' && cancelInline()}
+                            autoFocus className="inline-input"
+                          />
+                        ) : (
+                          <span className="editable-cell" onClick={() => startInline(editCase!, 'description')}>{editCase.description || '-'}</span>
+                        )}
+                      </td>
+                      <td>{editCase.create_by}</td>
+                      <td>{editCase.create_time ? new Date(editCase.create_time).toLocaleString() : '-'}</td>
+                      <td>
+                        <div className="actions-cell">
+                          <Button className="btn-outline" size="small" onClick={() => handleCopy(editCase!)}>复制</Button>
+                          <Button className="btn-outline" size="small" onClick={() => openShare(editCase!)}>共享</Button>
+                          <Button className="btn-outline" size="small" onClick={() => confirmDelete(editCase!)}>删除</Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    <tr><td colSpan={5} className="empty">请从左侧选择一个用例</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {editCase && (
+              <div className="edit-panel">
+                <div className="edit-toolbar">
+                  <h3>{editCase.name}</h3>
+                  <div className="toolbar-actions">
+                    <Button className="btn-outline" size="small" onClick={openTaskModal}>创建任务</Button>
+                    <Button className="btn-outline" size="small" loading={saving} onClick={() => handleSave()}>保存</Button>
                   </div>
                 </div>
+                <div className="edit-body">
+                  <div className="edit-left" style={{ width: leftWidth }}>
+                    <div className={`tree-section ${activeSection === 'model' ? 'section-active' : ''}`}
+                      onClick={() => activateSection('model')}>
+                      <div className="tree-section-header"><span className="tree-section-title">模型选择</span></div>
+                    </div>
+                    <div className={`tree-section ${activeSection === 'param' ? 'section-active' : ''}`}
+                      onClick={() => toggleTree('param')}>
+                      <div className="tree-section-header">
+                        <span className="tree-section-arrow">{activeSection === 'param' ? '▼' : '▶'}</span>
+                        <span className="tree-section-title">参数配置</span>
+                      </div>
+                      {activeSection === 'param' && (
+                        <div className="tree-content">
+                          {paramEntries.map(([k, v]) => (
+                            <TreeNode key={k} name={k} value={v} path={k}
+                              selPath={selParamPath} expanded={paramExpanded}
+                              onToggle={p => setParamExpanded(prev => ({ ...prev, [p]: !prev[p] }))}
+                              onSelect={onParamSelect}
+                            />
+                          ))}
+                          {paramEntries.length === 0 && <div className="tree-empty">暂无参数数据</div>}
+                        </div>
+                      )}
+                    </div>
+                    <div className={`tree-section ${activeSection === 'disturb' ? 'section-active' : ''}`}
+                      onClick={() => toggleTree('disturb')}>
+                      <div className="tree-section-header">
+                        <span className="tree-section-arrow">{activeSection === 'disturb' ? '▼' : '▶'}</span>
+                        <span className="tree-section-title">扰动分析</span>
+                      </div>
+                      {activeSection === 'disturb' && (
+                        <div className="tree-content">
+                          {disturbEntries.map(([k, v]) => (
+                            <DistTreeNode key={k} name={k} value={v} path={k}
+                              checked={disturbChecked} expanded={disturbExpanded} selFile={selDisturbFile}
+                              onToggle={p => setDisturbExpanded(prev => ({ ...prev, [p]: !prev[p] }))}
+                              onCheck={onDisturbCheck} onLeafClick={onDisturbLeafClick}
+                            />
+                          ))}
+                          {disturbTree.files?.length! > 0 && (
+                            <>
+                              {disturbTree.files!.map(f => (
+                                <div className="tree-node" key={f.path}>
+                                  <label onClick={e => e.stopPropagation()}>
+                                    <span className="tree-toggle" style={{ visibility: 'hidden' }}>{'▶'}</span>
+                                    <input type="checkbox" checked={!!disturbChecked[f.path]}
+                                      onChange={() => onDisturbCheck(f.path)} />
+                                    <span style={{ cursor: 'pointer', color: selDisturbFile === f.path ? '#3b82f6' : undefined }}
+                                      onClick={() => onDisturbLeafClick(f.path)}>{f.name}</span>
+                                  </label>
+                                </div>
+                              ))}
+                            </>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    <div className={`tree-section ${activeSection === 'indicator' ? 'section-active' : ''}`}
+                      onClick={() => setActiveSection(activeSection === 'indicator' ? '' : 'indicator')}>
+                      <div className="tree-section-header">
+                        <span className="tree-section-arrow">{activeSection === 'indicator' ? '▼' : '▶'}</span>
+                        <span className="tree-section-title">指标分析</span>
+                      </div>
+                      {activeSection === 'indicator' && (
+                        <div className="tree-content"><div className="tree-empty">此页面暂未填充内容</div></div>
+                      )}
+                    </div>
+                  </div>
 
-                <div className="h-resize-handle" onMouseDown={startResizeLeft} />
+                  <div className="h-resize-handle" onMouseDown={startResizeLeft} />
 
-                <div className="edit-right">
+                  <div className="edit-right">
                   {activeSection === 'model' && (
                     <div className="model-select-panel">
                       <div className="select-group">
@@ -919,9 +908,10 @@ const CaseList: React.FC = () => {
                 </div>
               </div>
             </div>
-          </>
-        )}
+          )}
+        </div>
       </div>
+    </div>
 
       {/* Add Modal */}
       <Modal title="创建用例" open={addModalOpen} onCancel={() => setAddModalOpen(false)}
