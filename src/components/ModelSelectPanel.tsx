@@ -22,35 +22,37 @@ const ModelSelectPanel: React.FC<Props> = ({ systems, draft, onSysChange, onDraf
         options={systems.map(s => ({ value: s, label: s }))}
       />
     </div>
-    <div className="select-group">
-      <label className="select-label">产率</label>
-      <Select style={{ width: '100%' }}
-        value={draft.model_productivity || undefined}
-        onChange={v => onDraftChange({ model_productivity: v })}
-        options={PRODUCTIVITY_OPTIONS.map(o => ({ value: o, label: o }))}
-      />
-    </div>
-    <div className="select-group">
-      <label className="select-label">版本</label>
-      <Select style={{ width: '100%' }}
-        value={draft.model_verison || undefined}
-        onChange={v => onDraftChange({ model_verison: v })}
-        options={VERSION_OPTIONS.map(o => ({ value: o, label: o }))}
-      />
-    </div>
-    <div className="select-group">
-      <label className="select-label">仿真时间 (s)</label>
-      <Input type="number" placeholder="留空使用默认值"
-        value={draft.sim_time ?? ''}
-        onChange={e => onDraftChange({ sim_time: e.target.value ? Number(e.target.value) : null })}
-        onBlur={e => {
-          const v = parseFloat(e.target.value)
-          if (!isNaN(v) && v > 0 && v > 19.2) {
-            onDraftChange({ sim_time: 19.2 })
-            message.error('仿真时间不能超过 19.2s，已自动修正')
-          }
-        }}
-      />
+    <div className="select-row">
+      <div className="select-group" style={{ flex: 1, minWidth: 0 }}>
+        <label className="select-label">产率</label>
+        <Select style={{ width: '100%' }}
+          value={draft.model_productivity || undefined}
+          onChange={v => onDraftChange({ model_productivity: v })}
+          options={PRODUCTIVITY_OPTIONS.map(o => ({ value: o, label: o }))}
+        />
+      </div>
+      <div className="select-group" style={{ flex: 1, minWidth: 0 }}>
+        <label className="select-label">版本</label>
+        <Select style={{ width: '100%' }}
+          value={draft.model_verison || undefined}
+          onChange={v => onDraftChange({ model_verison: v })}
+          options={VERSION_OPTIONS.map(o => ({ value: o, label: o }))}
+        />
+      </div>
+      <div className="select-group" style={{ flex: 1, minWidth: 0 }}>
+        <label className="select-label">仿真时间 (s)</label>
+        <Input type="number" placeholder="留空使用默认值"
+          value={draft.sim_time ?? ''}
+          onChange={e => onDraftChange({ sim_time: e.target.value ? Number(e.target.value) : null })}
+          onBlur={e => {
+            const v = parseFloat(e.target.value)
+            if (!isNaN(v) && v > 0 && v > 19.2) {
+              onDraftChange({ sim_time: 19.2 })
+              message.error('仿真时间不能超过 19.2s，已自动修正')
+            }
+          }}
+        />
+      </div>
     </div>
     {draft.sys_name && (
       <img src={`/api/v1/sim/model_image/${draft.sys_name}`}

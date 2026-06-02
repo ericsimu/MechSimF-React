@@ -274,6 +274,7 @@
   flex: 1;
   min-width: 0;
 }
+.select-row { display: flex; gap: 12px; }
 .select-label {
   display: block;
   margin-bottom: 4px;
