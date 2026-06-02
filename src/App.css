@@ -15,10 +15,9 @@
 
 .sidebar-brand {
   padding: 20px 20px;
-  font-size: 18px;
+  font-size: 15px;
   font-weight: 700;
   color: #fff;
-  letter-spacing: 0.5px;
 }
 
 .sidebar-nav {
@@ -32,7 +31,7 @@
   padding: 12px 20px;
   color: rgba(255, 255, 255, 0.85);
   text-decoration: none;
-  font-size: 14px;
+  font-size: 13px;
   transition: color 0.15s, background 0.15s;
 }
 
@@ -65,7 +64,7 @@
 }
 
 .header-breadcrumb {
-  font-size: 14px;
+  font-size: 13px;
   color: #333;
   font-weight: 500;
 }
@@ -74,7 +73,7 @@
 .header-nav-item { color: #666; text-decoration: none; font-size: 13px; padding: 4px 8px; border-radius: 4px; }
 .header-nav-item:hover { color: #333; background: #f0f0f0; }
 .header-nav-item.active { color: #3b82f6; font-weight: 600; }
-.header-user { font-size: 12px; color: #888;
+.header-user { font-size: 13px; color: #888;
   margin-left: auto;
 }
 
