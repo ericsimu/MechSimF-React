@@ -204,7 +204,6 @@
 }
 
 .tree-section-arrow {
-  font-size: 10px;
   width: 14px;
   text-align: center;
   color: #999;
@@ -251,7 +250,6 @@
 }
 
 .tree-toggle {
-  font-size: 9px;
   width: 14px;
   text-align: center;
   color: #999;
@@ -278,8 +276,9 @@
 .select-label {
   display: block;
   margin-bottom: 4px;
-  font-size: 13px;
-  font-weight: 500;
+  font-size: 12px;
+  font-weight: 600;
+  color: #888;
   color: #555;
 }
 
@@ -307,6 +306,7 @@
   flex-wrap: wrap;
   gap: 4px 16px;
   padding: 6px 4px;
+  font-size: 12px;
   font-size: 12px;
 }
 .chart-legend-item {
@@ -388,7 +388,7 @@
 
 /* ── Diff Table ── */
 .diff-section-title {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   color: #333;
   margin-bottom: 8px;
