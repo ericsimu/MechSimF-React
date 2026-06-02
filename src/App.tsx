@@ -7,7 +7,7 @@ import DataViewer from './pages/DataViewer'
 import Placeholder from './pages/Placeholder'
 import './App.css'
 
-interface NavChild { path: string; label: string }
+interface NavChild { path?: string; label: string }
 interface NavItem { path?: string; label: string; children?: NavChild[] }
 
 const navItems: NavItem[] = [
@@ -17,9 +17,9 @@ const navItems: NavItem[] = [
     label: '结果分析',
     children: [
       { path: '/data', label: '数据可视化' },
-      { path: '/data', label: '指标查看' },
-      { path: '/data', label: '报告查看' },
-      { path: '/data', label: '日志查看' },
+      { path: '/indicators', label: '指标查看' },
+      { path: '/reports', label: '报告查看' },
+      { path: '/logs', label: '日志查看' },
     ],
   },
   { path: '/data-manage', label: '数据管理' },
@@ -56,17 +56,21 @@ export function setCurrentUser(name: string): void {
 
 function NavGroup({ item }: { item: NavItem }) {
   const loc = useLocation()
-  const isChildActive = item.children?.some(c => loc.pathname.startsWith(c.path))
+  const isChildActive = item.children?.some(c => c.path && loc.pathname.startsWith(c.path))
   return (
     <div className="nav-group">
       <div className={`nav-parent ${isChildActive ? 'active' : ''}`}>{item.label}</div>
       <div className="nav-sub">
-        {item.children!.map(c => (
-          <NavLink key={c.label} to={c.path}
-            className={({ isActive }) => `nav-sub-item${isActive ? ' active' : ''}`}>
-            {c.label}
-          </NavLink>
-        ))}
+        {item.children!.map(c =>
+          c.path ? (
+            <NavLink key={c.label} to={c.path}
+              className={({ isActive }) => `nav-sub-item${isActive ? ' active' : ''}`}>
+              {c.label}
+            </NavLink>
+          ) : (
+            <span key={c.label} className="nav-sub-item" style={{ opacity: 0.5 }}>{c.label}</span>
+          )
+        )}
       </div>
     </div>
   )
@@ -112,6 +116,9 @@ function App() {
                 <Route path="/data-manage" element={<Placeholder />} />
                 <Route path="/tools" element={<Placeholder />} />
                 <Route path="/manual" element={<Placeholder />} />
+                <Route path="/indicators" element={<Placeholder />} />
+                <Route path="/reports" element={<Placeholder />} />
+                <Route path="/logs" element={<Placeholder />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </main>
