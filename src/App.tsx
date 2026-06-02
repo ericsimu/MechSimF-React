@@ -21,9 +21,9 @@ const navItems: NavItem[] = [
       { path: '/data', label: '日志查看' },
     ],
   },
-  { path: '/data', label: '数据管理' },
-  { path: '/data', label: '工具箱' },
-  { path: '/data', label: '用户手册' },
+  { path: '/data', label: '数据管理（待添加）' },
+  { path: '/data', label: '工具箱（待添加）' },
+  { path: '/data', label: '用户手册（待添加）' },
 ]
 
 /**

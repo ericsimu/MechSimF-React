@@ -49,14 +49,14 @@
 
 .nav-group { margin: 4px 0; }
 .nav-parent {
-  padding: 12px 20px; color: rgba(255,255,255,0.85);
-  font-size: 13px; user-select: none;
+  padding: 12px 20px 4px; color: rgba(255,255,255,0.85);
+  font-size: 18px; user-select: none;
 }
 .nav-parent:hover, .nav-parent.active { color: #fff; background: rgba(255,255,255,0.12); }
 .nav-sub { padding: 4px 0 4px 32px; }
 .nav-sub-item {
   display: block; padding: 8px 12px;
-  color: rgba(255,255,255,0.7); text-decoration: none; font-size: 12px;
+  color: rgba(255,255,255,0.7); text-decoration: none; font-size: 13px;
 }
 .nav-sub-item:hover, .nav-sub-item.active { color: #fff; background: rgba(255,255,255,0.1); }
 
