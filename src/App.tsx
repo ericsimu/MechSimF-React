@@ -11,7 +11,7 @@ interface NavChild { path: string; label: string }
 interface NavItem { path?: string; label: string; children?: NavChild[] }
 
 const navItems: NavItem[] = [
-  { path: '/', label: '用例编排' },
+  { path: '/cases', label: '用例编排' },
   { path: '/tasks', label: '任务管理' },
   {
     label: '结果分析',
@@ -110,7 +110,8 @@ function App() {
             </header>
             <main className="app-main">
               <Routes>
-                <Route path="/" element={<CaseList />} />
+                <Route path="/cases" element={<CaseList />} />
+                <Route path="/" element={<Navigate to="/cases" replace />} />
                 <Route path="/tasks" element={<Tasks />} />
                 <Route path="/data/:taskId" element={<DataViewer />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
