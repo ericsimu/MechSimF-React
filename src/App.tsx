@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, NavLink, useLocation } from 'react-router-dom'
 import { ConfigProvider } from 'antd'
 import zhCN from 'antd/locale/zh_CN'
@@ -22,7 +21,9 @@ const navItems: NavItem[] = [
       { path: '/data', label: '日志查看' },
     ],
   },
-  { path: '/tasks', label: '数据管理' },
+  { path: '/data', label: '数据管理' },
+  { path: '/data', label: '工具箱' },
+  { path: '/data', label: '用户手册' },
 ]
 
 /**
@@ -53,26 +54,19 @@ export function setCurrentUser(name: string): void {
 }
 
 function NavGroup({ item }: { item: NavItem }) {
-  const [open, setOpen] = useState(false)
   const loc = useLocation()
   const isChildActive = item.children?.some(c => loc.pathname.startsWith(c.path))
   return (
     <div className="nav-group">
-      <div className={`nav-parent ${isChildActive ? 'active' : ''}`}
-        onClick={() => setOpen(!open)}>
-        <span className="nav-arrow">{open ? '▼' : '▶'}</span>
-        {item.label}
+      <div className={`nav-parent ${isChildActive ? 'active' : ''}`}>{item.label}</div>
+      <div className="nav-sub">
+        {item.children!.map(c => (
+          <NavLink key={c.label} to={c.path}
+            className={({ isActive }) => `nav-sub-item${isActive ? ' active' : ''}`}>
+            {c.label}
+          </NavLink>
+        ))}
       </div>
-      {open && (
-        <div className="nav-sub">
-          {item.children!.map(c => (
-            <NavLink key={c.label} to={c.path}
-              className={({ isActive }) => `nav-sub-item${isActive ? ' active' : ''}`}>
-              {c.label}
-            </NavLink>
-          ))}
-        </div>
-      )}
     </div>
   )
 }
