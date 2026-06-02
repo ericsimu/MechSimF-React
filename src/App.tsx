@@ -4,6 +4,7 @@ import zhCN from 'antd/locale/zh_CN'
 import CaseList from './pages/CaseList'
 import Tasks from './pages/Tasks'
 import DataViewer from './pages/DataViewer'
+import Placeholder from './pages/Placeholder'
 import './App.css'
 
 interface NavChild { path: string; label: string }
@@ -21,9 +22,9 @@ const navItems: NavItem[] = [
       { path: '/data', label: '日志查看' },
     ],
   },
-  { path: '/data', label: '数据管理（待添加）' },
-  { path: '/data', label: '工具箱（待添加）' },
-  { path: '/data', label: '用户手册（待添加）' },
+  { path: '/data-manage', label: '数据管理' },
+  { path: '/tools', label: '工具箱' },
+  { path: '/manual', label: '用户手册' },
 ]
 
 /**
@@ -108,6 +109,9 @@ function App() {
                 <Route path="/" element={<Navigate to="/cases" replace />} />
                 <Route path="/tasks" element={<Tasks />} />
                 <Route path="/data/:taskId" element={<DataViewer />} />
+                <Route path="/data-manage" element={<Placeholder />} />
+                <Route path="/tools" element={<Placeholder />} />
+                <Route path="/manual" element={<Placeholder />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </main>
