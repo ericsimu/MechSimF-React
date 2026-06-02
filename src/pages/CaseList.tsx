@@ -848,13 +848,13 @@ const CaseList: React.FC = () => {
                         <Input type="number" placeholder="留空使用默认值"
                           value={editDraft.sim_time ?? ''}
                           onChange={e => setEditDraft(prev => ({ ...prev, sim_time: e.target.value ? Number(e.target.value) : null }))}
-                        />
-                      </div>
-                      <div className="select-group">
-                        <label className="select-label">仿真步长 (s)</label>
-                        <Input type="number" placeholder="留空使用默认值"
-                          value={editDraft.sim_step ?? ''}
-                          onChange={e => setEditDraft(prev => ({ ...prev, sim_step: e.target.value ? Number(e.target.value) : null }))}
+                          onBlur={e => {
+                            const v = parseFloat(e.target.value)
+                            if (!isNaN(v) && v > 0 && v > 19.2) {
+                              setEditDraft(prev => ({ ...prev, sim_time: 19.2 }))
+                              message.error('仿真时间不能超过 19.2s，已自动修正')
+                            }
+                          }}
                         />
                       </div>
                     </div>
@@ -865,44 +865,33 @@ const CaseList: React.FC = () => {
                       {paramEditGroups.map(g => (
                         <div className="param-group" key={g.path}>
                           <div className="param-group-title">{g.name}</div>
-                          <Table
-                            size="small"
-                            showHeader={false}
-                            pagination={false}
-                            dataSource={g.rows.map((r, i) => ({ ...r, _key: i }))}
-                            rowKey="_key"
-                            columns={[
-                              {
-                                title: '参数名', dataIndex: 'key', width: 200,
-                                render: (k: string, r: any) => (
-                                  <span>{k}{r.label ? <span style={{ color: '#888', marginLeft: 4 }}>({r.label})</span> : null}</span>
-                                ),
-                              },
-                              {
-                                title: '参数值', dataIndex: 'value',
-                                render: (_v: string, r: any) => {
-                                  const dk = `${g.path}|${r.key}`
-                                  const val = dirtyValues.current.has(dk) ? dirtyValues.current.get(dk)! : String(r.orig ?? '')
-                                  return (
-                                    <input
-                                      className="ant-input css-var-R1a ant-input-sm"
-                                      style={{ width: '100%' }}
-                                      value={val}
-                                      onChange={e => {
-                                        dirtyValues.current.set(dk, e.target.value)
-                                        // Force re-render by updating a counter
-                                        setParamVars(prev => ({ ...prev }))
-                                      }}
-                                      onBlur={() => saveParamGroup(g)}
-                                      onKeyDown={e => {
-                                        if (e.key === 'Enter') (e.target as HTMLInputElement).blur()
-                                      }}
-                                    />
-                                  )
-                                },
-                              },
-                            ]}
-                          />
+                          <table className="param-table">
+                            <thead><tr><th>参数名</th><th>参数值</th></tr></thead>
+                            <tbody>
+                              {g.rows.map(r => {
+                                const dk = `${g.path}|${r.key}`
+                                const val = dirtyValues.current.has(dk) ? dirtyValues.current.get(dk)! : String(r.orig ?? '')
+                                return (
+                                  <tr key={r.key}>
+                                    <td>{r.key}{r.label ? <span style={{ color: '#888', marginLeft: 4 }}>({r.label})</span> : null}</td>
+                                    <td>
+                                      <input className="param-input"
+                                        value={val}
+                                        onChange={e => {
+                                          dirtyValues.current.set(dk, e.target.value)
+                                          setParamVars(prev => ({ ...prev }))
+                                        }}
+                                        onBlur={() => saveParamGroup(g)}
+                                        onKeyDown={e => {
+                                          if (e.key === 'Enter') (e.target as HTMLInputElement).blur()
+                                        }}
+                                      />
+                                    </td>
+                                  </tr>
+                                )
+                              })}
+                            </tbody>
+                          </table>
                         </div>
                       ))}
                     </>
