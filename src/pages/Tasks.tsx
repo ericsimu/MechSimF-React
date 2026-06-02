@@ -75,12 +75,7 @@ const Tasks: React.FC = () => {
   }
 
   const columns: TableColumnsType<SimTask> = [
-    {
-      title: 'ID', dataIndex: 'id', key: 'id',
-      render: (id: number) => (
-        <span className="task-id-link" onClick={() => navigate(`/data/${id}`)}>{id}</span>
-      ),
-    },
+    { title: 'ID', dataIndex: 'id', key: 'id' },
     { title: '名称', dataIndex: 'name', key: 'name' },
     { title: '系统', dataIndex: 'sys_name', key: 'sys_name', render: (v: string) => v || '-' },
     { title: '模型', dataIndex: 'model_name', key: 'model_name', render: (v: string) => v || '-' },
@@ -96,7 +91,10 @@ const Tasks: React.FC = () => {
     {
       title: '操作', key: 'actions',
       render: (_: unknown, record: SimTask) => (
-        <Button size="small" danger onClick={() => handleDelete(record)}>删除</Button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <Button size="small" onClick={() => navigate(`/data/${record.id}`)}>查看详情</Button>
+          <Button size="small" danger onClick={() => handleDelete(record)}>删除</Button>
+        </div>
       ),
     },
   ]
