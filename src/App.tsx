@@ -48,17 +48,21 @@ function App() {
     >
       <BrowserRouter>
         <div className="app-shell">
+          <aside className="sidebar">
+            <div className="sidebar-brand">MechSim</div>
+            <nav className="sidebar-nav">
+              {navItems.map(item => (
+                <NavLink key={item.path} to={item.path} end
+                  className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}>
+                  {item.label}
+                </NavLink>
+              ))}
+            </nav>
+            <div className="sidebar-user" title="当前登录用户">{user}</div>
+          </aside>
           <div className="app-body">
             <header className="app-header">
               <span className="header-breadcrumb">MechSim 仿真平台</span>
-              <nav className="header-nav">
-                {navItems.map(item => (
-                  <NavLink key={item.path} to={item.path} end
-                    className={({ isActive }) => `header-nav-item${isActive ? ' active' : ''}`}>
-                    {item.label}
-                  </NavLink>
-                ))}
-              </nav>
               <span className="header-user">{user}</span>
             </header>
             <main className="app-main">
