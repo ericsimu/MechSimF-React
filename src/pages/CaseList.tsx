@@ -360,18 +360,6 @@ const CaseList: React.FC = () => {
   }
 
   // ── Left Panel Section Activation ──
-  async function activateSection(key: string) {
-    setActiveSection(key)
-    if (key === 'model' && Object.keys(modelInfo).length === 0) {
-      try {
-        const r = await queueModelInfo()
-        if (r.success && r.data) setModelInfo(r.data)
-      } catch { /* */ }
-    }
-    if (!editDraft.model_productivity) setEditDraft(prev => ({ ...prev, model_productivity: PRODUCTIVITY_OPTIONS[0] }))
-    if (!editDraft.model_verison) setEditDraft(prev => ({ ...prev, model_verison: VERSION_OPTIONS[0] }))
-  }
-
   async function toggleTree(key: string) {
     if (activeSection === key) { setActiveSection(''); return }
     setActiveSection(key)
@@ -675,8 +663,11 @@ const CaseList: React.FC = () => {
                 <div className="edit-body">
                   <div className="edit-left" style={{ width: leftWidth }}>
                     <div className={`tree-section ${activeSection === 'model' ? 'section-active' : ''}`}
-                      onClick={() => activateSection('model')}>
-                      <div className="tree-section-header"><span className="tree-section-title">模型选择</span></div>
+                      onClick={() => toggleTree('model')}>
+                      <div className="tree-section-header">
+                        <span className="tree-section-arrow">{activeSection === 'model' ? '▼' : '▶'}</span>
+                        <span className="tree-section-title">模型选择</span>
+                      </div>
                     </div>
                     <div className={`tree-section ${activeSection === 'param' ? 'section-active' : ''}`}
                       onClick={() => toggleTree('param')}>
