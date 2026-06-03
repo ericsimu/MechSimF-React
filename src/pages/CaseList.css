@@ -1,10 +1,9 @@
 /* ── Page Layout ── */
 .case-page {
-  flex: 1;
+  height: calc(100vh - 49px);
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  min-height: 0;
   font-size: 13px;
   color: #333;
 }
