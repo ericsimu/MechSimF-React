@@ -243,14 +243,14 @@ const DataViewer: React.FC = () => {
     if (isNaN(tid)) { setLoading(false); return }
     setLoading(true)
     Promise.all([getTaskDataColumns(tid), getTaskStatus(tid)]).then(([colsR, statusR]) => {
+      if (statusR.success && statusR.data) {
+        setTaskError(statusR.data.error || '')
+        setTaskStatus(statusR.data.status || '')
+      }
       if (colsR.success && colsR.data) {
         setColumns([{ name: 'time', data: [] }, ...colsR.data.column_names.map((n: string) => ({ name: n, data: [] }))])
         setFftColumns([{ name: 'frequency', data: [] }, ...(colsR.data.fft_column_names || []).map((n: string) => ({ name: n, data: [] }))])
-        setTaskStatus(colsR.data.task_status)
         setChecked({})
-      }
-      if (statusR.success && statusR.data) {
-        setTaskError(statusR.data.error || '')
       }
     }).catch(() => message.error('获取数据失败')).finally(() => setLoading(false))
   }, [tid])
