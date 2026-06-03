@@ -450,7 +450,7 @@ const CaseList: React.FC = () => {
     if (!isObject(node)) { setParamEditGroups([]); return }
     const labelMap: Record<string, string> = (node as any)._labels || {}
     const unitMap: Record<string, string> = (node as any)._units || {}
-    const entries = Object.entries(node).filter(([k]) => k !== '_labels' && k !== '_units')
+    const entries = Object.entries(node).filter(([k]) => k !== '_labels' && k !== '_units' && k !== 'ID')
     const hasNested = entries.some(([, v]) => isObject(v))
 
     function fmt(v: unknown): string {
