@@ -40,7 +40,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({ name, value, path, selPath, expande
       </label>
       {nested && !childLast && expanded[path] && (
         <div className="tree-children">
-          {Object.entries(value).map(([k, v]) => (
+          {Object.entries(value).filter(([k]) => k !== '_labels' && k !== '_units').map(([k, v]) => (
             <TreeNode
               key={k}
               name={k}
