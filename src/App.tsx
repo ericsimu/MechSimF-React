@@ -104,7 +104,7 @@ function App() {
           </aside>
           <div className="app-body">
             <header className="app-header">
-              <span className="header-breadcrumb">MechSim 仿真平台</span>
+              <span className="header-breadcrumb">MechSim (机电仿真平台)</span>
               <span className="header-user">{user}</span>
             </header>
             <main className="app-main">
