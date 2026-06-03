@@ -13,7 +13,7 @@
 .case-layout { display: flex; flex: 1; min-height: 0; }
 
 .case-sidebar {
-  width: 200px; flex-shrink: 0; overflow-y: auto;
+  width: 200px; flex-shrink: 0; overflow: hidden;
   background: #fff; border-right: 1px solid #f0f0f0;
   display: flex; flex-direction: column;
 }
