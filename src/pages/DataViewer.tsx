@@ -18,6 +18,9 @@ const STATUS_MAP: Record<string, string> = {
 
 function fmtNum(v: number): string {
   if (!isFinite(v)) return String(v)
+  const av = Math.abs(v)
+  if (av === 0) return '0'
+  if (av < 0.001 || av >= 10000) return v.toExponential(4)
   const s = v.toFixed(10)
   return s.includes('.') ? s.replace(/\.?0+$/, '') : s
 }
@@ -292,7 +295,7 @@ const DataViewer: React.FC = () => {
       timeInst.current = new (uPlot as any)({
         width: w, height: 300,
         cursor: { show: true, drag: { setScale: true, x: true, y: false } },
-        legend: { show: false },
+        legend: { show: true },
         scales: { x: { time: false } },
         axes: [
           { label: timeCol ? 'Time (s)' : 'Index', grid: { stroke: '#e8e8e8' }, stroke: '#888', values: (_self: any, ticks: number[]) => ticks.map(t => t.toFixed(2) + ' s') },
@@ -337,7 +340,7 @@ const DataViewer: React.FC = () => {
     freqInst.current = new (uPlot as any)({
       width: w, height: 300,
       cursor: { show: true, drag: { setScale: true, x: true, y: false } },
-      legend: { show: false },
+      legend: { show: true },
       scales: { x: { time: false } },
       axes: [
         { label: 'Frequency (log10 Hz)', grid: { stroke: '#e8e8e8' }, stroke: '#888' },
