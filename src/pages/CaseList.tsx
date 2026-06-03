@@ -29,10 +29,10 @@ function isObject(v: unknown): v is Record<string, unknown> {
 }
 function isLastLayer(v: unknown): boolean {
   if (!isObject(v)) return false
-  return Object.entries(v).filter(([k]) => k !== '_labels').every(([, cv]) => !isObject(cv))
+  return Object.entries(v).filter(([k]) => k !== '_labels' && k !== '_units').every(([, cv]) => !isObject(cv))
 }
 
-type ParamRow = { key: string; label: string; value: string; orig: unknown }
+type ParamRow = { key: string; label: string; unit: string; value: string; orig: unknown }
 function normalizeTypes(obj: unknown): unknown {
   if (obj === null || obj === undefined) return obj
   if (Array.isArray(obj)) return obj.map(normalizeTypes)
@@ -461,7 +461,8 @@ const CaseList: React.FC = () => {
     for (const p of parts) { if (!isObject(node)) { node = undefined; break } node = node[p] }
     if (!isObject(node)) { setParamEditGroups([]); return }
     const labelMap: Record<string, string> = (node as any)._labels || {}
-    const entries = Object.entries(node).filter(([k]) => k !== '_labels')
+    const unitMap: Record<string, string> = (node as any)._units || {}
+    const entries = Object.entries(node).filter(([k]) => k !== '_labels' && k !== '_units')
     const hasNested = entries.some(([, v]) => isObject(v))
 
     function fmt(v: unknown): string {
@@ -470,21 +471,21 @@ const CaseList: React.FC = () => {
       return String(v)
     }
 
-    function mkRow(k: string, v: unknown, labels: Record<string, string>): ParamRow {
-      return { key: k, label: labels[k] || '', value: fmt(v), orig: v }
+    function mkRow(k: string, v: unknown, labels: Record<string, string>, units?: Record<string, string>): ParamRow {
+      return { key: k, label: labels[k] || '', unit: (units || {})[k] || '', value: fmt(v), orig: v }
     }
 
     if (!hasNested) {
       setParamEditGroups([{
         name: parts[parts.length - 1], path,
-        rows: entries.map(([k, v]) => mkRow(k, v, labelMap)),
+        rows: entries.map(([k, v]) => mkRow(k, v, labelMap, unitMap)),
       }])
       return
     }
     if (entries.every(([, v]) => isLastLayer(v))) {
       setParamEditGroups(entries.map(([cn, cv]) => ({
         name: cn, path: `${path}.${cn}`,
-        rows: Object.entries(cv as Record<string, unknown>).filter(([k]) => k !== '_labels').map(([k, v]) => mkRow(k, v, (cv as any)._labels || {})),
+        rows: Object.entries(cv as Record<string, unknown>).filter(([k]) => k !== '_labels' && k !== '_units').map(([k, v]) => mkRow(k, v, (cv as any)._labels || {}, (cv as any)._units || {})),
       })))
       return
     }
@@ -492,7 +493,7 @@ const CaseList: React.FC = () => {
     const leafEntries = entries.filter(([, v]) => !isObject(v))
     setParamEditGroups(leafEntries.length > 0 ? [{
       name: parts[parts.length - 1], path,
-      rows: leafEntries.map(([k, v]) => mkRow(k, v, labelMap)),
+      rows: leafEntries.map(([k, v]) => mkRow(k, v, labelMap, unitMap)),
     }] : [])
   }
 

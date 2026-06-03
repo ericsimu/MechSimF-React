@@ -1,6 +1,6 @@
 import React from 'react'
 
-type ParamRow = { key: string; label: string; value: string; orig: unknown }
+type ParamRow = { key: string; label: string; unit: string; value: string; orig: unknown }
 
 interface Group {
   name: string
@@ -28,7 +28,7 @@ const ParamEditor: React.FC<Props> = ({ groups, dirtyValues, onSave, forceUpdate
               const val = dirtyValues.current.has(dk) ? dirtyValues.current.get(dk)! : String(r.orig ?? '')
               return (
                 <tr key={r.key}>
-                  <td>{r.key}{r.label ? <span style={{ color: '#888', marginLeft: 4 }}>({r.label})</span> : null}</td>
+                  <td>{r.key}{r.label || r.unit ? <span style={{ color: '#888', marginLeft: 4 }}>({[r.label, r.unit].filter(Boolean).join(', ')})</span> : null}</td>
                   <td>
                     <input className="param-input"
                       value={val}
