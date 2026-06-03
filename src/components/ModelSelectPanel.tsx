@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { Select, Input, message } from 'antd'
 
 const PRODUCTIVITY_OPTIONS = ['100WPH', '150WPH']
@@ -9,6 +9,23 @@ interface Props {
   draft: Record<string, any>
   onSysChange: (sys: string) => void
   onDraftChange: (patch: Record<string, any>) => void
+}
+
+function ModelImage({ sysName }: { sysName: string }) {
+  const [failed, setFailed] = useState(false)
+  if (failed) return (
+    <div style={{ width: '100%', minHeight: 120, marginTop: 12, borderRadius: 6, border: '1px solid #e8e8e8',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#999', fontSize: 13 }}>
+      没有相关图片
+    </div>
+  )
+  return (
+    <img key={sysName} src={`/api/v1/sim/model_image/${sysName}`}
+      alt={`${sysName} model`}
+      style={{ width: '100%', minHeight: 120, marginTop: 12, borderRadius: 6, border: '1px solid #e8e8e8', objectFit: 'contain' }}
+      onError={() => setFailed(true)}
+    />
+  )
 }
 
 const ModelSelectPanel: React.FC<Props> = ({ systems, draft, onSysChange, onDraftChange }) => (
@@ -54,13 +71,7 @@ const ModelSelectPanel: React.FC<Props> = ({ systems, draft, onSysChange, onDraf
         />
       </div>
     </div>
-    {draft.sys_name && (
-      <img src={`/api/v1/sim/model_image/${draft.sys_name}`}
-        alt={`${draft.sys_name} model`}
-        style={{ width: '100%', minHeight: 120, marginTop: 12, borderRadius: 6, border: '1px solid #e8e8e8', objectFit: 'contain' }}
-        onError={e => { (e.target as HTMLImageElement).style.display = 'none' }}
-      />
-    )}
+    {draft.sys_name && <ModelImage sysName={draft.sys_name} />}
   </div>
 )
 
