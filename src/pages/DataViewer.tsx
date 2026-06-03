@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Button, Spin, message } from 'antd'
+import { Button, Spin } from 'antd'
 import { getTaskDataColumns, getTaskSignals, getTaskStatus } from '../api/index'
 import type { DisturbanceColumn } from '../types/api'
 import uPlot from '../lib/uplot/uPlot.esm.js'
@@ -242,17 +242,22 @@ const DataViewer: React.FC = () => {
   useEffect(() => {
     if (isNaN(tid)) { setLoading(false); return }
     setLoading(true)
-    Promise.all([getTaskDataColumns(tid), getTaskStatus(tid)]).then(([colsR, statusR]) => {
+    getTaskStatus(tid).then(statusR => {
       if (statusR.success && statusR.data) {
-        setTaskError(statusR.data.error || '')
         setTaskStatus(statusR.data.status || '')
+        setTaskError(statusR.data.error || '')
       }
-      if (colsR.success && colsR.data) {
-        setColumns([{ name: 'time', data: [] }, ...colsR.data.column_names.map((n: string) => ({ name: n, data: [] }))])
-        setFftColumns([{ name: 'frequency', data: [] }, ...(colsR.data.fft_column_names || []).map((n: string) => ({ name: n, data: [] }))])
-        setChecked({})
+      // For done tasks, also fetch columns
+      if (statusR.success && statusR.data && statusR.data.status === 'done') {
+        return getTaskDataColumns(tid).then(colsR => {
+          if (colsR.success && colsR.data) {
+            setColumns([{ name: 'time', data: [] }, ...colsR.data.column_names.map((n: string) => ({ name: n, data: [] }))])
+            setFftColumns([{ name: 'frequency', data: [] }, ...(colsR.data.fft_column_names || []).map((n: string) => ({ name: n, data: [] }))])
+            setChecked({})
+          }
+        })
       }
-    }).catch(() => message.error('获取数据失败')).finally(() => setLoading(false))
+    }).catch(() => {}).finally(() => setLoading(false))
   }, [tid])
 
   // Build time-domain chart
