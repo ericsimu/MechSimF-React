@@ -35,6 +35,11 @@
 .dv-chart-section { display: flex; flex-direction: column; }
 .dv-chart-title { font-size: 13px; font-weight: 600; color: #555; margin-bottom: 2px; }
 .dv-chart { min-height: 300px; min-width: 100%; position: relative; }
+.dv-chart .u-legend {
+  position: absolute; top: 4px; right: 8px; z-index: 10;
+  font-size: 11px; background: rgba(255,255,255,0.85);
+  padding: 4px 8px; border-radius: 4px;
+}
 
 /* Tasks page */
 .tasks-page { padding: 16px; }
