@@ -21,14 +21,14 @@ const ParamEditor: React.FC<Props> = ({ groups, dirtyValues, onSave, forceUpdate
       <div className="param-group" key={g.path}>
         <div className="param-group-title">{g.name}</div>
         <table className="param-table">
-          <thead><tr><th>参数名</th><th>参数值</th></tr></thead>
+          <thead><tr><th>参数名</th><th>参数值</th><th>单位</th></tr></thead>
           <tbody>
             {g.rows.map(r => {
               const dk = `${g.path}|${r.key}`
               const val = dirtyValues.current.has(dk) ? dirtyValues.current.get(dk)! : String(r.orig ?? '')
               return (
                 <tr key={r.key}>
-                  <td>{r.key}{r.label || r.unit ? <span style={{ color: '#888', marginLeft: 4 }}>({[r.label, r.unit].filter(Boolean).join(', ')})</span> : null}</td>
+                  <td>{r.key}{r.label ? <span style={{ color: '#888', marginLeft: 4 }}>({r.label})</span> : null}</td>
                   <td>
                     <input className="param-input"
                       value={val}
@@ -40,6 +40,7 @@ const ParamEditor: React.FC<Props> = ({ groups, dirtyValues, onSave, forceUpdate
                       onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }}
                     />
                   </td>
+                  <td style={{ color: '#888', fontSize: 12 }}>{r.unit || '-'}</td>
                 </tr>
               )
             })}
