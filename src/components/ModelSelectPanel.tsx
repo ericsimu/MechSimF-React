@@ -14,17 +14,19 @@ interface Props {
 function ModelImage({ sysName }: { sysName: string }) {
   const [failed, setFailed] = useState(false)
   if (failed) return (
-    <div style={{ width: '100%', minHeight: 120, marginTop: 12, borderRadius: 6, border: '1px solid #e8e8e8',
+    <div style={{ width: '100%', height: 160, marginTop: 12, borderRadius: 6, border: '1px solid #e8e8e8',
       display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#999', fontSize: 13 }}>
       没有相关图片
     </div>
   )
   return (
-    <img key={sysName} src={`/api/v1/sim/model_image/${sysName}`}
-      alt={`${sysName} model`}
-      style={{ width: '100%', minHeight: 120, marginTop: 12, borderRadius: 6, border: '1px solid #e8e8e8', objectFit: 'contain' }}
-      onError={() => setFailed(true)}
-    />
+    <div style={{ width: '100%', maxHeight: 360, marginTop: 12, borderRadius: 6, border: '1px solid #e8e8e8', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fafafa' }}>
+      <img key={sysName} src={`/api/v1/sim/model_image/${sysName}`}
+        alt={`${sysName} model`}
+        style={{ maxWidth: '100%', maxHeight: 360, objectFit: 'contain', display: 'block' }}
+        onError={() => setFailed(true)}
+      />
+    </div>
   )
 }
 
