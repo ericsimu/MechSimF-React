@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Button, Spin } from 'antd'
+import { Button, Input, Spin } from 'antd'
 import { getTaskDataColumns, getTaskSignals, getTaskStatus } from '../api/index'
 import type { DisturbanceColumn } from '../types/api'
 import uPlot from '../lib/uplot/uPlot.esm.js'
@@ -85,6 +85,7 @@ const DataViewer: React.FC = () => {
   const [taskStatus, setTaskStatus] = useState('')
   const [taskError, setTaskError] = useState('')
   const [checked, setChecked] = useState<Record<string, boolean>>({})
+  const [searchText, setSearchText] = useState('')
 
   // Zoom state
   const [isTimeZoomed, setIsTimeZoomed] = useState(false)
@@ -383,6 +384,7 @@ const DataViewer: React.FC = () => {
   }, [])
 
   const sigCols = columns.filter(c => c.name.toLowerCase() !== 'time')
+  const filteredSigCols = sigCols.filter(c => c.name.toLowerCase().includes(searchText.toLowerCase()))
 
   return (
     <div className="dataviewer-page">
@@ -415,8 +417,13 @@ const DataViewer: React.FC = () => {
                 <Button size="small" onClick={() => toggleAll(false)}>全不选</Button>
               </div>
             </div>
+            <div style={{ padding: '4px 8px' }}>
+              <Input placeholder="搜索信号..." value={searchText}
+                onChange={e => setSearchText(e.target.value)}
+                allowClear size="small" />
+            </div>
             <div className="dv-signal-list">
-              {sigCols.map((c, i) => (
+              {filteredSigCols.map((c, i) => (
                 <label key={c.name} className="dv-signal-row">
                   <input type="checkbox" checked={checked[c.name] === true} onChange={() => toggleChecked(c.name)} />
                   <span className="dv-dot" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
