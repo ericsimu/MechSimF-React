@@ -162,7 +162,7 @@ const DataViewer: React.FC = () => {
     setChecked({})
   }
 
-  function exportChartSVG(container: HTMLDivElement | null, defaultName: string) {
+  function exportChartSVG(container: HTMLDivElement | null, inst: any, defaultName: string) {
     if (!container) return
     const canvas = container.querySelector('canvas')
     if (!canvas) return
@@ -172,19 +172,25 @@ const DataViewer: React.FC = () => {
     const dataUrl = canvas.toDataURL('image/png')
     const cw = canvas.width
     const ch = canvas.height
-    // Embed uPlot legend HTML directly via foreignObject to preserve exact colors
+    // Build legend from uPlot instance series data (exact colors)
     let legendSvg = ''
-    const legendEl = container.querySelector('.u-legend') as HTMLElement | null
-    if (legendEl) {
-      const legendH = legendEl.offsetHeight || 22
-      const legendHTML = legendEl.outerHTML.replace(/thead/g, 'tbody')
-      legendSvg = `<foreignObject x="0" y="${ch}" width="${cw}" height="${legendH}">
-        <style>.uplot{font-family:system-ui,sans-serif;line-height:1.5}.u-legend{font-size:14px;text-align:center}.u-legend .u-marker{width:1em;height:1em;margin-right:4px;background-clip:padding-box!important}.u-legend th{font-weight:600}.u-legend th>*{vertical-align:middle;display:inline-block}.u-series>*{padding:4px}.u-series th{cursor:pointer}.u-inline{display:block}.u-inline *{display:inline-block}.u-inline tr{margin-right:16px}.u-legend .u-off>*{opacity:.3}</style>
-        ${legendHTML}
-      </foreignObject>`
+    let legendH = 0
+    if (inst && inst.series) {
+      const active = inst.series.slice(1).filter((s: any) => s.show !== false)
+      if (active.length > 0) {
+        const itemH = 18
+        legendH = active.length * itemH + 10
+        legendSvg = `<rect x="0" y="${ch}" width="${cw}" height="${legendH}" fill="#fafafa" stroke="#e8e8e8" stroke-width="1"/>`
+        active.forEach((s: any, i: number) => {
+          const color = s.stroke || s.fill || '#888'
+          const label = (s.label || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+          const y = ch + 8 + i * itemH
+          legendSvg += `<rect x="8" y="${y}" width="10" height="10" fill="${color}" rx="2"/>`
+          legendSvg += `<text x="24" y="${y + 10}" font-size="11" fill="#333" font-family="sans-serif">${label}</text>`
+        })
+      }
     }
-    const totalH = ch + (legendEl ? legendEl.offsetHeight || 22 : 0)
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${cw}" height="${totalH}"><image href="${dataUrl}" width="${cw}" height="${ch}"/>${legendSvg}</svg>`
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${cw}" height="${ch + legendH}"><image href="${dataUrl}" width="${cw}" height="${ch}"/>${legendSvg}</svg>`
     const blob = new Blob([svg], { type: 'image/svg+xml' })
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
@@ -461,14 +467,14 @@ const DataViewer: React.FC = () => {
             <div className="dv-chart-section">
               <div className="dv-chart-title">
                 时域图
-                <Button size="small" onClick={() => exportChartSVG(timeChartRef.current, `task_${tid}_time.svg`)}>导出SVG</Button>
+                <Button size="small" onClick={() => exportChartSVG(timeChartRef.current, timeInst.current, `task_${tid}_time.svg`)}>导出SVG</Button>
               </div>
               <div ref={timeChartRef} className="dv-chart" />
             </div>
             <div className="dv-chart-section">
               <div className="dv-chart-title">
                 频域图
-                <Button size="small" onClick={() => exportChartSVG(freqChartRef.current, `task_${tid}_freq.svg`)}>导出SVG</Button>
+                <Button size="small" onClick={() => exportChartSVG(freqChartRef.current, freqInst.current, `task_${tid}_freq.svg`)}>导出SVG</Button>
               </div>
               <div ref={freqChartRef} className="dv-chart" />
             </div>
