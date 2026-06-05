@@ -162,14 +162,34 @@ const DataViewer: React.FC = () => {
     setChecked({})
   }
 
-  function exportChartSVG(container: HTMLDivElement | null, filename: string) {
+  function exportChartSVG(container: HTMLDivElement | null, defaultName: string) {
     if (!container) return
     const canvas = container.querySelector('canvas')
     if (!canvas) return
+    const name = window.prompt('导出文件名:', defaultName)
+    if (!name) return
+    const filename = name.endsWith('.svg') ? name : name + '.svg'
     const dataUrl = canvas.toDataURL('image/png')
-    const w = canvas.width
-    const h = canvas.height
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><image href="${dataUrl}" width="${w}" height="${h}"/></svg>`
+    const cw = canvas.width
+    const ch = canvas.height
+    // Extract legend items from uPlot legend
+    let legendSvg = ''
+    const legendRows = container.querySelectorAll('.u-legend table tr')
+    if (legendRows.length > 0) {
+      const itemH = 18
+      const legendH = legendRows.length * itemH + 8
+      legendSvg = `<rect x="0" y="${ch}" width="${cw}" height="${legendH}" fill="#fafafa" stroke="#e8e8e8" stroke-width="1"/>`
+      legendRows.forEach((tr, i) => {
+        const marker = tr.querySelector('.u-marker') as HTMLElement | null
+        const label = tr.querySelector('th,td:last-child')?.textContent?.trim() || ''
+        const color = marker?.style.backgroundColor || '#888'
+        const y = ch + 6 + i * itemH
+        legendSvg += `<rect x="8" y="${y}" width="10" height="10" fill="${color}" rx="2"/>`
+        legendSvg += `<text x="24" y="${y + 10}" font-size="11" fill="#333" font-family="sans-serif">${label}</text>`
+      })
+    }
+    const totalH = ch + (legendSvg ? (legendRows.length * 18 + 8) : 0)
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${cw}" height="${totalH}"><image href="${dataUrl}" width="${cw}" height="${ch}"/>${legendSvg}</svg>`
     const blob = new Blob([svg], { type: 'image/svg+xml' })
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
