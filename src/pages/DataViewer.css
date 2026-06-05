@@ -33,7 +33,7 @@
   flex: 1; overflow-y: auto; display: flex; flex-direction: column;
 }
 .dv-chart-section { display: flex; flex-direction: column; }
-.dv-chart-title { font-size: 13px; font-weight: 600; color: #555; margin-bottom: 2px; }
+.dv-chart-title { font-size: 13px; font-weight: 600; color: #555; margin-bottom: 2px; display: flex; justify-content: space-between; align-items: center; }
 .dv-chart { min-height: 300px; min-width: 100%; position: relative; }
 .dv-chart .u-legend {
   position: absolute; top: 4px; right: 8px; z-index: 10;

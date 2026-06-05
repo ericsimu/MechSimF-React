@@ -3,7 +3,6 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { Button, Input, Spin } from 'antd'
 import { getTaskDataColumns, getTaskSignals, getTaskStatus } from '../api/index'
 import type { DisturbanceColumn } from '../types/api'
-import html2canvas from 'html2canvas'
 import uPlot from '../lib/uplot/uPlot.esm.js'
 import '../lib/uplot/uPlot.min.css'
 import './DataViewer.css'
@@ -98,7 +97,6 @@ const DataViewer: React.FC = () => {
 
   const timeChartRef = useRef<HTMLDivElement>(null)
   const freqChartRef = useRef<HTMLDivElement>(null)
-  const chartAreaRef = useRef<HTMLDivElement>(null)
   const timeInst = useRef<any>(null)
   const freqInst = useRef<any>(null)
   const timeDblCleanup = useRef<(() => void) | null>(null)
@@ -164,15 +162,21 @@ const DataViewer: React.FC = () => {
     setChecked({})
   }
 
-  async function exportChartImage() {
-    if (!chartAreaRef.current) return
-    try {
-      const canvas = await html2canvas(chartAreaRef.current, { backgroundColor: '#fff', scale: 2 })
-      const link = document.createElement('a')
-      link.download = `task_${tid}_charts.png`
-      link.href = canvas.toDataURL('image/png')
-      link.click()
-    } catch { /* ignore */ }
+  function exportChartSVG(container: HTMLDivElement | null, filename: string) {
+    if (!container) return
+    const canvas = container.querySelector('canvas')
+    if (!canvas) return
+    const dataUrl = canvas.toDataURL('image/png')
+    const w = canvas.width
+    const h = canvas.height
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><image href="${dataUrl}" width="${w}" height="${h}"/></svg>`
+    const blob = new Blob([svg], { type: 'image/svg+xml' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.download = filename
+    link.href = url
+    link.click()
+    URL.revokeObjectURL(url)
   }
 
   // Zoom-in handler (drag-to-zoom)
@@ -438,16 +442,19 @@ const DataViewer: React.FC = () => {
               ))}
             </div>
           </div>
-          <div className="dv-right" ref={chartAreaRef}>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 4 }}>
-              <Button size="small" onClick={exportChartImage}>导出图片</Button>
-            </div>
+          <div className="dv-right">
             <div className="dv-chart-section">
-              <div className="dv-chart-title">时域图</div>
+              <div className="dv-chart-title">
+                时域图
+                <Button size="small" onClick={() => exportChartSVG(timeChartRef.current, `task_${tid}_time.svg`)}>导出SVG</Button>
+              </div>
               <div ref={timeChartRef} className="dv-chart" />
             </div>
             <div className="dv-chart-section">
-              <div className="dv-chart-title">频域图</div>
+              <div className="dv-chart-title">
+                频域图
+                <Button size="small" onClick={() => exportChartSVG(freqChartRef.current, `task_${tid}_freq.svg`)}>导出SVG</Button>
+              </div>
               <div ref={freqChartRef} className="dv-chart" />
             </div>
           </div>
