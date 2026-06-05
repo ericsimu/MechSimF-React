@@ -654,7 +654,6 @@ const CaseList: React.FC = () => {
             {editCase && (
               <div className="edit-panel">
                 <div className="edit-toolbar">
-                  <h3>{editCase.name}</h3>
                   <div className="toolbar-actions">
                     <Button className="btn-outline" size="small" onClick={openTaskModal}>创建任务</Button>
                     <Button className="btn-outline" size="small" loading={saving} onClick={() => handleSave()}>保存</Button>

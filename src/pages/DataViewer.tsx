@@ -172,23 +172,18 @@ const DataViewer: React.FC = () => {
     const dataUrl = canvas.toDataURL('image/png')
     const cw = canvas.width
     const ch = canvas.height
-    // Extract legend items from uPlot legend
+    // Embed uPlot legend HTML directly via foreignObject to preserve exact colors
     let legendSvg = ''
-    const legendRows = container.querySelectorAll('.u-legend .u-series')
-    if (legendRows.length > 0) {
-      const itemH = 18
-      const legendH = legendRows.length * itemH + 8
-      legendSvg = `<rect x="0" y="${ch}" width="${cw}" height="${legendH}" fill="#fafafa" stroke="#e8e8e8" stroke-width="1"/>`
-      legendRows.forEach((tr, i) => {
-        const marker = tr.querySelector('.u-marker') as HTMLElement | null
-        const label = tr.querySelector('th,td:last-child')?.textContent?.trim() || ''
-        const color = marker?.style.backgroundColor || '#888'
-        const y = ch + 6 + i * itemH
-        legendSvg += `<rect x="8" y="${y}" width="10" height="10" fill="${color}" rx="2"/>`
-        legendSvg += `<text x="24" y="${y + 10}" font-size="11" fill="#333" font-family="sans-serif">${label}</text>`
-      })
+    const legendEl = container.querySelector('.u-legend') as HTMLElement | null
+    if (legendEl) {
+      const legendH = legendEl.offsetHeight || 22
+      const legendHTML = legendEl.outerHTML.replace(/thead/g, 'tbody')
+      legendSvg = `<foreignObject x="0" y="${ch}" width="${cw}" height="${legendH}">
+        <style>.uplot{font-family:system-ui,sans-serif;line-height:1.5}.u-legend{font-size:14px;text-align:center}.u-legend .u-marker{width:1em;height:1em;margin-right:4px;background-clip:padding-box!important}.u-legend th{font-weight:600}.u-legend th>*{vertical-align:middle;display:inline-block}.u-series>*{padding:4px}.u-series th{cursor:pointer}.u-inline{display:block}.u-inline *{display:inline-block}.u-inline tr{margin-right:16px}.u-legend .u-off>*{opacity:.3}</style>
+        ${legendHTML}
+      </foreignObject>`
     }
-    const totalH = ch + (legendSvg ? (legendRows.length * 18 + 8) : 0)
+    const totalH = ch + (legendEl ? legendEl.offsetHeight || 22 : 0)
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${cw}" height="${totalH}"><image href="${dataUrl}" width="${cw}" height="${ch}"/>${legendSvg}</svg>`
     const blob = new Blob([svg], { type: 'image/svg+xml' })
     const url = URL.createObjectURL(blob)
