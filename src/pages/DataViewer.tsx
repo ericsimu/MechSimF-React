@@ -158,14 +158,6 @@ const DataViewer: React.FC = () => {
     if (newVal) { fetchSignals([name], 'time'); fetchSignals([name], 'fft') }
   }, [tid])
 
-  function toggleAll(v: boolean) {
-    const sigCols = columns.filter(c => c.name.toLowerCase() !== 'time')
-    const ck: Record<string, boolean> = {}
-    sigCols.forEach(c => { ck[c.name] = v })
-    setChecked(ck)
-    if (v) { fetchSignals(sigCols.map(c => c.name), 'time'); fetchSignals(sigCols.map(c => c.name), 'fft') }
-  }
-
   // Zoom-in handler (drag-to-zoom)
   const makeSelectHandler = useCallback((domain: 'time' | 'fft') => {
     let timer: ReturnType<typeof setTimeout> | null = null
@@ -412,10 +404,6 @@ const DataViewer: React.FC = () => {
           <div className="dv-left">
             <div className="dv-signal-header">
               <span>信号列表 ({sigCols.length})</span>
-              <div style={{ display: 'flex', gap: 4 }}>
-                <Button size="small" onClick={() => toggleAll(true)}>全选</Button>
-                <Button size="small" onClick={() => toggleAll(false)}>全不选</Button>
-              </div>
             </div>
             <div style={{ padding: '4px 8px' }}>
               <Input placeholder="搜索信号..." value={searchText}
