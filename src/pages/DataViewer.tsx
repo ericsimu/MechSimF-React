@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { Button, Input, Spin } from 'antd'
 import { getTaskDataColumns, getTaskSignals, getTaskStatus } from '../api/index'
 import type { DisturbanceColumn } from '../types/api'
+import html2canvas from 'html2canvas'
 import uPlot from '../lib/uplot/uPlot.esm.js'
 import '../lib/uplot/uPlot.min.css'
 import './DataViewer.css'
@@ -97,6 +98,7 @@ const DataViewer: React.FC = () => {
 
   const timeChartRef = useRef<HTMLDivElement>(null)
   const freqChartRef = useRef<HTMLDivElement>(null)
+  const chartAreaRef = useRef<HTMLDivElement>(null)
   const timeInst = useRef<any>(null)
   const freqInst = useRef<any>(null)
   const timeDblCleanup = useRef<(() => void) | null>(null)
@@ -160,6 +162,17 @@ const DataViewer: React.FC = () => {
 
   function toggleAllOff() {
     setChecked({})
+  }
+
+  async function exportChartImage() {
+    if (!chartAreaRef.current) return
+    try {
+      const canvas = await html2canvas(chartAreaRef.current, { backgroundColor: '#fff', scale: 2 })
+      const link = document.createElement('a')
+      link.download = `task_${tid}_charts.png`
+      link.href = canvas.toDataURL('image/png')
+      link.click()
+    } catch { /* ignore */ }
   }
 
   // Zoom-in handler (drag-to-zoom)
@@ -425,7 +438,10 @@ const DataViewer: React.FC = () => {
               ))}
             </div>
           </div>
-          <div className="dv-right">
+          <div className="dv-right" ref={chartAreaRef}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 4 }}>
+              <Button size="small" onClick={exportChartImage}>导出图片</Button>
+            </div>
             <div className="dv-chart-section">
               <div className="dv-chart-title">时域图</div>
               <div ref={timeChartRef} className="dv-chart" />
