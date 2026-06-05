@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate, NavLink, useLocation } from 'react-router-dom'
+import { Routes, Route, Navigate, NavLink, useLocation } from 'react-router-dom'
 import { ConfigProvider } from 'antd'
 import zhCN from 'antd/locale/zh_CN'
 import CaseList from './pages/CaseList'
@@ -76,9 +76,6 @@ function NavGroup({ item }: { item: NavItem }) {
   )
 }
 
-// 应用基础路径由 Vite 的 `base` 配置决定，默认 "/"，子路径部署时改为 "/mechsim/" 等
-const APP_BASENAME = import.meta.env.BASE_URL
-
 function App() {
   const user = getCurrentUser()
 
@@ -87,8 +84,7 @@ function App() {
       theme={{ token: { colorPrimary: '#3b82f6' } }}
       locale={zhCN}
     >
-      <BrowserRouter basename={APP_BASENAME}>
-        <div className="app-shell">
+      <div className="app-shell">
           <aside className="sidebar">
             <div className="sidebar-brand">MechSim</div>
             <nav className="sidebar-nav">
@@ -127,7 +123,6 @@ function App() {
             </main>
           </div>
         </div>
-      </BrowserRouter>
     </ConfigProvider>
   )
 }
