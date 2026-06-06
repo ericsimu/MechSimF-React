@@ -107,7 +107,7 @@ const Tasks: React.FC = () => {
       title: '操作', key: 'actions',
       render: (_: unknown, record: SimTask) => (
         <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-          <Button type="link" size="small" onClick={() => navigate(`/data/${record.id}`)}>详情</Button>
+          <Button type="link" size="small" onClick={() => navigate(`../data/${record.id}`)}>详情</Button>
           {(record.status === 'pending' || record.status === 'running') && (
             <Button type="link" size="small" onClick={() => handleCancel(record)}>取消</Button>
           )}
