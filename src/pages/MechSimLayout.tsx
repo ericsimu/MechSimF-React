@@ -1,8 +1,4 @@
-import { Routes, Route, Navigate, NavLink, useLocation } from 'react-router-dom'
-import CaseList from './CaseList'
-import Tasks from './Tasks'
-import DataViewer from './DataViewer'
-import Placeholder from './Placeholder'
+import { Outlet, NavLink, useLocation } from 'react-router-dom'
 
 interface NavChild { path?: string; label: string }
 interface NavItem { path?: string; label: string; children?: NavChild[] }
@@ -83,19 +79,7 @@ function MechSimLayout() {
           <span className="header-user">{user}</span>
         </header>
         <main className="app-main">
-          <Routes>
-            <Route index element={<Navigate to="cases" replace />} />
-            <Route path="cases" element={<CaseList />} />
-            <Route path="tasks" element={<Tasks />} />
-            <Route path="data/:taskId?" element={<DataViewer />} />
-            <Route path="data-manage" element={<Placeholder />} />
-            <Route path="tools" element={<Placeholder />} />
-            <Route path="manual" element={<Placeholder />} />
-            <Route path="indicators" element={<Placeholder />} />
-            <Route path="reports" element={<Placeholder />} />
-            <Route path="logs" element={<Placeholder />} />
-            <Route path="*" element={<Navigate to="cases" replace />} />
-          </Routes>
+          <Outlet />
         </main>
       </div>
     </div>
