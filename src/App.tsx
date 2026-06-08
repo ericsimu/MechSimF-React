@@ -42,6 +42,7 @@ function App() {
         <div className="parent-body">
           <Routes>
             <Route path="/" element={<Home />} />
+            <Route path="/mechsim" element={<Navigate to="/mechsim/cases" replace />} />
             <Route path="/mechsim/*" element={<MechSimApp />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="*" element={<Navigate to="/" replace />} />

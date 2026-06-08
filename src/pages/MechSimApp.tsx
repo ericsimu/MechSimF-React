@@ -91,7 +91,7 @@ function MechSimApp() {
         <main className="app-main">
           <Routes>
             <Route path="/cases" element={<CaseList />} />
-            <Route path="/" element={<Navigate to="/cases" replace />} />
+            <Route index element={<Navigate to="/cases" replace />} />
             <Route path="/tasks" element={<Tasks />} />
             <Route path="/data/:taskId?" element={<DataViewer />} />
             <Route path="/data-manage" element={<Placeholder />} />
