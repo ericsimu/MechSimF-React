@@ -141,10 +141,6 @@
 .editable-cell:hover {
   color: #1677ff;
 }
-.actions-cell {
-  display: flex;
-  gap: 4px;
-}
 
 .case-list .page-header {
   display: flex;
