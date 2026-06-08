@@ -2,8 +2,7 @@ import type {
   ApiResponse, CaseModel, SimTask, AddCaseRequest, UpdateCaseRequest,
   CaseShare, DisturbanceInfo, ModelInfoMap, DisturbanceDirNode, DisturbanceColumn,
 } from '../types/api'
-
-const BASE = '/api/v1/sim'
+import { API_BASE } from './config'
 
 export function getCurrentUser(): string {
   return localStorage.getItem('current_user') || 'user1'
@@ -14,7 +13,7 @@ export function setCurrentUser(name: string): void {
 }
 
 async function request<T = unknown>(url: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
-  const res = await fetch(`${BASE}${url}`, {
+  const res = await fetch(`${API_BASE}${url}`, {
     headers: {
       'Content-Type': 'application/json',
       'X-User': getCurrentUser(),

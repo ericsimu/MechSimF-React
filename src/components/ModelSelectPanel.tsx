@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { Select, Input, message } from 'antd'
+import { API_BASE } from '../api/config'
 
 const PRODUCTIVITY_OPTIONS = ['100WPH', '150WPH']
 const VERSION_OPTIONS = ['3X', '5X']
@@ -21,7 +22,7 @@ function ModelImage({ sysName }: { sysName: string }) {
   )
   return (
     <div style={{ width: '100%', maxHeight: 360, marginTop: 12, borderRadius: 6, border: '1px solid #e8e8e8', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fafafa' }}>
-      <img key={sysName} src={`/api/v1/sim/model_image/${sysName}`}
+      <img key={sysName} src={`${API_BASE}/model_image/${sysName}`}
         alt={`${sysName} model`}
         style={{ maxWidth: '100%', maxHeight: 360, objectFit: 'contain', display: 'block' }}
         onError={() => setFailed(true)}
