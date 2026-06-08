@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useHistory } from 'react-router-dom'
 import { Button, Input, Spin } from 'antd'
 import { getTaskDataColumns, getTaskSignals, getTaskStatus } from '../api/index'
 import type { DisturbanceColumn } from '../types/api'
@@ -76,7 +76,7 @@ function makeCursorLabels(container: HTMLElement, xUnit: string, yFmt: (v: numbe
 
 const DataViewer: React.FC = () => {
   const { taskId } = useParams<{ taskId: string }>()
-  const navigate = useNavigate()
+  const history = useHistory()
   const tid = Number(taskId)
 
   const [loading, setLoading] = useState(true)
@@ -423,7 +423,7 @@ const DataViewer: React.FC = () => {
   return (
     <div className="dataviewer-page">
       <div className="dv-header">
-        <Button onClick={() => navigate(-1)}>返回</Button>
+        <Button onClick={() => history.goBack()}>返回</Button>
         <h2>数据查看{!isNaN(tid) ? ` — 任务 #${tid}` : ''}</h2>
         {taskStatus && <span className={`dv-status status-${taskStatus}`}>{STATUS_MAP[taskStatus] || taskStatus}</span>}
       </div>

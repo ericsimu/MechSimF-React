@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate, NavLink, useLocation, matchPath } from 'react-router-dom'
+import { Switch, Route, Redirect, NavLink, useLocation, matchPath } from 'react-router-dom'
 import { ConfigProvider } from 'antd'
 import zhCN from 'antd/locale/zh_CN'
 import CaseList from './pages/CaseList'
@@ -10,28 +10,24 @@ import './App.css'
 interface NavChild { path?: string; label: string }
 interface NavItem { path?: string; label: string; children?: NavChild[] }
 
-// 所有路径均为相对路径，独立运行时从根解析，嵌入时从父级路由继承前缀
+// 绝对路径，嵌入时由 BrowserRouter basename 处理前缀
 const navItems: NavItem[] = [
-  { path: 'cases', label: '用例编排' },
-  { path: 'tasks', label: '任务管理' },
+  { path: '/cases', label: '用例编排' },
+  { path: '/tasks', label: '任务管理' },
   {
     label: '结果分析',
     children: [
-      { path: 'data', label: '数据可视化' },
-      { path: 'indicators', label: '指标查看' },
-      { path: 'reports', label: '报告查看' },
-      { path: 'logs', label: '日志查看' },
+      { path: '/data', label: '数据可视化' },
+      { path: '/indicators', label: '指标查看' },
+      { path: '/reports', label: '报告查看' },
+      { path: '/logs', label: '日志查看' },
     ],
   },
-  { path: 'data-manage', label: '数据管理' },
-  { path: 'tools', label: '工具箱' },
-  { path: 'manual', label: '用户手册' },
+  { path: '/data-manage', label: '数据管理' },
+  { path: '/tools', label: '工具箱' },
+  { path: '/manual', label: '用户手册' },
 ]
 
-/**
- * 获取当前登录用户名。
- * MechSimF-React 本身不实现登录验证，登录由外部系统完成后将用户名写入 localStorage.current_user。
- */
 export function getCurrentUser(): string {
   return localStorage.getItem('current_user') || 'user1'
 }
@@ -43,7 +39,7 @@ export function setCurrentUser(name: string): void {
 function NavGroup({ item }: { item: NavItem }) {
   const loc = useLocation()
   const isChildActive = item.children?.some(c =>
-    c.path && matchPath({ path: c.path, end: false }, loc.pathname) !== null
+    c.path ? matchPath(loc.pathname, { path: c.path, exact: false }) : false
   )
   return (
     <div className="nav-group">
@@ -51,8 +47,7 @@ function NavGroup({ item }: { item: NavItem }) {
       <div className="nav-sub">
         {item.children!.map(c =>
           c.path ? (
-            <NavLink key={c.label} to={c.path} end={false}
-              className={({ isActive }) => `nav-sub-item${isActive ? ' active' : ''}`}>
+            <NavLink key={c.label} to={c.path} activeClassName="active" className="nav-sub-item">
               {c.label}
             </NavLink>
           ) : (
@@ -78,8 +73,7 @@ function App() {
           <nav className="sidebar-nav">
             {navItems.map((item, i) =>
               item.path ? (
-                <NavLink key={item.path} to={item.path} end
-                  className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}>
+                <NavLink key={item.path} to={item.path} exact activeClassName="active" className="nav-item">
                   {item.label}
                 </NavLink>
               ) : (
@@ -95,19 +89,19 @@ function App() {
             <span className="header-user">{user}</span>
           </header>
           <main className="app-main">
-            <Routes>
-              <Route path="cases" element={<CaseList />} />
-              <Route index element={<Navigate to="cases" replace />} />
-              <Route path="tasks" element={<Tasks />} />
-              <Route path="data/:taskId?" element={<DataViewer />} />
-              <Route path="data-manage" element={<Placeholder />} />
-              <Route path="tools" element={<Placeholder />} />
-              <Route path="manual" element={<Placeholder />} />
-              <Route path="indicators" element={<Placeholder />} />
-              <Route path="reports" element={<Placeholder />} />
-              <Route path="logs" element={<Placeholder />} />
-              <Route path="*" element={<Navigate to="cases" replace />} />
-            </Routes>
+            <Switch>
+              <Route path="/cases" component={CaseList} />
+              <Route exact path="/" render={() => <Redirect to="/cases" />} />
+              <Route path="/tasks" component={Tasks} />
+              <Route path="/data/:taskId?" component={DataViewer} />
+              <Route path="/data-manage" component={Placeholder} />
+              <Route path="/tools" component={Placeholder} />
+              <Route path="/manual" component={Placeholder} />
+              <Route path="/indicators" component={Placeholder} />
+              <Route path="/reports" component={Placeholder} />
+              <Route path="/logs" component={Placeholder} />
+              <Route path="*" render={() => <Redirect to="/cases" />} />
+            </Switch>
           </main>
         </div>
       </div>
