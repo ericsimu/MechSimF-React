@@ -36,6 +36,7 @@ import ModelSelectPanel from "../components/ModelSelectPanel";
 import ParamEditor from "../components/ParamEditor";
 import uPlot from "uplot/dist/uPlot.esm.js";
 import "uplot/dist/uPlot.min.css";
+import { isNil } from "../utils/isNil";
 import "./CaseList.css";
 
 // ── Constants ──
@@ -121,7 +122,8 @@ const CaseList: React.FC = () => {
   // ── Param Tree ──
   const [paramVars, setParamVars] = useState<Record<string, any>>({});
   const paramVarsRef = useRef(paramVars);
-  // eslint-disable-next-line react-hooks/refs
+
+
   paramVarsRef.current = paramVars;
   const dirtyValues = useRef<Map<string, string>>(new Map()); // "groupPath|rowKey" → current value
   const [selParamPath, setSelParamPath] = useState("");
@@ -768,7 +770,7 @@ const CaseList: React.FC = () => {
       (c) => disturbVisible[c.name] !== false,
     );
     const nonEmpty = active.filter(
-      (c) => c.data && c.data.some((v) => v != null),
+      (c) => c.data && c.data.some((v) => !isNil(v)),
     );
     if (nonEmpty.length === 0) {
       if (chartInst.current) {
@@ -789,7 +791,7 @@ const CaseList: React.FC = () => {
     const data = [
       xData,
       ...nonEmpty.map(
-        (c) => c.data.map((v) => (v == null ? null : Number(v))) || [],
+        (c) => c.data.map((v) => (isNil(v) ? null : Number(v))) || [],
       ),
     ];
     if (chartInst.current) chartInst.current.destroy();
@@ -837,7 +839,7 @@ const CaseList: React.FC = () => {
         }
         const rows: Array<{ path: string; old: string; new: string }> = [];
         const fmt = (v: unknown): string =>
-          v == null
+          isNil(v)
             ? ""
             : typeof v === "object"
               ? JSON.stringify(v)

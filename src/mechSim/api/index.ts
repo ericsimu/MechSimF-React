@@ -10,6 +10,7 @@ import type {
   DisturbanceDirNode,
   DisturbanceColumn,
 } from "../types/api";
+import { isNil } from "../utils/isNil";
 import { API_BASE } from "./config";
 
 export function getCurrentUser(): string {
@@ -195,7 +196,7 @@ export function getTaskSignals(
   raw?: boolean,
 ): Promise<ApiResponse<{ columns: DisturbanceColumn[] }>> {
   const body: Record<string, unknown> = { signal_names: signalNames, domain };
-  if (start != null && end != null) {
+  if (!isNil(start) && !isNil(end)) {
     body.start = start;
     body.end = end;
   }

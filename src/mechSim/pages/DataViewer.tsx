@@ -9,6 +9,7 @@ import {
 import type { DisturbanceColumn } from "../types/api";
 import uPlot from "uplot/dist/uPlot.esm.js";
 import "uplot/dist/uPlot.min.css";
+import { isNil } from "../utils/isNil";
 import "./DataViewer.css";
 
 const COLORS = [
@@ -71,7 +72,7 @@ function makeCursorLabels(
       try {
         removeAll();
         const idx = u.cursor?.idx;
-        if (idx == null) return;
+        if (isNil(idx)) return;
         const xVal = u.data[0][idx];
         const xLeft = u.valToPos(xVal, "x");
         const xl = document.createElement("div");
@@ -81,7 +82,7 @@ function makeCursorLabels(
         labels.push(xl);
         for (let i = 1; i < u.series.length; i++) {
           const y = u.data[i]?.[idx];
-          if (y == null) continue;
+          if (isNil(y)) continue;
           const ly = u.valToPos(xVal, "x");
           const ty = u.valToPos(y, "y");
           const d = document.createElement("div");
@@ -132,19 +133,24 @@ const DataViewer: React.FC = () => {
   const freqLabels = useRef<CursorLabels | null>(null);
 
   const columnsRef = useRef(columns);
-  // eslint-disable-next-line react-hooks/refs
+
+
   columnsRef.current = columns;
   const fftColumnsRef = useRef(fftColumns);
-  // eslint-disable-next-line react-hooks/refs
+
+
   fftColumnsRef.current = fftColumns;
   const checkedRef = useRef(checked);
-  // eslint-disable-next-line react-hooks/refs
+
+
   checkedRef.current = checked;
   const isTimeZoomedRef = useRef(isTimeZoomed);
-  // eslint-disable-next-line react-hooks/refs
+
+
   isTimeZoomedRef.current = isTimeZoomed;
   const isFreqZoomedRef = useRef(isFreqZoomed);
-  // eslint-disable-next-line react-hooks/refs
+
+
   isFreqZoomedRef.current = isFreqZoomed;
 
   async function fetchSignals(
@@ -161,14 +167,14 @@ const DataViewer: React.FC = () => {
 
     let rangeStart = start;
     let rangeEnd = end;
-    let hasRange = rangeStart != null && rangeEnd != null;
+    let hasRange = !isNil(rangeStart) && !isNil(rangeEnd);
     if (!hasRange && domain === "time" && isZoomed) {
       const timeCol = target.find((c) => c.name.toLowerCase() === "time");
       if (timeCol && timeCol.data.length > 0) {
         const d = timeCol.data;
         rangeStart = d[0] ?? undefined;
         rangeEnd = d[d.length - 1] ?? undefined;
-        hasRange = rangeStart != null && rangeEnd != null;
+        hasRange = !isNil(rangeStart) && !isNil(rangeEnd);
       }
     }
 
@@ -497,7 +503,7 @@ const DataViewer: React.FC = () => {
         stroke: COLORS[ci >= 0 ? ci % COLORS.length : 0],
         width: 1.5,
       });
-      const mapped = c.data.map((v) => (v == null ? null : Number(v)));
+      const mapped = c.data.map((v) => (isNil(v) ? null : Number(v)));
       signalArrays.push(
         mapped.length !== timeLen ? mapped.slice(0, timeLen) : mapped,
       );
@@ -621,7 +627,7 @@ const DataViewer: React.FC = () => {
       [
         freqCol.data.map((v) => v ?? 0),
         ...activeSigs.map((c) =>
-          c.data.map((v) => (v == null ? null : Number(v))),
+          c.data.map((v) => (isNil(v) ? null : Number(v))),
         ),
       ],
       el,

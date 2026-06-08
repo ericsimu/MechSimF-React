@@ -20,7 +20,8 @@ export default defineConfig([
     },
     rules: {
       '@typescript-eslint/no-explicit-any': 'warn',
-      'eqeqeq': ['error', 'smart'],
+      'eqeqeq': ['error', 'always'],
+      'react-hooks/refs': 'warn',
       'react-hooks/set-state-in-effect': 'warn',
       '@typescript-eslint/no-use-before-define': ['error', { functions: false, classes: true, variables: true }],
     },

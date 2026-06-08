@@ -4,6 +4,7 @@ import { Table, Modal, Button, message } from "antd";
 import type { TableColumnsType } from "antd";
 import { queueTasks, deleteTask, cancelTask } from "../api/index";
 import type { SimTask } from "../types/api";
+import { isNil } from "../utils/isNil";
 
 interface DiffRow {
   path: string;
@@ -52,7 +53,7 @@ const Tasks: React.FC = () => {
       const parsed = JSON.parse(task.param_diff);
       const rows: DiffRow[] = [];
       const fmt = (v: unknown): string =>
-        v == null ? "" : typeof v === "object" ? JSON.stringify(v) : String(v);
+        isNil(v) ? "" : typeof v === "object" ? JSON.stringify(v) : String(v);
       const cleanPath = (raw: string) =>
         raw
           .replace(/^root/, "")
