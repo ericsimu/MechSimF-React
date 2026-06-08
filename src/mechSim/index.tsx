@@ -5,6 +5,7 @@ import {
   NavLink,
   useLocation,
 } from "react-router-dom";
+import "./index.css"
 import CaseList from "./pages/CaseList";
 import Tasks from "./pages/Tasks";
 import DataViewer from "./pages/DataViewer";
