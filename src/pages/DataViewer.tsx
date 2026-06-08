@@ -3,8 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { Button, Input, Spin } from 'antd'
 import { getTaskDataColumns, getTaskSignals, getTaskStatus } from '../api/index'
 import type { DisturbanceColumn } from '../types/api'
-import uPlot from '../lib/uplot/uPlot.esm.js'
-import '../lib/uplot/uPlot.min.css'
+import uPlot from 'uplot/dist/uPlot.esm.js'
+import 'uplot/dist/uPlot.min.css'
 import './DataViewer.css'
 
 const COLORS = [
@@ -115,12 +115,14 @@ const DataViewer: React.FC = () => {
     const setTarget = domain === 'fft' ? setFftColumns : setColumns
     const isZoomed = domain === 'fft' ? isFreqZoomedRef.current : isTimeZoomedRef.current
 
-    let hasRange = start != null && end != null
+    let rangeStart = start
+    let rangeEnd = end
+    let hasRange = rangeStart != null && rangeEnd != null
     if (!hasRange && domain === 'time' && isZoomed) {
       const timeCol = target.find(c => c.name.toLowerCase() === 'time')
       if (timeCol && timeCol.data.length > 0) {
-        const d = timeCol.data; start = d[0] ?? undefined; end = d[d.length - 1] ?? undefined
-        hasRange = start != null && end != null
+        const d = timeCol.data; rangeStart = d[0] ?? undefined; rangeEnd = d[d.length - 1] ?? undefined
+        hasRange = rangeStart != null && rangeEnd != null
       }
     }
 
@@ -135,9 +137,9 @@ const DataViewer: React.FC = () => {
     const xCol = target.find(c => c.name.toLowerCase() === xName)
     if (xCol && xCol.data.length === 0 && !toFetch.includes(xCol.name)) toFetch.push(xCol.name)
 
-    const raw = domain === 'fft' || (hasRange && (end! - start!) < 1.0)
+    const raw = domain === 'fft' || (hasRange && (rangeEnd! - rangeStart!) < 1.0)
     try {
-      const r = await getTaskSignals(tid, toFetch, domain, start, end, raw)
+      const r = await getTaskSignals(tid, toFetch, domain, rangeStart, rangeEnd, raw)
       if (r.success && r.data) {
         setTarget(prev => {
           const updated = [...prev]

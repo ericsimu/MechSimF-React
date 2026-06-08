@@ -17,8 +17,8 @@ import CaseSidebar from '../components/CaseSidebar'
 import CaseDetail from '../components/CaseDetail'
 import ModelSelectPanel from '../components/ModelSelectPanel'
 import ParamEditor from '../components/ParamEditor'
-import uPlot from '../lib/uplot/uPlot.esm.js'
-import '../lib/uplot/uPlot.min.css'
+import uPlot from 'uplot/dist/uPlot.esm.js'
+import 'uplot/dist/uPlot.min.css'
 import './CaseList.css'
 
 // ── Constants ──

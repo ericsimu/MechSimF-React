@@ -3,10 +3,6 @@ import { ConfigProvider } from 'antd'
 import zhCN from 'antd/locale/zh_CN'
 import Home from './pages/Home'
 import MechSimLayout from './pages/MechSimLayout'
-import CaseList from './pages/CaseList'
-import Tasks from './pages/Tasks'
-import DataViewer from './pages/DataViewer'
-import Placeholder from './pages/Placeholder'
 import Settings from './pages/Settings'
 import { getCurrentUser } from './pages/MechSimLayout'
 import './App.css'
@@ -40,20 +36,10 @@ function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/settings" element={<Settings />} />
-
-            <Route path="/mechsim" element={<MechSimLayout />}>
-              <Route index element={<Navigate to="cases" replace />} />
-              <Route path="cases" element={<CaseList />} />
-              <Route path="tasks" element={<Tasks />} />
-              <Route path="data/:taskId?" element={<DataViewer />} />
-              <Route path="data-manage" element={<Placeholder />} />
-              <Route path="tools" element={<Placeholder />} />
-              <Route path="manual" element={<Placeholder />} />
-              <Route path="indicators" element={<Placeholder />} />
-              <Route path="reports" element={<Placeholder />} />
-              <Route path="logs" element={<Placeholder />} />
-            </Route>
-
+            {/* 裸 /mechsim 重定向到 /mechsim/cases */}
+            <Route path="/mechsim" element={<Navigate to="/mechsim/cases" replace />} />
+            {/* /mechsim/* 委托给 MechSimLayout 内部的 <Routes> */}
+            <Route path="/mechsim/*" element={<MechSimLayout />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>
