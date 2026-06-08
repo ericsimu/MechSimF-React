@@ -1,7 +1,68 @@
-/* ── App Layout Shell ── */
+/* ── Parent Shell ── */
+.parent-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* ── Top Navigation Bar ── */
+.top-nav {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 0 24px;
+  height: 48px;
+  background: #fff;
+  border-bottom: 1px solid #e8e8e8;
+  flex-shrink: 0;
+}
+
+.top-nav-brand {
+  font-size: 16px;
+  font-weight: 700;
+  color: #3b82f6;
+  letter-spacing: 0.5px;
+}
+
+.top-nav-links {
+  display: flex;
+  gap: 4px;
+}
+
+.top-nav-item {
+  padding: 6px 16px;
+  font-size: 14px;
+  color: #555;
+  text-decoration: none;
+  border-radius: 4px;
+  transition: color 0.15s, background 0.15s;
+}
+.top-nav-item:hover { color: #3b82f6; background: #f0f5ff; }
+.top-nav-item.active {
+  color: #3b82f6;
+  font-weight: 600;
+  background: #e8f0fe;
+}
+
+.top-nav-user {
+  margin-left: auto;
+  font-size: 13px;
+  color: #999;
+}
+
+/* ── Parent Body (fills remaining height) ── */
+.parent-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* ── MechSim App Layout (nested inside parent) ── */
 .app-shell {
   display: flex;
-  min-height: 100vh;
+  min-height: 100%;
+  flex: 1;
 }
 
 /* ── Sidebar ── */
@@ -59,7 +120,7 @@
 .nav-sub-item:hover { color: #fff; background: rgba(255,255,255,0.1); }
 .nav-sub-item.active { color: #fff; font-weight: 500; }
 
-/* ── App Body ── */
+/* ── App Body (inside MechSim) ── */
 .app-body {
   flex: 1;
   display: flex;
