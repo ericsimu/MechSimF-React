@@ -17,7 +17,7 @@ function isObject(v: unknown): v is Record<string, unknown> {
 function isLastLayer(v: unknown): boolean {
   if (!isObject(v)) return false;
   return Object.entries(v)
-    .filter(([k]) => k !== "_labels")
+    .filter(([k]) => k !== "_labels" && k !== "_units")
     .every(([, cv]) => !isObject(cv));
 }
 
