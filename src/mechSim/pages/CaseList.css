@@ -132,16 +132,6 @@
   padding: 2px 6px;
   font-size: 13px;
 }
-.editable-cell {
-  cursor: pointer;
-  min-height: 20px;
-  display: block;
-  padding: 2px 0;
-}
-.editable-cell:hover {
-  color: #1677ff;
-}
-
 .case-list .page-header {
   display: flex;
   justify-content: space-between;
@@ -441,6 +431,7 @@
 }
 .editable-cell:hover {
   background: #e6f4ff;
+  color: #1677ff;
 }
 
 /* ── Table Row Highlight ── */
