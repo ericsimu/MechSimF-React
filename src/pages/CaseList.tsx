@@ -685,10 +685,10 @@ const CaseList: React.FC = () => {
   function coerceByType(val: string, orig: unknown) {
     if (val === "" && (orig === null || orig === undefined)) return null;
     const t = typeof orig;
-    if (t === "number")
-      return Number.isInteger(orig as number)
-        ? parseInt(val, 10)
-        : parseFloat(val);
+    if (t === "number") {
+      const n = Number(val);
+      return Number.isNaN(n) ? val : n;
+    }
     if (t === "boolean") return val === "true" || val === "1";
     return val;
   }
