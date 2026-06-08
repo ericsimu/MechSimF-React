@@ -18,5 +18,11 @@ export default defineConfig([
     languageOptions: {
       globals: globals.browser,
     },
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'warn',
+      'eqeqeq': ['error', 'smart'],
+      'react-hooks/set-state-in-effect': 'warn',
+      '@typescript-eslint/no-use-before-define': ['error', { functions: false, classes: true, variables: true }],
+    },
   },
 ])

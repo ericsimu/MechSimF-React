@@ -1,133 +1,134 @@
 // ── Base / Common ──
 
 export interface BaseModel {
-  id?: number
-  create_time: string
-  update_time: string
-  is_deleted: boolean
+  id?: number;
+  create_time: string;
+  update_time: string;
+  is_deleted: boolean;
 }
 
 export interface ApiResponse<T = unknown> {
-  success: boolean
-  message: string
-  data?: T
+  success: boolean;
+  message: string;
+  data?: T;
 }
 
 // ── Case ──
 
 export interface CaseModel extends BaseModel {
-  name: string
-  description: string
-  create_by: string
-  sys_name: string
-  model_name: string
-  model_verison: string
-  model_productivity: string
-  model_param: string
-  disturbance: string
+  name: string;
+  description: string;
+  create_by: string;
+  sys_name: string;
+  model_name: string;
+  model_verison: string;
+  model_productivity: string;
+  model_param: string;
+  disturbance: string;
 }
 
 export interface AddCaseRequest {
-  name: string
-  description: string
-  create_by: string
-  sys_name: string
-  model_name: string
-  model_verison: string
-  model_productivity: string
-  model_param: string
-  disturbance: string
-  sim_time?: number
-  sim_step?: number
+  name: string;
+  description: string;
+  create_by: string;
+  sys_name: string;
+  model_name: string;
+  model_verison: string;
+  model_productivity: string;
+  model_param: string;
+  disturbance: string;
+  sim_time?: number;
+  sim_step?: number;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface UpdateCaseRequest extends AddCaseRequest {}
 
 // ── Task ──
 
 export interface SimTask extends BaseModel {
-  name: string
-  case_id: number
-  status: string
-  result: string
-  error: string
-  model_version: string
-  model_productivity: string
-  sys_name: string
-  model_name: string
-  param_diff: string
-  disturbance: string
-  sim_time: number | null
-  sim_step: number | null
+  name: string;
+  case_id: number;
+  status: string;
+  result: string;
+  error: string;
+  model_version: string;
+  model_productivity: string;
+  sys_name: string;
+  model_name: string;
+  param_diff: string;
+  disturbance: string;
+  sim_time: number | null;
+  sim_step: number | null;
 }
 
 export interface AddTasksRequest {
-  case_id: number
-  param_diff?: string
+  case_id: number;
+  param_diff?: string;
 }
 
 export interface SimRunRequest {
-  task_ids: number[]
+  task_ids: number[];
 }
 
 export interface SimTaskStatus {
-  task_id: number
-  status: string
-  result: unknown
-  error?: string
+  task_id: number;
+  status: string;
+  result: unknown;
+  error?: string;
 }
 
 // ── Share ──
 
 export interface ShareCaseRequest {
-  shared_to_user: string
+  shared_to_user: string;
 }
 
 export interface CaseShare extends BaseModel {
-  case_id: number
-  shared_to_user: string
+  case_id: number;
+  shared_to_user: string;
 }
 
 // ── Disturbance ──
 
 export interface DisturbanceInfoRequest {
-  file_path: string
+  file_path: string;
 }
 
 export interface DisturbanceColumn {
-  name: string
-  data: (number | null)[]
+  name: string;
+  data: (number | null)[];
 }
 
 export interface DisturbanceInfo {
-  columns: DisturbanceColumn[]
+  columns: DisturbanceColumn[];
 }
 
 // ── Diff ──
 
 export interface DiffRow {
-  path: string
-  old: string
-  new: string
+  path: string;
+  old: string;
+  new: string;
 }
 
 // ── Model Info ──
 
 export interface SystemModelInfo {
-  variables?: Record<string, unknown>
-  [key: string]: unknown
+  variables?: Record<string, unknown>;
+  [key: string]: unknown;
 }
 
-export type ModelInfoMap = Record<string, SystemModelInfo>
+export type ModelInfoMap = Record<string, SystemModelInfo>;
 
 // ── Disturbance Tree ──
 
 export interface DisturbanceFile {
-  name: string
-  path: string
+  name: string;
+  path: string;
 }
 
 export interface DisturbanceDirNode {
-  dirs?: Record<string, DisturbanceDirNode>
-  files?: DisturbanceFile[]
+  dirs?: Record<string, DisturbanceDirNode>;
+  files?: DisturbanceFile[];
 }
