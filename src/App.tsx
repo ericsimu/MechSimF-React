@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate, NavLink } from 'react-router-dom'
+import type { ComponentType } from 'react'
 import { ConfigProvider } from 'antd'
 import zhCN from 'antd/locale/zh_CN'
 import Home from './pages/Home'
@@ -7,10 +8,18 @@ import Settings from './pages/Settings'
 import { getCurrentUser } from './pages/MechSimLayout'
 import './App.css'
 
-const topNavItems = [
-  { path: '/',        label: '首页',     exact: true },
-  { path: '/mechsim', label: '仿真平台', exact: false },
-  { path: '/settings', label: '设置',   exact: true },
+interface RouteConfig {
+  path: string
+  label: string
+  component: ComponentType<any>
+  exact?: boolean
+}
+
+// 一份配置同时驱动顶栏 NavLink 和 Route
+const routes: RouteConfig[] = [
+  { path: '/',        label: '首页',     component: Home },
+  { path: '/settings', label: '设置',   component: Settings },
+  { path: '/mechsim', label: '仿真平台', component: MechSimLayout },
 ]
 
 function App() {
@@ -22,7 +31,7 @@ function App() {
         <header className="top-nav">
           <span className="top-nav-brand">MechSim</span>
           <nav className="top-nav-links">
-            {topNavItems.map(r => (
+            {routes.map(r => (
               <NavLink key={r.path} to={r.path} end={r.exact}
                 className={({ isActive }) => `top-nav-item${isActive ? ' active' : ''}`}>
                 {r.label}
@@ -34,11 +43,11 @@ function App() {
 
         <div className="parent-body">
           <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/settings" element={<Settings />} />
-            {/* 裸 /mechsim 重定向到 /mechsim/cases */}
-            <Route path="/mechsim" element={<Navigate to="/mechsim/cases" replace />} />
-            {/* /mechsim/* 委托给 MechSimLayout 内部的 <Routes> */}
+            {routes.map(r => {
+              const Comp = r.component
+              return <Route key={r.path} path={r.path} element={<Comp />} />
+            })}
+            {/* MechSimLayout 的子路由通过 /* 承接 */}
             <Route path="/mechsim/*" element={<MechSimLayout />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
