@@ -184,10 +184,10 @@
 .action-btn:hover {
   background: rgba(59, 130, 246, 0.08) !important;
 }
-.action-btn--danger {
+.action-btn-danger {
   color: #ef4444 !important;
 }
-.action-btn--danger:hover {
+.action-btn-danger:hover {
   color: #ef4444 !important;
   background: #fef2f2 !important;
 }
