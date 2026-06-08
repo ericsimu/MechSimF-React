@@ -37,14 +37,10 @@ function ModelImage({ sysName }: { sysName: string }) {
     <div
       style={{
         width: "100%",
-        maxHeight: 360,
         marginTop: 12,
         borderRadius: 6,
         border: "1px solid #e8e8e8",
         overflow: "hidden",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
         background: "#fafafa",
       }}
     >
@@ -53,8 +49,8 @@ function ModelImage({ sysName }: { sysName: string }) {
         src={`${API_BASE}/model_image/${sysName}`}
         alt={`${sysName} model`}
         style={{
-          maxWidth: "100%",
-          maxHeight: 360,
+          width: "100%",
+          maxHeight: "360px",
           objectFit: "contain",
           display: "block",
         }}
