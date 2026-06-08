@@ -1,13 +1,8 @@
-import { Routes, Route, Navigate, NavLink, useLocation } from 'react-router-dom'
-import CaseList from './CaseList'
-import Tasks from './Tasks'
-import DataViewer from './DataViewer'
-import Placeholder from './Placeholder'
+import { Outlet, NavLink, useLocation } from 'react-router-dom'
 
 interface NavChild { path?: string; label: string }
 interface NavItem { path?: string; label: string; children?: NavChild[] }
 
-// 相对路径 — 独立运行时从根解析，嵌入时继承父级路由前缀
 const navItems: NavItem[] = [
   { path: 'cases', label: '用例编排' },
   { path: 'tasks', label: '任务管理' },
@@ -33,7 +28,6 @@ export function setCurrentUser(name: string): void {
   localStorage.setItem('current_user', name)
 }
 
-/** 检查 pathname 中是否包含指定子路径段 */
 function pathHasSegment(pathname: string, seg: string): boolean {
   return pathname.split('/').filter(Boolean).includes(seg)
 }
@@ -49,7 +43,7 @@ function NavGroup({ item }: { item: NavItem }) {
       <div className="nav-sub">
         {item.children!.map(c =>
           c.path ? (
-            <NavLink key={c.label} to={c.path} end={false}
+            <NavLink key={c.label} to={c.path}
               className={({ isActive }) => `nav-sub-item${isActive ? ' active' : ''}`}>
               {c.label}
             </NavLink>
@@ -89,19 +83,7 @@ function MechSimApp() {
           <span className="header-user">{user}</span>
         </header>
         <main className="app-main">
-          <Routes>
-            <Route path="cases" element={<CaseList />} />
-            <Route index element={<Navigate to="cases" replace />} />
-            <Route path="tasks" element={<Tasks />} />
-            <Route path="data/:taskId?" element={<DataViewer />} />
-            <Route path="data-manage" element={<Placeholder />} />
-            <Route path="tools" element={<Placeholder />} />
-            <Route path="manual" element={<Placeholder />} />
-            <Route path="indicators" element={<Placeholder />} />
-            <Route path="reports" element={<Placeholder />} />
-            <Route path="logs" element={<Placeholder />} />
-            <Route path="*" element={<Navigate to="cases" replace />} />
-          </Routes>
+          <Outlet />
         </main>
       </div>
     </div>

@@ -3,14 +3,14 @@ import { ConfigProvider } from 'antd'
 import zhCN from 'antd/locale/zh_CN'
 import Home from './pages/Home'
 import MechSimApp from './pages/MechSimApp'
+import CaseList from './pages/CaseList'
+import Tasks from './pages/Tasks'
+import DataViewer from './pages/DataViewer'
+import Placeholder from './pages/Placeholder'
 import Settings from './pages/Settings'
 import { getCurrentUser } from './pages/MechSimApp'
 import './App.css'
 
-/**
- * 父级导航配置。
- * 新增页面在这里加一项即可，path 和 label 会同时用于 NavLink 和 Route。
- */
 const parentRoutes = [
   { path: '/',       label: '首页',     exact: true },
   { path: '/mechsim', label: '仿真平台', exact: false },
@@ -42,9 +42,20 @@ function App() {
         <div className="parent-body">
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/mechsim" element={<Navigate to="/mechsim/cases" replace />} />
-            <Route path="/mechsim/*" element={<MechSimApp />} />
             <Route path="/settings" element={<Settings />} />
+            {/* layout route: MechSimApp 作为壳，内层路由通过 Outlet 渲染 */}
+            <Route path="/mechsim" element={<MechSimApp />}>
+              <Route index element={<Navigate to="cases" replace />} />
+              <Route path="cases" element={<CaseList />} />
+              <Route path="tasks" element={<Tasks />} />
+              <Route path="data/:taskId?" element={<DataViewer />} />
+              <Route path="data-manage" element={<Placeholder />} />
+              <Route path="tools" element={<Placeholder />} />
+              <Route path="manual" element={<Placeholder />} />
+              <Route path="indicators" element={<Placeholder />} />
+              <Route path="reports" element={<Placeholder />} />
+              <Route path="logs" element={<Placeholder />} />
+            </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>
