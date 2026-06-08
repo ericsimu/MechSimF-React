@@ -121,7 +121,7 @@ const ModelSelectPanel: React.FC<Props> = ({
         />
       </div>
     </div>
-    {draft.sys_name && <ModelImage sysName={draft.sys_name} />}
+    {draft.sys_name && <ModelImage key={draft.sys_name} sysName={draft.sys_name} />}
   </div>
 );
 
