@@ -19,8 +19,8 @@ import {
   diffCase,
   addTasks,
   runTasks,
-  getCurrentUser,
 } from "../api/index";
+import { getCurrentUser } from "../utils/user";
 import type {
   CaseModel,
   ModelInfoMap,
