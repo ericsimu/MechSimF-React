@@ -1,23 +1,30 @@
-import { Outlet, NavLink, useLocation } from 'react-router-dom'
+import { Routes, Route, Navigate, NavLink, useLocation } from 'react-router-dom'
+import CaseList from './CaseList'
+import Tasks from './Tasks'
+import DataViewer from './DataViewer'
+import Placeholder from './Placeholder'
+
+// 嵌套路由下，NavLink 和 Route 需带完整路径才能正确解析
+const BASE = '/mechsim'
 
 interface NavChild { path?: string; label: string }
 interface NavItem { path?: string; label: string; children?: NavChild[] }
 
 const navItems: NavItem[] = [
-  { path: 'cases', label: '用例编排' },
-  { path: 'tasks', label: '任务管理' },
+  { path: `${BASE}/cases`, label: '用例编排' },
+  { path: `${BASE}/tasks`, label: '任务管理' },
   {
     label: '结果分析',
     children: [
-      { path: 'data', label: '数据可视化' },
-      { path: 'indicators', label: '指标查看' },
-      { path: 'reports', label: '报告查看' },
-      { path: 'logs', label: '日志查看' },
+      { path: `${BASE}/data`, label: '数据可视化' },
+      { path: `${BASE}/indicators`, label: '指标查看' },
+      { path: `${BASE}/reports`, label: '报告查看' },
+      { path: `${BASE}/logs`, label: '日志查看' },
     ],
   },
-  { path: 'data-manage', label: '数据管理' },
-  { path: 'tools', label: '工具箱' },
-  { path: 'manual', label: '用户手册' },
+  { path: `${BASE}/data-manage`, label: '数据管理' },
+  { path: `${BASE}/tools`, label: '工具箱' },
+  { path: `${BASE}/manual`, label: '用户手册' },
 ]
 
 export function getCurrentUser(): string {
@@ -28,14 +35,10 @@ export function setCurrentUser(name: string): void {
   localStorage.setItem('current_user', name)
 }
 
-function pathHasSegment(pathname: string, seg: string): boolean {
-  return pathname.split('/').filter(Boolean).includes(seg)
-}
-
 function NavGroup({ item }: { item: NavItem }) {
   const loc = useLocation()
   const isChildActive = item.children?.some(c =>
-    c.path && pathHasSegment(loc.pathname, c.path)
+    c.path && loc.pathname.startsWith(c.path)
   )
   return (
     <div className="nav-group">
@@ -83,7 +86,19 @@ function MechSimApp() {
           <span className="header-user">{user}</span>
         </header>
         <main className="app-main">
-          <Outlet />
+          <Routes>
+            <Route path={`${BASE}/cases`} element={<CaseList />} />
+            <Route path={`${BASE}`} element={<Navigate to={`${BASE}/cases`} replace />} />
+            <Route path={`${BASE}/tasks`} element={<Tasks />} />
+            <Route path={`${BASE}/data/:taskId?`} element={<DataViewer />} />
+            <Route path={`${BASE}/data-manage`} element={<Placeholder />} />
+            <Route path={`${BASE}/tools`} element={<Placeholder />} />
+            <Route path={`${BASE}/manual`} element={<Placeholder />} />
+            <Route path={`${BASE}/indicators`} element={<Placeholder />} />
+            <Route path={`${BASE}/reports`} element={<Placeholder />} />
+            <Route path={`${BASE}/logs`} element={<Placeholder />} />
+            <Route path="*" element={<Navigate to={`${BASE}/cases`} replace />} />
+          </Routes>
         </main>
       </div>
     </div>
