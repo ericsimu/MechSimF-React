@@ -11,11 +11,8 @@ import type {
   DisturbanceColumn,
 } from "../types/api";
 import { isNil } from "../utils/isNil";
+import { getCurrentUser } from "../utils/user";
 import { API_BASE } from "./config";
-
-export function getCurrentUser(): string {
-  return localStorage.getItem("current_user") || "user1";
-}
 
 async function request<T = unknown>(
   url: string,
