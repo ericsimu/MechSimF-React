@@ -1,9 +1,12 @@
-import { Outlet, NavLink, useLocation } from 'react-router-dom'
+import { Routes, Route, Navigate, NavLink, useLocation } from 'react-router-dom'
+import CaseList from './CaseList'
+import Tasks from './Tasks'
+import DataViewer from './DataViewer'
+import Placeholder from './Placeholder'
 
 interface NavChild { path?: string; label: string }
 interface NavItem { path?: string; label: string; children?: NavChild[] }
 
-// 相对路径 — NavLink 在 /mechsim 上下文中自动解析为 /mechsim/cases 等
 const navItems: NavItem[] = [
   { path: 'cases', label: '用例编排' },
   { path: 'tasks', label: '任务管理' },
@@ -80,7 +83,19 @@ function MechSimLayout() {
           <span className="header-user">{user}</span>
         </header>
         <main className="app-main">
-          <Outlet />
+          <Routes>
+            <Route index element={<Navigate to="cases" replace />} />
+            <Route path="cases" element={<CaseList />} />
+            <Route path="tasks" element={<Tasks />} />
+            <Route path="data/:taskId?" element={<DataViewer />} />
+            <Route path="data-manage" element={<Placeholder />} />
+            <Route path="tools" element={<Placeholder />} />
+            <Route path="manual" element={<Placeholder />} />
+            <Route path="indicators" element={<Placeholder />} />
+            <Route path="reports" element={<Placeholder />} />
+            <Route path="logs" element={<Placeholder />} />
+            <Route path="*" element={<Navigate to="cases" replace />} />
+          </Routes>
         </main>
       </div>
     </div>
