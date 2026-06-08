@@ -17,10 +17,6 @@ export function getCurrentUser(): string {
   return localStorage.getItem("current_user") || "user1";
 }
 
-export function setCurrentUser(name: string): void {
-  localStorage.setItem("current_user", name);
-}
-
 async function request<T = unknown>(
   url: string,
   options: RequestInit = {},
@@ -58,10 +54,6 @@ export function updateCase(
     method: "PUT",
     body: JSON.stringify(body),
   });
-}
-
-export function deleteCase(id: number): Promise<ApiResponse> {
-  return request(`/delete_case/${id}`, { method: "DELETE" });
 }
 
 export function queueModelInfo(): Promise<ApiResponse<ModelInfoMap>> {

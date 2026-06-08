@@ -41,8 +41,7 @@ export interface AddCaseRequest {
   sim_step?: number;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface UpdateCaseRequest extends AddCaseRequest {}
+export type UpdateCaseRequest = AddCaseRequest;
 
 // ── Task ──
 
@@ -62,27 +61,7 @@ export interface SimTask extends BaseModel {
   sim_step: number | null;
 }
 
-export interface AddTasksRequest {
-  case_id: number;
-  param_diff?: string;
-}
-
-export interface SimRunRequest {
-  task_ids: number[];
-}
-
-export interface SimTaskStatus {
-  task_id: number;
-  status: string;
-  result: unknown;
-  error?: string;
-}
-
 // ── Share ──
-
-export interface ShareCaseRequest {
-  shared_to_user: string;
-}
 
 export interface CaseShare extends BaseModel {
   case_id: number;
@@ -91,10 +70,6 @@ export interface CaseShare extends BaseModel {
 
 // ── Disturbance ──
 
-export interface DisturbanceInfoRequest {
-  file_path: string;
-}
-
 export interface DisturbanceColumn {
   name: string;
   data: (number | null)[];
@@ -102,14 +77,6 @@ export interface DisturbanceColumn {
 
 export interface DisturbanceInfo {
   columns: DisturbanceColumn[];
-}
-
-// ── Diff ──
-
-export interface DiffRow {
-  path: string;
-  old: string;
-  new: string;
 }
 
 // ── Model Info ──
