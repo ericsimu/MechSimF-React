@@ -5,11 +5,11 @@ import {
   NavLink,
   useLocation,
 } from "react-router-dom";
-import CaseList from "./CaseList";
-import Tasks from "./Tasks";
-import DataViewer from "./DataViewer";
-import Placeholder from "./Placeholder";
-import { getCurrentUser } from "../utils/user";
+import CaseList from "./pages/CaseList";
+import Tasks from "./pages/Tasks";
+import DataViewer from "./pages/DataViewer";
+import Placeholder from "./pages/Placeholder";
+import { getCurrentUser } from "./utils/user";
 
 interface NavChild {
   path?: string;
@@ -75,7 +75,7 @@ function NavGroup({ item }: { item: NavItem }) {
   );
 }
 
-function MechSimLayout() {
+function MechSim() {
   const user = getCurrentUser();
 
   return (
@@ -128,4 +128,4 @@ function MechSimLayout() {
   );
 }
 
-export default MechSimLayout;
+export default MechSim;

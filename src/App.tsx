@@ -2,10 +2,10 @@ import { Routes, Route, Navigate, NavLink } from "react-router-dom";
 import type { ComponentType } from "react";
 import { ConfigProvider } from "antd";
 import zhCN from "antd/locale/zh_CN";
-import Home from "./pages/Home";
-import MechSimLayout from "./pages/MechSimLayout";
-import Settings from "./pages/Settings";
-import { getCurrentUser } from "./utils/user";
+import Home from "./mechSim/pages/Home";
+import MechSim from "./mechSim";
+import Settings from "./mechSim/pages/Settings";
+import { getCurrentUser } from "./mechSim/utils/user";
 import "./App.css";
 
 interface RouteConfig {
@@ -22,12 +22,12 @@ const routes: RouteConfig[] = [
   {
     path: "/mechsim",
     label: "仿真平台",
-    component: MechSimLayout,
+    component: MechSim,
     wildcard: true,
   },
 ];
 
-function MechSim() {
+function App() {
   const user = getCurrentUser();
 
   return (
@@ -78,4 +78,4 @@ function MechSim() {
   );
 }
 
-export default MechSim;
+export default App;
