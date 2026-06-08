@@ -13,13 +13,13 @@ interface RouteConfig {
   label: string
   component: ComponentType<any>
   exact?: boolean
+  wildcard?: boolean
 }
 
-// 一份配置同时驱动顶栏 NavLink 和 Route
 const routes: RouteConfig[] = [
   { path: '/',        label: '首页',     component: Home },
   { path: '/settings', label: '设置',   component: Settings },
-  { path: '/mechsim', label: '仿真平台', component: MechSimLayout },
+  { path: '/mechsim', label: '仿真平台', component: MechSimLayout, wildcard: true },
 ]
 
 function App() {
@@ -45,10 +45,13 @@ function App() {
           <Routes>
             {routes.map(r => {
               const Comp = r.component
-              return <Route key={r.path} path={r.path} element={<Comp />} />
+              return (
+                <Route key={r.path} path={r.path} element={<Comp />} />
+              )
             })}
-            {/* MechSimLayout 的子路由通过 /* 承接 */}
-            <Route path="/mechsim/*" element={<MechSimLayout />} />
+            {routes.filter(r => r.wildcard).map(r => (
+              <Route key={`${r.path}/*`} path={`${r.path}/*`} element={<r.component />} />
+            ))}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>
