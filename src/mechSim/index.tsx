@@ -1,4 +1,4 @@
-import { Routes, Route, NavLink, useLocation } from "react-router-dom";
+import { Routes, Route, Navigate, NavLink, useLocation } from "react-router-dom";
 import "./index.css";
 import CaseList from "./pages/CaseList";
 import Tasks from "./pages/Tasks";
@@ -86,6 +86,8 @@ function MechSim() {
             <Route path={`${PREFIX}/indicators`} element={<Placeholder />} />
             <Route path={`${PREFIX}/reports`} element={<Placeholder />} />
             <Route path={`${PREFIX}/logs`} element={<Placeholder />} />
+            <Route path={`${PREFIX}/`} element={<Navigate to={`${PREFIX}/cases`} replace />} />
+            <Route path="*" element={<Navigate to={`${PREFIX}/cases`} replace />} />
           </Routes>
         </main>
       </div>

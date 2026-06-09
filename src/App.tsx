@@ -17,7 +17,7 @@ function App() {
           <span className="top-nav-brand">MechSim</span>
           <nav className="top-nav-links">
             <NavLink to="/" end className={({ isActive }) => `top-nav-item${isActive ? " active" : ""}`}>首页</NavLink>
-            <NavLink to="/mechsim" className={({ isActive }) => `top-nav-item${isActive ? " active" : ""}`}>仿真平台</NavLink>
+            <NavLink to="/mechsim/cases" className={({ isActive }) => `top-nav-item${isActive ? " active" : ""}`}>仿真平台</NavLink>
             <NavLink to="/settings" end className={({ isActive }) => `top-nav-item${isActive ? " active" : ""}`}>设置</NavLink>
           </nav>
           <span className="top-nav-user">{user}</span>
@@ -26,7 +26,6 @@ function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/settings" element={<Settings />} />
-            <Route path="/mechsim" element={<Navigate to="/mechsim/cases" replace />} />
             <Route path="/mechsim/*" element={<MechSim />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
