@@ -13,18 +13,12 @@ interface RouteConfig {
   label: string;
   component: ComponentType<any>;
   exact?: boolean;
-  wildcard?: boolean;
 }
 
-const routes: RouteConfig[] = [
+const topRoutes: RouteConfig[] = [
   { path: "/", label: "首页", component: Home },
   { path: "/settings", label: "设置", component: Settings },
-  {
-    path: "/mechsim",
-    label: "仿真平台",
-    component: MechSim,
-    wildcard: true,
-  },
+  { path: "/mechsim", label: "仿真平台", component: MechSim },
 ];
 
 function App() {
@@ -39,7 +33,7 @@ function App() {
         <header className="top-nav">
           <span className="top-nav-brand">MechSim</span>
           <nav className="top-nav-links">
-            {routes.map((r) => (
+            {topRoutes.map((r) => (
               <NavLink
                 key={r.path}
                 to={r.path}
@@ -57,21 +51,9 @@ function App() {
 
         <div className="parent-body">
           <Routes>
-            {/* 普通页面：不包含 wildcard 路由（wildcard 单独处理） */}
-            {routes
-              .filter((r) => !r.wildcard)
-              .map((r) => {
-                const Comp = r.component;
-                return <Route key={r.path} path={r.path} element={<Comp />} />;
-              })}
-
-            {/* MechSim: 只通过 /mechsim/* 承接子路由，裸 /mechsim 重定向 */}
-            <Route
-              path="/mechsim"
-              element={<Navigate to="/mechsim/cases" replace />}
-            />
+            <Route path="/" element={<Home />} />
+            <Route path="/settings" element={<Settings />} />
             <Route path="/mechsim/*" element={<MechSim />} />
-
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>

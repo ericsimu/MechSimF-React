@@ -1,16 +1,12 @@
-import {
-  Routes,
-  Route,
-  Navigate,
-  NavLink,
-  useLocation,
-} from "react-router-dom";
-import "./index.css"
+import { Routes, Route, Navigate, NavLink, useLocation } from "react-router-dom";
+import "./index.css";
 import CaseList from "./pages/CaseList";
 import Tasks from "./pages/Tasks";
 import DataViewer from "./pages/DataViewer";
 import Placeholder from "./pages/Placeholder";
 import { getCurrentUser } from "./utils/user";
+
+const PREFIX = "/mechsim";
 
 interface NavChild {
   path?: string;
@@ -23,26 +19,26 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { path: "cases", label: "用例编排" },
-  { path: "tasks", label: "任务管理" },
+  { path: `${PREFIX}/cases`, label: "用例编排" },
+  { path: `${PREFIX}/tasks`, label: "任务管理" },
   {
     label: "结果分析",
     children: [
-      { path: "data", label: "数据可视化" },
-      { path: "indicators", label: "指标查看" },
-      { path: "reports", label: "报告查看" },
-      { path: "logs", label: "日志查看" },
+      { path: `${PREFIX}/data`, label: "数据可视化" },
+      { path: `${PREFIX}/indicators`, label: "指标查看" },
+      { path: `${PREFIX}/reports`, label: "报告查看" },
+      { path: `${PREFIX}/logs`, label: "日志查看" },
     ],
   },
-  { path: "data-manage", label: "数据管理" },
-  { path: "tools", label: "工具箱" },
-  { path: "manual", label: "用户手册" },
+  { path: `${PREFIX}/data-manage`, label: "数据管理" },
+  { path: `${PREFIX}/tools`, label: "工具箱" },
+  { path: `${PREFIX}/manual`, label: "用户手册" },
 ];
 
 function NavGroup({ item }: { item: NavItem }) {
   const loc = useLocation();
   const isChildActive = item.children?.some(
-    (c) => c.path && loc.pathname.split("/").filter(Boolean).includes(c.path),
+    (c) => c.path && loc.pathname.startsWith(c.path),
   );
   return (
     <div className="nav-group">
@@ -112,16 +108,23 @@ function MechSim() {
         </header>
         <main className="app-main">
           <Routes>
-            <Route path="cases" element={<CaseList />} />
-            <Route path="tasks" element={<Tasks />} />
-            <Route path="data/:taskId?" element={<DataViewer />} />
-            <Route path="data-manage" element={<Placeholder />} />
-            <Route path="tools" element={<Placeholder />} />
-            <Route path="manual" element={<Placeholder />} />
-            <Route path="indicators" element={<Placeholder />} />
-            <Route path="reports" element={<Placeholder />} />
-            <Route path="logs" element={<Placeholder />} />
-            <Route path="*" element={<Navigate to="cases" replace />} />
+            <Route path={`${PREFIX}/cases`} element={<CaseList />} />
+            <Route path={`${PREFIX}/tasks`} element={<Tasks />} />
+            <Route path={`${PREFIX}/data/:taskId?`} element={<DataViewer />} />
+            <Route path={`${PREFIX}/data-manage`} element={<Placeholder />} />
+            <Route path={`${PREFIX}/tools`} element={<Placeholder />} />
+            <Route path={`${PREFIX}/manual`} element={<Placeholder />} />
+            <Route path={`${PREFIX}/indicators`} element={<Placeholder />} />
+            <Route path={`${PREFIX}/reports`} element={<Placeholder />} />
+            <Route path={`${PREFIX}/logs`} element={<Placeholder />} />
+            <Route
+              path={`${PREFIX}`}
+              element={<Navigate to={`${PREFIX}/cases`} replace />}
+            />
+            <Route
+              path="*"
+              element={<Navigate to={`${PREFIX}/cases`} replace />}
+            />
           </Routes>
         </main>
       </div>
