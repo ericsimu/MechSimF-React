@@ -53,6 +53,7 @@ function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/mechsim" element={<Navigate to="/mechsim/cases" replace />} />
             <Route path="/mechsim/*" element={<MechSim />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

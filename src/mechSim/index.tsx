@@ -118,10 +118,6 @@ function MechSim() {
             <Route path={`${PREFIX}/reports`} element={<Placeholder />} />
             <Route path={`${PREFIX}/logs`} element={<Placeholder />} />
             <Route
-              path={`${PREFIX}`}
-              element={<Navigate to={`${PREFIX}/cases`} replace />}
-            />
-            <Route
               path="*"
               element={<Navigate to={`${PREFIX}/cases`} replace />}
             />
