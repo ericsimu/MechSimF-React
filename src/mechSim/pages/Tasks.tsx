@@ -212,15 +212,17 @@ const Tasks: React.FC = () => {
       <div className="page-header">
         <h2>任务列表</h2>
       </div>
-      <Table
-        columns={columns}
-        dataSource={tasks}
-        rowKey="id"
-        loading={loading}
-        size="small"
-        pagination={false}
-        locale={{ emptyText: "暂无数据" }}
-      />
+      <div className="tasks-table-wrap">
+        <Table
+          columns={columns}
+          dataSource={tasks}
+          rowKey="id"
+          loading={loading}
+          size="small"
+          pagination={false}
+          locale={{ emptyText: "暂无数据" }}
+        />
+      </div>
 
       <Modal
         title="参数变更详情"
