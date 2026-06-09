@@ -138,6 +138,9 @@
 /* Tasks page */
 .tasks-page {
   padding: 16px;
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
 }
 .tasks-page .page-header {
   display: flex;
