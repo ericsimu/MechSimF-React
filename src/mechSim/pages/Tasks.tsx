@@ -186,7 +186,7 @@ const Tasks: React.FC = () => {
           <Button
             type="link"
             size="small"
-            onClick={() => navigate(`../data/${record.id}`)}
+            onClick={() => navigate(`data/${record.id}`)}
           >
             详情
           </Button>
