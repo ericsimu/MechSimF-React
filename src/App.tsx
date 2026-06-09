@@ -1,25 +1,15 @@
 import { Routes, Route, Navigate, NavLink } from "react-router-dom";
-import type { ComponentType } from "react";
 import { ConfigProvider } from "antd";
 import zhCN from "antd/locale/zh_CN";
 import Home from "./mechSim/pages/Home";
 import MechSim from "./mechSim";
+import CaseList from "./mechSim/pages/CaseList";
+import Tasks from "./mechSim/pages/Tasks";
+import DataViewer from "./mechSim/pages/DataViewer";
+import Placeholder from "./mechSim/pages/Placeholder";
 import Settings from "./mechSim/pages/Settings";
 import { getCurrentUser } from "./mechSim/utils/user";
 import "./App.css";
-
-interface RouteConfig {
-  path: string;
-  label: string;
-  component: ComponentType<any>;
-  exact?: boolean;
-}
-
-const topRoutes: RouteConfig[] = [
-  { path: "/", label: "首页", component: Home },
-  { path: "/settings", label: "设置", component: Settings },
-  { path: "/mechsim", label: "仿真平台", component: MechSim },
-];
 
 function App() {
   const user = getCurrentUser();
@@ -33,18 +23,9 @@ function App() {
         <header className="top-nav">
           <span className="top-nav-brand">MechSim</span>
           <nav className="top-nav-links">
-            {topRoutes.map((r) => (
-              <NavLink
-                key={r.path}
-                to={r.path}
-                end={r.exact}
-                className={({ isActive }) =>
-                  `top-nav-item${isActive ? " active" : ""}`
-                }
-              >
-                {r.label}
-              </NavLink>
-            ))}
+            <NavLink to="/" end className={({ isActive }) => `top-nav-item${isActive ? " active" : ""}`}>首页</NavLink>
+            <NavLink to="/mechsim/cases" className={({ isActive }) => `top-nav-item${isActive ? " active" : ""}`}>仿真平台</NavLink>
+            <NavLink to="/settings" end className={({ isActive }) => `top-nav-item${isActive ? " active" : ""}`}>设置</NavLink>
           </nav>
           <span className="top-nav-user">{user}</span>
         </header>
@@ -53,8 +34,18 @@ function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/settings" element={<Settings />} />
-            <Route path="/mechsim" element={<Navigate to="/mechsim/cases" replace />} />
-            <Route path="/mechsim/*" element={<MechSim />} />
+            <Route path="/mechsim" element={<MechSim />}>
+              <Route index element={<Navigate to="cases" replace />} />
+              <Route path="cases" element={<CaseList />} />
+              <Route path="tasks" element={<Tasks />} />
+              <Route path="data/:taskId?" element={<DataViewer />} />
+              <Route path="data-manage" element={<Placeholder />} />
+              <Route path="tools" element={<Placeholder />} />
+              <Route path="manual" element={<Placeholder />} />
+              <Route path="indicators" element={<Placeholder />} />
+              <Route path="reports" element={<Placeholder />} />
+              <Route path="logs" element={<Placeholder />} />
+            </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>

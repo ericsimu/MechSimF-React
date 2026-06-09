@@ -1,12 +1,6 @@
-import { Routes, Route, Navigate, NavLink, useLocation } from "react-router-dom";
+import { Outlet, NavLink, useLocation } from "react-router-dom";
 import "./index.css";
-import CaseList from "./pages/CaseList";
-import Tasks from "./pages/Tasks";
-import DataViewer from "./pages/DataViewer";
-import Placeholder from "./pages/Placeholder";
 import { getCurrentUser } from "./utils/user";
-
-const PREFIX = "/mechsim";
 
 interface NavChild {
   path?: string;
@@ -19,26 +13,26 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { path: `${PREFIX}/cases`, label: "用例编排" },
-  { path: `${PREFIX}/tasks`, label: "任务管理" },
+  { path: "cases", label: "用例编排" },
+  { path: "tasks", label: "任务管理" },
   {
     label: "结果分析",
     children: [
-      { path: `${PREFIX}/data`, label: "数据可视化" },
-      { path: `${PREFIX}/indicators`, label: "指标查看" },
-      { path: `${PREFIX}/reports`, label: "报告查看" },
-      { path: `${PREFIX}/logs`, label: "日志查看" },
+      { path: "data", label: "数据可视化" },
+      { path: "indicators", label: "指标查看" },
+      { path: "reports", label: "报告查看" },
+      { path: "logs", label: "日志查看" },
     ],
   },
-  { path: `${PREFIX}/data-manage`, label: "数据管理" },
-  { path: `${PREFIX}/tools`, label: "工具箱" },
-  { path: `${PREFIX}/manual`, label: "用户手册" },
+  { path: "data-manage", label: "数据管理" },
+  { path: "tools", label: "工具箱" },
+  { path: "manual", label: "用户手册" },
 ];
 
 function NavGroup({ item }: { item: NavItem }) {
   const loc = useLocation();
   const isChildActive = item.children?.some(
-    (c) => c.path && loc.pathname.startsWith(c.path),
+    (c) => c.path && loc.pathname.split("/").filter(Boolean).includes(c.path),
   );
   return (
     <div className="nav-group">
@@ -58,11 +52,7 @@ function NavGroup({ item }: { item: NavItem }) {
               {c.label}
             </NavLink>
           ) : (
-            <span
-              key={c.label}
-              className="nav-sub-item"
-              style={{ opacity: 0.5 }}
-            >
+            <span className="nav-sub-item" style={{ opacity: 0.5 }}>
               {c.label}
             </span>
           ),
@@ -107,21 +97,7 @@ function MechSim() {
           <span className="header-user">{user}</span>
         </header>
         <main className="app-main">
-          <Routes>
-            <Route path={`${PREFIX}/cases`} element={<CaseList />} />
-            <Route path={`${PREFIX}/tasks`} element={<Tasks />} />
-            <Route path={`${PREFIX}/data/:taskId?`} element={<DataViewer />} />
-            <Route path={`${PREFIX}/data-manage`} element={<Placeholder />} />
-            <Route path={`${PREFIX}/tools`} element={<Placeholder />} />
-            <Route path={`${PREFIX}/manual`} element={<Placeholder />} />
-            <Route path={`${PREFIX}/indicators`} element={<Placeholder />} />
-            <Route path={`${PREFIX}/reports`} element={<Placeholder />} />
-            <Route path={`${PREFIX}/logs`} element={<Placeholder />} />
-            <Route
-              path="*"
-              element={<Navigate to={`${PREFIX}/cases`} replace />}
-            />
-          </Routes>
+          <Outlet />
         </main>
       </div>
     </div>
