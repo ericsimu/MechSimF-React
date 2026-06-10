@@ -525,8 +525,6 @@ const DataViewer: React.FC = () => {
             {
               stroke: "#888",
               grid: { stroke: "#e8e8e8" },
-              values: (_self: any, ticks: number[]) =>
-                ticks.map((t) => fmtNum(t)),
             },
           ],
           series,
@@ -585,7 +583,7 @@ const DataViewer: React.FC = () => {
       return;
 
     const w = el.offsetWidth || 800;
-    const labels = makeCursorLabels(el, "Hz", fmtNum);
+    const labels = makeCursorLabels(el, "");
     freqLabels.current = labels;
 
     const series: Array<object> = [{ label: "Frequency (Hz)", value: (_u: unknown, v: number) => fmtNum(v) }];
@@ -624,7 +622,7 @@ const DataViewer: React.FC = () => {
         },
       },
       [
-        freqCol.data.map((v) => (v == null ? 1 : Math.pow(10, v))),
+        freqCol.data.map((v) => v ?? 0),
         ...activeSigs.map((c) =>
           c.data.map((v) => (isNil(v) ? null : Number(v))),
         ),
