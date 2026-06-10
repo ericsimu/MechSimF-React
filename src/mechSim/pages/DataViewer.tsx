@@ -734,23 +734,16 @@ const DataViewer: React.FC = () => {
               />
             </div>
             <div className="dv-signal-list">
-              {filteredSigCols.map((c) => {
-                const ci = columns.findIndex((sc) => sc.name === c.name);
-                return (
-                  <label key={c.name} className="dv-signal-row">
+              {filteredSigCols.map((c) => (
+                <label key={c.name} className="dv-signal-row">
                   <input
                     type="checkbox"
                     checked={checked[c.name] === true}
                     onChange={() => toggleChecked(c.name)}
                   />
-                  <span
-                    className="dv-dot"
-                    style={{ backgroundColor: COLORS[ci >= 0 ? ci % COLORS.length : 0] }}
-                  />
                   <span className="dv-signal-name">{c.name}</span>
                 </label>
-                );
-              })}
+              ))}
             </div>
           </div>
           <div className="dv-right">
