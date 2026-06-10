@@ -489,7 +489,7 @@ const DataViewer: React.FC = () => {
     const labels = makeCursorLabels(el, "s", fmtNum);
     timeLabels.current = labels;
 
-    const series: Array<object> = [{ value: (_u: unknown, v: number) => fmtNum(v) }];
+    const series: Array<object> = [{ label: timeCol ? "Time (s)" : "Index", value: (_u: unknown, v: number) => fmtNum(v) }];
     const signalArrays: Array<Array<number | null>> = [];
     for (const c of activeSigs) {
       const ci = columns.findIndex((sc) => sc.name === c.name);
@@ -588,7 +588,7 @@ const DataViewer: React.FC = () => {
     const labels = makeCursorLabels(el, "");
     freqLabels.current = labels;
 
-    const series: Array<object> = [{ value: (_u: unknown, v: number) => fmtNum(v) }];
+    const series: Array<object> = [{ label: "Frequency (log10 Hz)", value: (_u: unknown, v: number) => fmtNum(v) }];
     activeSigs.forEach((c) => {
       const ci = columns.findIndex((sc) => sc.name === c.name);
       series.push({
