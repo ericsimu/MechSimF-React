@@ -622,7 +622,7 @@ const DataViewer: React.FC = () => {
         },
       },
       [
-        freqCol.data.map((v) => v ?? 0),
+        freqCol.data.map((v) => (v != null ? Math.pow(10, v) : null)),
         ...activeSigs.map((c) =>
           c.data.map((v) => (isNil(v) ? null : Number(v))),
         ),
