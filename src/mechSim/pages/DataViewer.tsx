@@ -7,7 +7,7 @@ import {
   getTaskStatus,
 } from "../api/index";
 import type { DisturbanceColumn } from "../types/api";
-import uPlot from "uplot/dist/uPlot.esm.js";
+import uPlot from "uplot";
 import "uplot/dist/uPlot.min.css";
 import { isNil } from "../utils/isNil";
 import "./DataViewer.css";

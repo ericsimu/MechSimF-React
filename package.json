@@ -12,8 +12,8 @@
   "dependencies": {
     "@types/react-router-dom": "^5.3.3",
     "antd": "^6.4.3",
-    "react": "^19.2.6",
-    "react-dom": "^19.2.6",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
     "react-router-dom": "^5.3.4",
     "uplot": "^1.6.32"
   },

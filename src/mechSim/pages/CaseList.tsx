@@ -34,7 +34,7 @@ import CaseSidebar from "../components/CaseSidebar";
 import CaseDetail from "../components/CaseDetail";
 import ModelSelectPanel from "../components/ModelSelectPanel";
 import ParamEditor from "../components/ParamEditor";
-import uPlot from "uplot/dist/uPlot.esm.js";
+import uPlot from "uplot";
 import "uplot/dist/uPlot.min.css";
 import { isNil } from "../utils/isNil";
 import "./CaseList.css";
