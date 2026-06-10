@@ -585,7 +585,7 @@ const DataViewer: React.FC = () => {
       return;
 
     const w = el.offsetWidth || 800;
-    const labels = makeCursorLabels(el, "");
+    const labels = makeCursorLabels(el, "Hz", fmtNum);
     freqLabels.current = labels;
 
     const series: Array<object> = [{ label: "Frequency (Hz)", value: (_u: unknown, v: number) => fmtNum(v) }];
@@ -606,7 +606,7 @@ const DataViewer: React.FC = () => {
         height: 300,
         cursor: { show: true, drag: { setScale: true, x: true, y: false } },
         legend: { show: true },
-        scales: { x: { time: false } },
+        scales: { x: { time: false, distr: 3, log: 10 } },
         axes: [
           {
             label: "Frequency (Hz)",
@@ -624,7 +624,7 @@ const DataViewer: React.FC = () => {
         },
       },
       [
-        freqCol.data.map((v) => v ?? 0),
+        freqCol.data.map((v) => (v == null ? 1 : Math.pow(10, v))),
         ...activeSigs.map((c) =>
           c.data.map((v) => (isNil(v) ? null : Number(v))),
         ),
