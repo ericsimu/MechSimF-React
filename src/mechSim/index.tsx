@@ -1,4 +1,4 @@
-import { Switch, Route, Redirect, NavLink, useLocation } from "react-router-dom";
+import { Routes, Route, Navigate, NavLink, useLocation } from "react-router-dom";
 import "./index.css";
 import CaseList from "./pages/CaseList";
 import Tasks from "./pages/Tasks";
@@ -31,7 +31,7 @@ const navItems: NavItem[] = [
 function NavGroup({ item }: { item: NavItem }) {
   const loc = useLocation();
   const isChildActive = item.children?.some(
-    (c) => c.path && loc.pathname.startsWith(c.path),
+    (c) => c.path && loc.pathname.split("/").filter(Boolean).includes(c.path),
   );
   return (
     <div className="nav-group">
@@ -39,7 +39,8 @@ function NavGroup({ item }: { item: NavItem }) {
       <div className="nav-sub">
         {item.children!.map((c) =>
           c.path ? (
-            <NavLink key={c.label} to={c.path} activeClassName="active" className="nav-sub-item">
+            <NavLink key={c.label} to={c.path}
+              className={({ isActive }) => `nav-sub-item${isActive ? " active" : ""}`}>
               {c.label}
             </NavLink>
           ) : (
@@ -60,7 +61,8 @@ function MechSim() {
         <nav className="sidebar-nav">
           {navItems.map((item, i) =>
             item.path ? (
-              <NavLink key={item.path} to={item.path} exact activeClassName="active" className="nav-item">
+              <NavLink key={item.path} to={item.path} end
+                className={({ isActive }) => `nav-item${isActive ? " active" : ""}`}>
                 {item.label}
               </NavLink>
             ) : (<NavGroup key={i} item={item} />),
@@ -74,18 +76,18 @@ function MechSim() {
           <span className="header-user">{user}</span>
         </header>
         <main className="app-main">
-          <Switch>
-            <Route path={`${PREFIX}/cases`} component={CaseList} />
-            <Route path={`${PREFIX}/tasks`} component={Tasks} />
-            <Route path={`${PREFIX}/data/:taskId?`} component={DataViewer} />
-            <Route path={`${PREFIX}/data-manage`} component={Placeholder} />
-            <Route path={`${PREFIX}/tools`} component={Placeholder} />
-            <Route path={`${PREFIX}/manual`} component={Placeholder} />
-            <Route path={`${PREFIX}/indicators`} component={Placeholder} />
-            <Route path={`${PREFIX}/reports`} component={Placeholder} />
-            <Route path={`${PREFIX}/logs`} component={Placeholder} />
-            <Redirect to={`${PREFIX}/cases`} />
-          </Switch>
+          <Routes>
+            <Route path={`${PREFIX}/cases`} element={<CaseList />} />
+            <Route path={`${PREFIX}/tasks`} element={<Tasks />} />
+            <Route path={`${PREFIX}/data/:taskId?`} element={<DataViewer />} />
+            <Route path={`${PREFIX}/data-manage`} element={<Placeholder />} />
+            <Route path={`${PREFIX}/tools`} element={<Placeholder />} />
+            <Route path={`${PREFIX}/manual`} element={<Placeholder />} />
+            <Route path={`${PREFIX}/indicators`} element={<Placeholder />} />
+            <Route path={`${PREFIX}/reports`} element={<Placeholder />} />
+            <Route path={`${PREFIX}/logs`} element={<Placeholder />} />
+            <Route path="*" element={<Navigate to={`${PREFIX}/cases`} replace />} />
+          </Routes>
         </main>
       </div>
     </div>
