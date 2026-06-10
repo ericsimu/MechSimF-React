@@ -502,6 +502,7 @@ const DataViewer: React.FC = () => {
         label: c.name,
         stroke: COLORS[ci >= 0 ? ci % COLORS.length : 0],
         width: 1.5,
+        value: (_u: unknown, v: number) => v == null ? "" : fmtSci(v),
       });
       const mapped = c.data.map((v) => (isNil(v) ? null : Number(v)));
       signalArrays.push(
@@ -599,6 +600,7 @@ const DataViewer: React.FC = () => {
         label: c.name,
         stroke: COLORS[ci >= 0 ? ci % COLORS.length : 0],
         width: 1.5,
+        value: (_u: unknown, v: number) => v == null ? "" : fmtSci(v),
       });
     });
 
