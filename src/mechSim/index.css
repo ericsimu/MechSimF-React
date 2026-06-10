@@ -2,7 +2,7 @@
 .parent-shell {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  height: 100vh;
 }
 
 /* ── Top Navigation Bar ── */
@@ -151,7 +151,6 @@
   flex-direction: column;
   min-width: 0;
   min-height: 0;
-  height: 0;
   overflow: hidden;
 }
 
@@ -185,8 +184,6 @@
 
 .app-main {
   flex: 1;
-  overflow: hidden;
-  height: 0;
   padding: 0;
   min-height: 0;
   display: flex;
