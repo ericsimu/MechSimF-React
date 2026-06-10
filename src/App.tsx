@@ -1,4 +1,4 @@
-import { Switch, Route, Redirect, NavLink } from "react-router-dom";
+import { Routes, Route, Navigate, NavLink } from "react-router-dom";
 import { ConfigProvider } from "antd";
 import zhCN from "antd/locale/zh_CN";
 import Home from "./pages/Home";
@@ -16,20 +16,19 @@ function App() {
         <header className="top-nav">
           <span className="top-nav-brand">MechSim</span>
           <nav className="top-nav-links">
-            <NavLink to="/" exact activeClassName="active" className="top-nav-item">首页</NavLink>
-            <NavLink to="/mechsim/cases" activeClassName="active" className="top-nav-item">仿真平台</NavLink>
-            <NavLink to="/settings" exact activeClassName="active" className="top-nav-item">设置</NavLink>
+            <NavLink to="/" end className={({ isActive }) => `top-nav-item${isActive ? " active" : ""}`}>首页</NavLink>
+            <NavLink to="/mechsim/cases" className={({ isActive }) => `top-nav-item${isActive ? " active" : ""}`}>仿真平台</NavLink>
+            <NavLink to="/settings" end className={({ isActive }) => `top-nav-item${isActive ? " active" : ""}`}>设置</NavLink>
           </nav>
           <span className="top-nav-user">{user}</span>
         </header>
         <div className="parent-body">
-          <Switch>
-            <Route exact path="/" component={Home} />
-            <Route path="/settings" component={Settings} />
-            {/* MechSim 内部是 v5 Switch，父级只做入口路由 */}
-            <Route path="/mechsim" component={MechSim} />
-            <Redirect to="/" />
-          </Switch>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/mechsim/*" element={<MechSim />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
         </div>
       </div>
     </ConfigProvider>
