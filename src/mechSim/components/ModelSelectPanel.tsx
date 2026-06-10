@@ -22,7 +22,6 @@ function ModelImage({ sysName }: { sysName: string }) {
           height: 160,
           marginTop: 12,
           borderRadius: 6,
-          border: "1px solid #e8e8e8",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -39,7 +38,6 @@ function ModelImage({ sysName }: { sysName: string }) {
         width: "100%",
         marginTop: 12,
         borderRadius: 6,
-        border: "1px solid #e8e8e8",
         overflow: "hidden",
         background: "#fafafa",
       }}
