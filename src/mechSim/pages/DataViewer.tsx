@@ -611,12 +611,7 @@ const DataViewer: React.FC = () => {
             grid: { stroke: "#e8e8e8" },
             stroke: "#888",
             values: (_self: any, ticks: number[]) =>
-              ticks.map((t) => {
-                const l = Math.round(Math.log10(t));
-                if (Math.abs(t - 10 ** l) / t > 0.01) return "";
-                const pow = 10 ** l;
-                return pow <= 10000 ? String(pow) : fmtNum(t);
-              }),
+              ticks.map((t) => fmtNum(t)),
           },
           { stroke: "#888", grid: { stroke: "#e8e8e8" } },
         ],
@@ -627,7 +622,7 @@ const DataViewer: React.FC = () => {
         },
       },
       [
-        freqCol.data.map(v=>v?? 0),
+        freqCol.data.map((v) => (v != null ? Math.pow(10, v) : null)),
         ...activeSigs.map((c) =>
           c.data.map((v) => (isNil(v) ? null : Number(v))),
         ),
