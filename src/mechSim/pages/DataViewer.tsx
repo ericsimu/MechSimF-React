@@ -604,7 +604,7 @@ const DataViewer: React.FC = () => {
         height: 300,
         cursor: { show: true, drag: { setScale: true, x: true, y: false } },
         legend: { show: true },
-        scales: { x: { time: false, distr: 3, log: 10 } },
+        scales: { x: { time: false, distr: 3, log: 10, range: [1, 40000] } },
         axes: [
           {
             label: "Frequency (Hz)",
