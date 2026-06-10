@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useHistory } from "react-router-dom";
 import { Table, Modal, Button, message } from "antd";
 import type { TableColumnsType } from "antd";
 import { queueTasks, deleteTask, cancelTask } from "../api/index";
@@ -25,7 +25,7 @@ const Tasks: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [diffOpen, setDiffOpen] = useState(false);
   const [diffRows, setDiffRows] = useState<DiffRow[]>([]);
-  const navigate = useNavigate();
+  const history = useHistory();
 
   const loadTasks = useCallback(async () => {
     try {
@@ -186,7 +186,7 @@ const Tasks: React.FC = () => {
           <Button
             type="link"
             size="small"
-            onClick={() => navigate(`/mechsim/data/${record.id}`)}
+            onClick={() => history.push(`/mechsim/data/${record.id}`)}
           >
             详情
           </Button>
