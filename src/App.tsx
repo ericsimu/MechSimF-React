@@ -1,9 +1,9 @@
 import { Routes, Route, Navigate, NavLink } from "react-router-dom";
 import { ConfigProvider } from "antd";
 import zhCN from "antd/locale/zh_CN";
-import Home from "./mechSim/pages/Home";
+import Home from "./pages/Home";
 import MechSim from "./mechSim";
-import Settings from "./mechSim/pages/Settings";
+import Settings from "./pages/Settings";
 import { getCurrentUser } from "./mechSim/utils/user";
 import "./App.css";
 

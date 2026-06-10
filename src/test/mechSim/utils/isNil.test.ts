@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { isNil } from "./isNil";
+import { isNil } from "../../../mechSim/utils/isNil";
 
 describe("isNil", () => {
   it("returns true for null", () => {

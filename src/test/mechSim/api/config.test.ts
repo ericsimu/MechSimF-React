@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { API_BASE } from "./config";
+import { API_BASE } from "../../../mechSim/api/config";
 
 describe("API_BASE", () => {
   it("defaults to /api/v1/sim", () => {

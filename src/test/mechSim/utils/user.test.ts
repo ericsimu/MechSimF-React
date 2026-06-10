@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { getCurrentUser, setCurrentUser } from "./user";
+import { getCurrentUser, setCurrentUser } from "../../../mechSim/utils/user";
 
 describe("user", () => {
   beforeEach(() => {
