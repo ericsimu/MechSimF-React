@@ -66,8 +66,8 @@
 /* ── MechSim App Layout (nested inside parent) ── */
 .app-shell {
   display: flex;
-  min-height: 100%;
   flex: 1;
+  min-height: 0;
 }
 
 /* ── Sidebar ── */
