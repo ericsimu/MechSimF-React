@@ -42,11 +42,6 @@ function fmtNum(v: number): string {
   return s.includes(".") ? s.replace(/\.?0+$/, "") : s;
 }
 
-function fmtSci(v: number): string {
-  if (!isFinite(v)) return String(v);
-  if (v === 0) return "0";
-  return v.toExponential(4);
-}
 
 type CursorLabels = {
   hook: (u: any) => void;
@@ -491,7 +486,7 @@ const DataViewer: React.FC = () => {
         ? timeCol.data.map((v) => v ?? 0)
         : activeSigs[0].data.map((_, i) => i);
     const w = el.offsetWidth || 800;
-    const labels = makeCursorLabels(el, "s", fmtSci);
+    const labels = makeCursorLabels(el, "s", fmtNum);
     timeLabels.current = labels;
 
     const series: Array<object> = [{}];
@@ -531,7 +526,7 @@ const DataViewer: React.FC = () => {
               stroke: "#888",
               grid: { stroke: "#e8e8e8" },
               values: (_self: any, ticks: number[]) =>
-                ticks.map((t) => fmtSci(t)),
+                ticks.map((t) => fmtNum(t)),
             },
           ],
           series,
