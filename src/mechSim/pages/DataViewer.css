@@ -143,11 +143,6 @@
   flex: 1;
   min-height: 0;
 }
-.tasks-table-wrap {
-  flex: 1;
-  overflow-y: auto;
-  min-height: 0;
-}
 .tasks-page .page-header {
   display: flex;
   align-items: center;
