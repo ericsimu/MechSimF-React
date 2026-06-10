@@ -257,7 +257,7 @@ const DataViewer: React.FC = () => {
       if (active.length > 0) {
         const itemH = 18;
         legendH = active.length * itemH + 10;
-        legendSvg = `<rect x="0" y="${ch}" width="${cw}" height="${legendH}" fill="#fafafa" stroke="#e8e8e8" stroke-width="1"/>`;
+        legendSvg = `<rect x="0" y="${ch}" width="${cw}" height="${legendH}" fill="#fafafa"/>`;
         active.forEach((s: any, i: number) => {
           const color = s.stroke || s.fill || "#888";
           const label = (s.label || "")
