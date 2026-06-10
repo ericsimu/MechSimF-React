@@ -525,7 +525,7 @@ const DataViewer: React.FC = () => {
               grid: { stroke: "#e8e8e8" },
               stroke: "#888",
               values: (_self: any, ticks: number[]) =>
-                ticks.map((t) => t.toFixed(2) + " s"),
+                ticks.map((t) => fmtNum(t) + " s"),
             },
             {
               stroke: "#888",
@@ -617,6 +617,8 @@ const DataViewer: React.FC = () => {
             label: "Frequency (log10 Hz)",
             grid: { stroke: "#e8e8e8" },
             stroke: "#888",
+            values: (_self: any, ticks: number[]) =>
+              ticks.map((t) => fmtNum(t)),
           },
           { stroke: "#888", grid: { stroke: "#e8e8e8" } },
         ],
