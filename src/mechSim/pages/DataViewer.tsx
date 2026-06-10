@@ -588,7 +588,7 @@ const DataViewer: React.FC = () => {
     const labels = makeCursorLabels(el, "");
     freqLabels.current = labels;
 
-    const series: Array<object> = [{ label: "Frequency (log10 Hz)", value: (_u: unknown, v: number) => fmtNum(v) }];
+    const series: Array<object> = [{ label: "Frequency (Hz)", value: (_u: unknown, v: number) => fmtNum(v) }];
     activeSigs.forEach((c) => {
       const ci = columns.findIndex((sc) => sc.name === c.name);
       series.push({
@@ -609,7 +609,7 @@ const DataViewer: React.FC = () => {
         scales: { x: { time: false } },
         axes: [
           {
-            label: "Frequency (log10 Hz)",
+            label: "Frequency (Hz)",
             grid: { stroke: "#e8e8e8" },
             stroke: "#888",
             values: (_self: any, ticks: number[]) =>
