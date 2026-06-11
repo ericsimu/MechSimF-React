@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Select, Input, message } from "antd";
 import { API_BASE } from "../api/config";
 
@@ -58,12 +58,13 @@ function ModelImage({ sysName }: { sysName: string }) {
   );
 }
 
-const ModelSelectPanel: React.FC<Props> = ({
+export default function ModelSelectPanel({
   systems,
   draft,
   onSysChange,
   onDraftChange,
-}) => (
+}: Props) {
+  return (
   <div className="model-select-panel">
     <div className="select-row">
       <div className="select-group" style={{ flex: 1, minWidth: 0 }}>
@@ -117,6 +118,7 @@ const ModelSelectPanel: React.FC<Props> = ({
     </div>
     {draft.sys_name && <ModelImage key={draft.sys_name} sysName={draft.sys_name} />}
   </div>
-);
+  );
+}
 
-export default ModelSelectPanel;
+

@@ -1,4 +1,3 @@
-import React from "react";
 import { Button, Input } from "antd";
 import type { CaseModel } from "../types/api";
 
@@ -20,7 +19,7 @@ interface Props {
   onDelete: (c: CaseModel) => void;
 }
 
-const CaseDetail: React.FC<Props> = ({
+export default function CaseDetail({
   editCase,
   editingCell,
   editValue,
@@ -31,7 +30,8 @@ const CaseDetail: React.FC<Props> = ({
   onCopy,
   onShare,
   onDelete,
-}) => (
+}: Props) {
+  return (
   <div className="case-list">
     <div className="page-header">
       <h2>用例详情</h2>
@@ -135,6 +135,7 @@ const CaseDetail: React.FC<Props> = ({
       </tbody>
     </table>
   </div>
-);
+  );
+}
 
-export default CaseDetail;
+

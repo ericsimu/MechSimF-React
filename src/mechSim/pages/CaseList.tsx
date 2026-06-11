@@ -1,4 +1,4 @@
-import React, {
+import {
   useState,
   useEffect,
   useCallback,
@@ -79,7 +79,7 @@ function normalizeTypes(obj: unknown): unknown {
 }
 
 // ── Main Component ──
-const CaseList: React.FC = () => {
+export default function CaseList() {
   // ── Case List State ──
   const [cases, setCases] = useState<CaseModel[]>([]);
   const [loading, setLoading] = useState(true);
@@ -1307,4 +1307,5 @@ const CaseList: React.FC = () => {
   );
 };
 
-export default CaseList;
+
+

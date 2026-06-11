@@ -1,4 +1,3 @@
-import React from "react";
 import { Button } from "antd";
 import type { CaseModel } from "../types/api";
 
@@ -10,13 +9,14 @@ interface Props {
   onAdd: () => void;
 }
 
-const CaseSidebar: React.FC<Props> = ({
+export default function CaseSidebar({
   cases,
   loading,
   editCase,
   onSelect,
   onAdd,
-}) => (
+}: Props) {
+  return (
   <div className="case-sidebar">
     <div className="sidebar-header">
       <span className="sidebar-title">用例列表</span>
@@ -42,6 +42,5 @@ const CaseSidebar: React.FC<Props> = ({
       </ul>
     )}
   </div>
-);
-
-export default CaseSidebar;
+  );
+}

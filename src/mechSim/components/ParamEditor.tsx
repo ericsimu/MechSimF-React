@@ -1,5 +1,3 @@
-import React from "react";
-
 type ParamRow = {
   key: string;
   label: string;
@@ -21,12 +19,13 @@ interface Props {
   forceUpdate: () => void;
 }
 
-const ParamEditor: React.FC<Props> = ({
+export default function ParamEditor({
   groups,
   dirtyValues,
   onSave,
   forceUpdate,
-}) => (
+}: Props) {
+  return (
   <>
     {groups.map((g) => (
       <div className="param-group" key={g.path}>
@@ -81,6 +80,7 @@ const ParamEditor: React.FC<Props> = ({
       </div>
     ))}
   </>
-);
+  );
+}
 
-export default ParamEditor;
+

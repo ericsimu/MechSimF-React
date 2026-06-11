@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useHistory } from "react-router-dom";
 import { Table, Modal, Button, message } from "antd";
 import type { TableColumnsType } from "antd";
@@ -20,7 +20,7 @@ const STATUS_LABELS: Record<string, string> = {
   cancelled: "已取消",
 };
 
-const Tasks: React.FC = () => {
+export default function Tasks() {
   const [tasks, setTasks] = useState<SimTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [diffOpen, setDiffOpen] = useState(false);
@@ -250,4 +250,5 @@ const Tasks: React.FC = () => {
   );
 };
 
-export default Tasks;
+
+

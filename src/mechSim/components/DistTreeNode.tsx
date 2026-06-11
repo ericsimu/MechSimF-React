@@ -1,4 +1,4 @@
-import React from "react";
+import type { ReactNode } from "react";
 import type { DisturbanceDirNode, DisturbanceFile } from "../types/api";
 
 interface DistTreeNodeProps {
@@ -13,7 +13,7 @@ interface DistTreeNodeProps {
   onLeafClick: (path: string) => void;
 }
 
-const DistTreeNode: React.FC<DistTreeNodeProps> = ({
+export default function DistTreeNode({
   name,
   value,
   path,
@@ -23,10 +23,10 @@ const DistTreeNode: React.FC<DistTreeNodeProps> = ({
   onToggle,
   onCheck,
   onLeafClick,
-}) => {
+}: DistTreeNodeProps) {
   const dirs = value.dirs || {};
   const files: DisturbanceFile[] = value.files || [];
-  const nodes: React.ReactNode[] = [];
+  const nodes: ReactNode[] = [];
 
   if (Object.keys(dirs).length > 0) {
     nodes.push(
@@ -95,4 +95,5 @@ const DistTreeNode: React.FC<DistTreeNodeProps> = ({
   return nodes.length > 0 ? <>{nodes}</> : null;
 };
 
-export default DistTreeNode;
+
+

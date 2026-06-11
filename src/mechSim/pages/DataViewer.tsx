@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useHistory } from "react-router-dom";
 import { Button, Input, Spin } from "antd";
 import {
@@ -97,7 +97,7 @@ function makeCursorLabels(
   };
 }
 
-const DataViewer: React.FC = () => {
+export default function DataViewer() {
   const { taskId } = useParams<{ taskId: string }>();
   const history = useHistory();
   const tid = Number(taskId);
@@ -787,4 +787,5 @@ const DataViewer: React.FC = () => {
   );
 };
 
-export default DataViewer;
+
+

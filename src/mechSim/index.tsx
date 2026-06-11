@@ -50,7 +50,7 @@ function NavGroup({ item }: { item: NavItem }) {
   );
 }
 
-function MechSim() {
+export default function MechSim() {
   const user = getCurrentUser();
   return (
     <div className="app-shell mechsim-app">
@@ -91,4 +91,5 @@ function MechSim() {
   );
 }
 
-export default MechSim;
+
+

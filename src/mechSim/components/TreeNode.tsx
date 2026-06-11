@@ -1,5 +1,3 @@
-import React from "react";
-
 interface TreeNodeProps {
   name: string;
   value: unknown;
@@ -21,7 +19,7 @@ function isLastLayer(v: unknown): boolean {
     .every(([, cv]) => !isObject(cv));
 }
 
-const TreeNode: React.FC<TreeNodeProps> = ({
+export default function TreeNode({
   name,
   value,
   path,
@@ -29,7 +27,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
   expanded,
   onToggle,
   onSelect,
-}) => {
+}: TreeNodeProps) {
   const nested = isObject(value);
   const childLast = isLastLayer(value);
 
@@ -81,4 +79,5 @@ const TreeNode: React.FC<TreeNodeProps> = ({
   );
 };
 
-export default TreeNode;
+
+
