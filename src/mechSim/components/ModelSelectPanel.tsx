@@ -68,13 +68,12 @@ export default function ModelSelectPanel({
   <div className="model-select-panel">
     <div className="select-row">
       <div className="select-group" style={{ flex: 1, minWidth: 0 }}>
-        <label className="select-label">系统选择</label>
+        <label className="select-label">版本</label>
         <Select
           style={{ width: "100%" }}
-          value={draft.sys_name || undefined}
-          onChange={onSysChange}
-          placeholder="请选择系统"
-          options={systems.map((s) => ({ value: s, label: s }))}
+          value={draft.model_verison || undefined}
+          onChange={(v) => onDraftChange({ model_verison: v })}
+          options={VERSION_OPTIONS.map((o) => ({ value: o, label: o }))}
         />
       </div>
       <div className="select-group" style={{ flex: 1, minWidth: 0 }}>
@@ -87,12 +86,13 @@ export default function ModelSelectPanel({
         />
       </div>
       <div className="select-group" style={{ flex: 1, minWidth: 0 }}>
-        <label className="select-label">版本</label>
+        <label className="select-label">系统选择</label>
         <Select
           style={{ width: "100%" }}
-          value={draft.model_verison || undefined}
-          onChange={(v) => onDraftChange({ model_verison: v })}
-          options={VERSION_OPTIONS.map((o) => ({ value: o, label: o }))}
+          value={draft.sys_name || undefined}
+          onChange={onSysChange}
+          placeholder="请选择系统"
+          options={systems.map((s) => ({ value: s, label: s }))}
         />
       </div>
       <div className="select-group" style={{ flex: 1, minWidth: 0 }}>
