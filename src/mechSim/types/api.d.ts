@@ -86,7 +86,8 @@ export interface SystemModelInfo {
   [key: string]: unknown;
 }
 
-export type ModelInfoMap = Record<string, SystemModelInfo>;
+/** 外层 key 为版本（"3X" / "5X"），内层 key 为系统名称。 */
+export type ModelInfoMap = Record<string, Record<string, SystemModelInfo>>;
 
 // ── Disturbance Tree ──
 

@@ -186,7 +186,7 @@ export default function Tasks() {
           <Button
             type="link"
             size="small"
-            onClick={() => history.push(`/mechsim/data/${record.id}`)}
+            onClick={() => history.push(`/data/${record.id}`)}
           >
             详情
           </Button>

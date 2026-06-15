@@ -6,7 +6,7 @@ import DataViewer from "./pages/DataViewer";
 import Placeholder from "./pages/Placeholder";
 import { getCurrentUser } from "./utils/user";
 
-const PREFIX = "/mechsim";
+const PREFIX = "";
 
 interface NavChild { path?: string; label: string }
 interface NavItem { path?: string; label: string; children?: NavChild[] }

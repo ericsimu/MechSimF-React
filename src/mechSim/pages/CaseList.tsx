@@ -51,6 +51,22 @@ function isLastLayer(v: unknown): boolean {
     .filter(([k]) => k !== "_labels" && k !== "_units")
     .every(([, cv]) => !isObject(cv));
 }
+/** 深度优先查找第一个 isLastLayer（含可编辑叶子值）的命名空间路径。 */
+function findFirstLeafPath(node: unknown, path = ""): string | null {
+  if (!isObject(node)) return null;
+  const entries = Object.entries(node).filter(
+    ([k]) => k !== "_labels" && k !== "_units" && k !== "ID",
+  );
+  for (const [k, v] of entries) {
+    const p = path ? `${path}.${k}` : k;
+    if (isLastLayer(v)) return p;
+    if (isObject(v)) {
+      const found = findFirstLeafPath(v, p);
+      if (found) return found;
+    }
+  }
+  return null;
+}
 
 type ParamRow = {
   key: string;
@@ -154,7 +170,10 @@ export default function CaseList() {
   const chartRef = useRef<HTMLDivElement>(null);
   const chartInst = useRef<any>(null);
 
-  const systems = useMemo(() => Object.keys(modelInfo), [modelInfo]);
+  const systems = useMemo(() => {
+    const version = editDraft.model_verison || "3X";
+    return Object.keys(modelInfo[version] || {});
+  }, [modelInfo, editDraft.model_verison]);
   const paramEntries = useMemo(() => Object.entries(paramVars), [paramVars]);
   const disturbEntries = useMemo(() => {
     const dirs = disturbTree?.dirs;
@@ -192,31 +211,44 @@ export default function CaseList() {
     };
   }
 
-  /** 构建包含所有系统参数的 model_param JSON 字符串（与 Vue 版一致）。 */
+  /** 构建包含所有版本、所有系统参数的 model_param JSON 字符串。
+   *  格式：{ "3X": { sys: nsTree }, "5X": { sys: nsTree } }
+   *  仅更新当前版本，其它版本从累积的 editDraft.model_param 中保留。
+   *  currentVars 格式：{ sysName: nsTree }
+   */
   function buildFullModelParam(currentVars?: Record<string, any>): string {
-    const full: Record<string, any> = {};
-    for (const [sys, info] of Object.entries(modelInfo)) {
-      if (info.variables)
-        full[sys] = JSON.parse(JSON.stringify(info.variables));
-    }
-    // Merge saved params from editCase
-    if (editCase?.model_param) {
+    const version = editDraft.model_verison || "3X";
+
+    // 保留所有版本（从累积的 editDraft.model_param）
+    const allVersions: Record<string, any> = {};
+    if (editDraft.model_param) {
       try {
-        const saved = JSON.parse(editCase.model_param);
-        for (const [sys, vars] of Object.entries(saved)) {
-          full[sys] = vars;
+        const saved = JSON.parse(editDraft.model_param);
+        if (saved && typeof saved === "object" && !Array.isArray(saved)) {
+          Object.assign(allVersions, saved);
         }
       } catch {
         /* */
       }
     }
-    // Merge currentVars (or paramVars state) for current system
-    const name = editDraft.sys_name || editCase?.sys_name;
-    const vars = currentVars ?? paramVarsRef.current;
-    if (name && Object.keys(vars).length > 0) {
-      full[name] = JSON.parse(JSON.stringify(vars));
+
+    // 构建当前版本：默认值 + 该版本已累积值 + 当前系统编辑
+    const versionSystems = modelInfo[version] || {};
+    const versionFull: Record<string, any> = {};
+    for (const [sys, info] of Object.entries(versionSystems)) {
+      if (info.variables)
+        versionFull[sys] = JSON.parse(JSON.stringify(info.variables));
     }
-    return JSON.stringify(full);
+    const accVersion = allVersions[version];
+    if (accVersion && typeof accVersion === "object" && !Array.isArray(accVersion)) {
+      Object.assign(versionFull, accVersion);
+    }
+    const sysData = currentVars ?? paramVarsRef.current;
+    if (Object.keys(sysData).length > 0) {
+      Object.assign(versionFull, JSON.parse(JSON.stringify(sysData)));
+    }
+    allVersions[version] = versionFull;
+    return JSON.stringify(allVersions);
   }
 
   /** 从 modelInfo 全量或已保存 model_param 中提取当前系统参数子树。 */
@@ -224,48 +256,52 @@ export default function CaseList() {
     draft: Record<string, any>,
   ): Record<string, any> | null {
     const sysName = draft.sys_name;
+    const version = draft.model_verison || "3X";
     if (!sysName) return null;
     if (draft.model_param) {
       try {
         const parsed = JSON.parse(draft.model_param);
+        const candidate = parsed[version]?.[sysName];
         if (
-          parsed[sysName] &&
-          typeof parsed[sysName] === "object" &&
-          !Array.isArray(parsed[sysName]) &&
-          Object.keys(parsed[sysName] as object).length > 0
+          candidate &&
+          typeof candidate === "object" &&
+          !Array.isArray(candidate) &&
+          Object.keys(candidate as object).length > 0
         ) {
-          return normalizeTypes(parsed[sysName]) as Record<string, any>;
+          return normalizeTypes(candidate) as Record<string, any>;
         }
       } catch {
         /* */
       }
     }
+    const versionSystems = modelInfo[version] || {};
     if (
-      modelInfo[sysName]?.variables &&
-      Object.keys(modelInfo[sysName].variables!).length > 0
+      versionSystems[sysName]?.variables &&
+      Object.keys(versionSystems[sysName].variables!).length > 0
     ) {
-      return JSON.parse(JSON.stringify(modelInfo[sysName].variables!));
+      return JSON.parse(JSON.stringify(versionSystems[sysName].variables!));
     }
     return null;
   }
 
   function initParamVars(draft: Record<string, any>) {
-    let src: Record<string, any> = {};
-    let fromDefaults = false;
+    const sysName = draft.sys_name;
+    const version = draft.model_verison || "3X";
+    let nsTree: Record<string, any> = {};
     const extracted = extractSystemParams(draft);
     if (extracted) {
-      src = extracted;
-    } else if (draft.sys_name && modelInfo[draft.sys_name]?.variables) {
-      src = modelInfo[draft.sys_name].variables!;
-      fromDefaults = true;
+      nsTree = extracted;
+    } else {
+      const versionSystems = modelInfo[version] || {};
+      if (sysName && versionSystems[sysName]?.variables) {
+        nsTree = versionSystems[sysName].variables! as Record<string, any>;
+      }
     }
-    setParamVars(src);
-    if (fromDefaults) {
-      setEditDraft((prev) => ({
-        ...prev,
-        model_param: buildFullModelParam(src),
-      }));
-    }
+    const newParamVars = sysName && Object.keys(nsTree).length > 0
+      ? { [sysName]: nsTree }
+      : {};
+    paramVarsRef.current = newParamVars;
+    setParamVars(newParamVars);
   }
 
   // ── Open Edit ──
@@ -303,22 +339,53 @@ export default function CaseList() {
   }
 
   function initParamVarsFilter(draft: Record<string, any>, mi: ModelInfoMap) {
-    let src: Record<string, any> = {};
-    let fromDefaults = false;
+    const sysName = draft.sys_name;
+    const version = (draft.model_verison || "3X") as string;
+
+    // 计算当前系统的命名空间树
+    let nsTree: Record<string, any> = {};
     const extracted = extractSystemParams(draft);
     if (extracted) {
-      src = extracted;
-    } else if (draft.sys_name && mi[draft.sys_name]?.variables) {
-      src = mi[draft.sys_name].variables!;
-      fromDefaults = true;
+      nsTree = extracted;
+    } else {
+      const versionSystems = mi[version] || {};
+      if (sysName && versionSystems[sysName]?.variables) {
+        nsTree = versionSystems[sysName].variables! as Record<string, any>;
+      }
     }
-    setParamVars(src);
-    if (fromDefaults) {
-      setEditDraft((prev) => ({
-        ...prev,
-        model_param: buildFullModelParam(src),
-      }));
+
+    // paramVars 格式：{ sysName: nsTree }，供参数树顶层显示系统名
+    const newParamVars = sysName && Object.keys(nsTree).length > 0
+      ? { [sysName]: nsTree }
+      : {};
+    paramVarsRef.current = newParamVars;
+    setParamVars(newParamVars);
+
+    // 直接用 draft + mi 重建 model_param（保留所有版本，仅更新当前版本）
+    const allVersions: Record<string, any> = {};
+    try {
+      const saved = JSON.parse(draft.model_param || "{}");
+      if (saved && typeof saved === "object" && !Array.isArray(saved)) {
+        Object.assign(allVersions, saved);
+      }
+    } catch { /* */ }
+    const versionSystems = mi[version] || {};
+    const versionFull: Record<string, any> = {};
+    for (const [sys, info] of Object.entries(versionSystems)) {
+      if (info.variables) versionFull[sys] = JSON.parse(JSON.stringify(info.variables));
     }
+    const accVersion = allVersions[version];
+    if (accVersion && typeof accVersion === "object" && !Array.isArray(accVersion)) {
+      Object.assign(versionFull, accVersion);
+    }
+    if (sysName && Object.keys(nsTree).length > 0) {
+      versionFull[sysName] = nsTree;
+    }
+    allVersions[version] = versionFull;
+    setEditDraft((prev) => ({
+      ...prev,
+      model_param: JSON.stringify(allVersions),
+    }));
   }
 
   // ── Save ──
@@ -335,8 +402,8 @@ export default function CaseList() {
       });
       const r = await updateCase(editCase.id!, body);
       if (r.success) {
-        // Sync update editCase for immediate reads after handleSave (matching Vue Object.assign)
-        Object.assign(editCase, editDraft);
+        // 用 body.model_param（已正确构建）覆盖，避免 editDraft.model_param 因异步 setState 滞后
+        Object.assign(editCase, editDraft, { model_param: body.model_param });
         setCases((prev) =>
           prev.map((c) => (c.id === editCase.id ? { ...editCase } : c)),
         );
@@ -522,7 +589,17 @@ export default function CaseList() {
         return keys;
       }
       // Use setTimeout to ensure paramVars is populated from latest state
-      setTimeout(() => setParamExpanded(expandAllParams(paramVars)), 0);
+      setTimeout(() => {
+        setParamExpanded(expandAllParams(paramVars));
+        // 编辑器为空时自动选中第一个可编辑节点，免去手动点击
+        if (
+          paramEditGroups.length === 0 &&
+          Object.keys(paramVarsRef.current).length > 0
+        ) {
+          const firstPath = findFirstLeafPath(paramVarsRef.current);
+          if (firstPath) selectParamNode(firstPath, false);
+        }
+      }, 0);
     }
 
     if (key === "disturb") {
@@ -569,6 +646,8 @@ export default function CaseList() {
 
   // ── Param Tree Interactions ──
   function onSystemChange(sys: string) {
+    // 先把输入框中未提交的编辑（dirtyValues）应用到 paramVarsRef，避免切换时丢失修改
+    for (const g of paramEditGroups) saveParamGroup(g);
     const fullModelParam = buildFullModelParam();
     setEditDraft((prev) => ({
       ...prev,
@@ -577,33 +656,55 @@ export default function CaseList() {
       model_param: fullModelParam,
     }));
     // 从全量 model_param 或 modelInfo 加载新系统参数
-    let src: Record<string, any> | null = null;
+    let nsTree: Record<string, any> | null = null;
     try {
       const full = JSON.parse(fullModelParam);
+      const version = editDraft.model_verison || "3X";
+      const versionData = full[version] || {};
       if (
-        full[sys] &&
-        typeof full[sys] === "object" &&
-        !Array.isArray(full[sys]) &&
-        Object.keys(full[sys] as object).length > 0
+        versionData[sys] &&
+        typeof versionData[sys] === "object" &&
+        !Array.isArray(versionData[sys]) &&
+        Object.keys(versionData[sys] as object).length > 0
       ) {
-        src = normalizeTypes(full[sys]) as Record<string, any>;
+        nsTree = normalizeTypes(versionData[sys]) as Record<string, any>;
       }
     } catch {
       /* */
     }
-    if (
-      !src &&
-      modelInfo[sys]?.variables &&
-      Object.keys(modelInfo[sys].variables!).length > 0
-    ) {
-      src = JSON.parse(JSON.stringify(modelInfo[sys].variables!));
+    if (!nsTree) {
+      const version = editDraft.model_verison || "3X";
+      const versionSystems = modelInfo[version] || {};
+      if (
+        versionSystems[sys]?.variables &&
+        Object.keys(versionSystems[sys].variables!).length > 0
+      ) {
+        nsTree = JSON.parse(JSON.stringify(versionSystems[sys].variables!));
+      }
     }
-    if (src) setParamVars(src);
+    if (nsTree) {
+      const newParamVars = { [sys]: nsTree };
+      paramVarsRef.current = newParamVars;
+      setParamVars(newParamVars);
+      // 切换系统后，立即用新系统的首个可编辑节点填充参数详情面板
+      const firstPath = findFirstLeafPath(newParamVars);
+      if (firstPath) selectParamNode(firstPath, false);
+      else {
+        setSelParamPath("");
+        setParamEditGroups([]);
+      }
+    } else {
+      setSelParamPath("");
+      setParamEditGroups([]);
+    }
+    dirtyValues.current.clear();
   }
 
-  function onParamSelect(path: string) {
+  /** 根据路径从 paramVarsRef 构建参数编辑分组，填充 paramEditGroups。
+   *  activate=true 时同时切换到 param 区段（用于树节点点击）。 */
+  function selectParamNode(path: string, activate: boolean) {
     setSelParamPath(path);
-    setActiveSection("param");
+    if (activate) setActiveSection("param");
     const parts = path.split(".");
     let node: any = paramVarsRef.current;
     for (const p of parts) {
@@ -682,6 +783,10 @@ export default function CaseList() {
           ]
         : [],
     );
+  }
+
+  function onParamSelect(path: string) {
+    selectParamNode(path, true);
   }
 
   function coerceByType(val: string, orig: unknown) {
@@ -1103,9 +1208,24 @@ export default function CaseList() {
                         systems={systems}
                         draft={editDraft}
                         onSysChange={onSystemChange}
-                        onDraftChange={(patch) =>
-                          setEditDraft((prev) => ({ ...prev, ...patch }))
-                        }
+                        onDraftChange={(patch) => {
+                          if ("model_verison" in patch && patch.model_verison !== editDraft.model_verison) {
+                            // 切换版本时清空系统选择和参数
+                            setEditDraft((prev) => ({
+                              ...prev,
+                              ...patch,
+                              sys_name: "",
+                              model_name: "",
+                            }));
+                            paramVarsRef.current = {};
+                            setParamVars({});
+                            setSelParamPath("");
+                            setParamEditGroups([]);
+                            dirtyValues.current.clear();
+                          } else {
+                            setEditDraft((prev) => ({ ...prev, ...patch }));
+                          }
+                        }}
                       />
                     )}
 
