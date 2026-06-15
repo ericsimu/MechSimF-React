@@ -202,6 +202,7 @@ export default function CaseList() {
       create_by: src.create_by || getCurrentUser(),
       sys_name: src.sys_name || "",
       model_name: src.model_name || "",
+      init_script: src.init_script || "",
       model_verison: src.model_verison || "",
       model_productivity: src.model_productivity || "",
       model_param: src.model_param || "",
@@ -452,6 +453,7 @@ export default function CaseList() {
         create_by: getCurrentUser(),
         sys_name: "",
         model_name: "",
+        init_script: "",
         model_verison: "3X",
         model_productivity: "100WPH",
         model_param: "",
@@ -653,6 +655,7 @@ export default function CaseList() {
       ...prev,
       sys_name: sys,
       model_name: sys,
+      init_script: sys,
       model_param: fullModelParam,
     }));
     // 从全量 model_param 或 modelInfo 加载新系统参数
@@ -1216,6 +1219,7 @@ export default function CaseList() {
                               ...patch,
                               sys_name: "",
                               model_name: "",
+                              init_script: "",
                             }));
                             paramVarsRef.current = {};
                             setParamVars({});

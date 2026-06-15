@@ -21,6 +21,7 @@ export interface CaseModel extends BaseModel {
   create_by: string;
   sys_name: string;
   model_name: string;
+  init_script: string;
   model_verison: string;
   model_productivity: string;
   model_param: string;
@@ -33,6 +34,7 @@ export interface AddCaseRequest {
   create_by: string;
   sys_name: string;
   model_name: string;
+  init_script: string;
   model_verison: string;
   model_productivity: string;
   model_param: string;
@@ -55,6 +57,7 @@ export interface SimTask extends BaseModel {
   model_productivity: string;
   sys_name: string;
   model_name: string;
+  init_script: string;
   param_diff: string;
   disturbance: string;
   sim_time: number | null;
