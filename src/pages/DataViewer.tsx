@@ -604,14 +604,18 @@ export default function DataViewer() {
         height: 300,
         cursor: { show: true, drag: { setScale: true, x: true, y: false } },
         legend: { show: true },
-        scales: { x: { time: false, distr: 3, log: 10, range: [1, 40000] } },
+        scales: { x: { time: false, distr: 3, log: 10, range: [1, 20000] } },
         axes: [
           {
             label: "Frequency (Hz)",
             grid: { stroke: "#e8e8e8" },
             stroke: "#888",
             values: (_self: any, ticks: number[]) =>
-              ticks.map((t) => fmtNum(t)),
+              ticks.map((t) => {
+                const log10 = Math.log10(t);
+                // 只在对数主轴（10的整数次幂）显示标签
+                return Math.abs(log10 - Math.round(log10)) < 1e-10 ? fmtNum(t) : "";
+              }),
           },
           { stroke: "#888", grid: { stroke: "#e8e8e8" } },
         ],
