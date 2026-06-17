@@ -43,8 +43,8 @@ export default function ParamTab({
   startResizeLeft,
 }: Props) {
   return (
-    <div className="edit-body">
-      <div className="edit-left" style={{ width: leftWidth }}>
+    <div className="flex-1 flex overflow-hidden min-h-0">
+      <div className="shrink-0 overflow-y-auto overflow-x-hidden box-border border-r border-[#f0f0f0] bg-[#fafafa] pb-3 min-h-0" style={{ width: leftWidth }}>
         {paramEntries.map(([k, v]) => (
           <TreeNode
             key={k}
@@ -58,14 +58,14 @@ export default function ParamTab({
           />
         ))}
         {paramEntries.length === 0 && (
-          <div className="tree-empty">暂无参数数据</div>
+          <div className="px-4 py-2 text-[#999] text-xs">暂无参数数据</div>
         )}
       </div>
       <div
-        className="h-resize-handle"
+        className="w-1 bg-[#f0f0f0] cursor-col-resize shrink-0 border-l border-r border-[#e8e8e8] transition-colors hover:bg-[#d9d9d9]"
         onMouseDown={startResizeLeft}
       />
-      <div className="edit-right">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden box-border px-4 py-3 min-w-0 min-h-0">
         {paramEditGroups.length > 0 && (
           <ParamEditor
             groups={paramEditGroups}

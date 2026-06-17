@@ -10,7 +10,6 @@ import type { DisturbanceColumn } from "../types/api";
 import uPlot from "uplot";
 import "uplot/dist/uPlot.min.css";
 import { isNil } from "../utils/isNil";
-import "./DataViewer.css";
 
 const COLORS = [
   "#3b82f6",
@@ -31,6 +30,14 @@ const STATUS_MAP: Record<string, string> = {
   done: "已完成",
   failed: "失败",
   cancelled: "已取消",
+};
+
+const STATUS_CLASS: Record<string, string> = {
+  done: "bg-[#d1fae5] text-[#065f46]",
+  running: "bg-[#dbeafe] text-[#1e40af]",
+  pending: "bg-[#fef3c7] text-[#92400e]",
+  failed: "bg-[#fee2e2] text-[#991b1b]",
+  cancelled: "bg-[#f3f4f6] text-[#6b7280]",
 };
 
 function fmtNum(v: number): string {
@@ -679,21 +686,21 @@ export default function DataViewer() {
   );
 
   return (
-    <div className="dataviewer-page">
-      <div className="dv-header">
+    <div className="h-[calc(100vh-49px)] flex flex-col p-4">
+      <div className="flex items-center gap-4 mb-3">
         <Button onClick={() => history.goBack()}>返回</Button>
-        <h2>数据查看{!isNaN(tid) ? ` — 任务 #${tid}` : ""}</h2>
+        <h2 className="text-base font-semibold m-0">数据查看{!isNaN(tid) ? ` — 任务 #${tid}` : ""}</h2>
         {taskStatus && (
-          <span className={`dv-status status-${taskStatus}`}>
+          <span className={`text-xs px-2.5 py-0.5 rounded-[10px] font-medium ${STATUS_CLASS[taskStatus] || ""}`}>
             {STATUS_MAP[taskStatus] || taskStatus}
           </span>
         )}
       </div>
 
       {isNaN(tid) ? (
-        <div className="dv-empty">请从任务列表中选择一个任务查看数据</div>
+        <div className="text-center text-[#999] py-[120px] text-sm">请从任务列表中选择一个任务查看数据</div>
       ) : taskStatus === "cancelled" ? (
-        <div className="dv-empty">该任务已被取消，无仿真数据</div>
+        <div className="text-center text-[#999] py-[120px] text-sm">该任务已被取消，无仿真数据</div>
       ) : taskStatus === "failed" ? (
         <div style={{ textAlign: "center", padding: "80px 0" }}>
           <div
@@ -715,11 +722,11 @@ export default function DataViewer() {
           <Spin size="large" />
         </div>
       ) : columns.length === 0 ? (
-        <div className="dv-empty">该任务暂无输出数据</div>
+        <div className="text-center text-[#999] py-[120px] text-sm">该任务暂无输出数据</div>
       ) : (
-        <div className="dv-body">
-          <div className="dv-left">
-            <div className="dv-signal-header">
+        <div className="flex flex-1 gap-3 overflow-hidden">
+          <div className="w-[240px] shrink-0 border border-[#e8e8e8] rounded-md flex flex-col overflow-hidden">
+            <div className="flex items-center justify-between px-2.5 py-2 border-b border-[#e8e8e8] font-semibold text-[13px]">
               <span>信号列表 ({sigCols.length})</span>
               <Button size="small" onClick={toggleAllOff}>
                 全不选
@@ -734,22 +741,22 @@ export default function DataViewer() {
                 size="small"
               />
             </div>
-            <div className="dv-signal-list">
+            <div className="flex-1 overflow-y-auto px-2.5 py-1.5 flex flex-col gap-0.5">
               {filteredSigCols.map((c) => (
-                <label key={c.name} className="dv-signal-row">
+                <label key={c.name} className="flex items-center gap-1 cursor-pointer text-[13px] py-0.5">
                   <input
                     type="checkbox"
                     checked={checked[c.name] === true}
                     onChange={() => toggleChecked(c.name)}
                   />
-                  <span className="dv-signal-name">{c.name}</span>
+                  <span>{c.name}</span>
                 </label>
               ))}
             </div>
           </div>
-          <div className="dv-right">
-            <div className="dv-chart-section">
-              <div className="dv-chart-title">
+          <div className="flex-1 overflow-y-auto flex flex-col">
+            <div className="flex flex-col">
+              <div className="text-[13px] font-semibold text-[#555] mb-0.5 flex justify-between items-center">
                 时域图
                 <Button
                   size="small"
@@ -764,10 +771,10 @@ export default function DataViewer() {
                   导出SVG
                 </Button>
               </div>
-              <div ref={timeChartRef} className="dv-chart" />
+              <div ref={timeChartRef} className="min-h-[300px] min-w-full relative" />
             </div>
-            <div className="dv-chart-section">
-              <div className="dv-chart-title">
+            <div className="flex flex-col">
+              <div className="text-[13px] font-semibold text-[#555] mb-0.5 flex justify-between items-center">
                 频域图
                 <Button
                   size="small"
@@ -782,7 +789,7 @@ export default function DataViewer() {
                   导出SVG
                 </Button>
               </div>
-              <div ref={freqChartRef} className="dv-chart" />
+              <div ref={freqChartRef} className="min-h-[300px] min-w-full relative" />
             </div>
           </div>
         </div>

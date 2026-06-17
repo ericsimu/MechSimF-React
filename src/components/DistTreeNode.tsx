@@ -30,9 +30,12 @@ export default function DistTreeNode({
 
   if (Object.keys(dirs).length > 0) {
     nodes.push(
-      <div className="tree-node" key={`dir-${path}`}>
-        <label onClick={(e) => e.stopPropagation()}>
-          <span className="tree-toggle" onClick={() => onToggle(path)}>
+      <div className="whitespace-nowrap" key={`dir-${path}`}>
+        <label
+          className="flex items-center gap-0.5 px-3 py-0.5 cursor-pointer text-xs transition-colors duration-100 select-none hover:bg-[#e6f4ff]"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <span className="w-3.5 text-center text-[#999] shrink-0 cursor-pointer" onClick={() => onToggle(path)}>
             {expanded[path] ? "▼" : "▶"}
           </span>
           <span>{name}</span>
@@ -41,7 +44,7 @@ export default function DistTreeNode({
     );
     if (expanded[path]) {
       nodes.push(
-        <div className="tree-children" key={`dir-c-${path}`}>
+        <div className="pl-4" key={`dir-c-${path}`}>
           {Object.entries(dirs).map(([k, sub]) => (
             <DistTreeNode
               key={k}
@@ -63,8 +66,11 @@ export default function DistTreeNode({
 
   if (files.length > 0) {
     const fileNodes = files.map((f) => (
-      <div className="tree-node" key={f.path}>
-        <label onClick={(e) => e.stopPropagation()}>
+      <div className="whitespace-nowrap" key={f.path}>
+        <label
+          className="flex items-center gap-0.5 px-3 py-0.5 cursor-pointer text-xs transition-colors duration-100 select-none hover:bg-[#e6f4ff]"
+          onClick={(e) => e.stopPropagation()}
+        >
           <input
             type="checkbox"
             checked={!!checked[f.path]}
@@ -73,7 +79,7 @@ export default function DistTreeNode({
           <span
             style={{
               cursor: "pointer",
-              color: selFile === f.path ? "var(--accent)" : undefined,
+              color: selFile === f.path ? "#3b82f6" : undefined,
             }}
             onClick={() => onLeafClick(f.path)}
           >
@@ -83,14 +89,11 @@ export default function DistTreeNode({
       </div>
     ));
     nodes.push(
-      <div className="tree-files" key={`files-${path}`}>
+      <div className="pl-2" key={`files-${path}`}>
         {fileNodes}
       </div>,
     );
   }
 
   return nodes.length > 0 ? <>{nodes}</> : null;
-};
-
-
-
+}

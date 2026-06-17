@@ -35,16 +35,16 @@ function NavGroup({ item }: { item: NavItem }) {
     (c) => c.path && loc.pathname.startsWith(c.path),
   );
   return (
-    <div className="nav-group">
-      <div className={`nav-parent ${isChildActive ? "active" : ""}`}>{item.label}</div>
-      <div className="nav-sub">
+    <div className="m-0">
+      <div className={`py-3 px-5 pt-3 pb-1 text-white/50 text-lg font-medium select-none ${isChildActive ? "active" : ""}`}>{item.label}</div>
+      <div className="pb-2">
         {item.children!.map((c) =>
           c.path ? (
-            <NavLink key={c.label} to={c.path} activeClassName="active" className="nav-sub-item">
+            <NavLink key={c.label} to={c.path} activeClassName="active" className="block py-2.5 px-5 pb-2 pl-10 text-white/70 no-underline text-[15px] hover:text-white hover:bg-white/10 [&.active]:text-white [&.active]:font-medium">
               {c.label}
             </NavLink>
           ) : (
-            <span className="nav-sub-item" style={{ opacity: 0.5 }}>{c.label}</span>
+            <span className="block py-2.5 px-5 pb-2 pl-10 text-white/70 no-underline text-[15px]" style={{ opacity: 0.5 }}>{c.label}</span>
           ),
         )}
       </div>
@@ -56,26 +56,26 @@ function App() {
   const user = getCurrentUser();
   return (
     <ConfigProvider theme={{ token: { colorPrimary: "#3b82f6" } }} locale={zhCN}>
-      <div className="app-shell mechsim-app">
-        <aside className="sidebar">
-          <div className="sidebar-brand">MechSim</div>
-          <nav className="sidebar-nav">
+      <div className="flex h-full overflow-hidden">
+        <aside className="w-[200px] shrink-0 flex flex-col bg-gradient-to-b from-[#0f1b3d] via-[#1e3a8a] to-[#2563eb]">
+          <div className="py-5 px-5 text-lg font-bold text-white tracking-[0.5px]">MechSim</div>
+          <nav className="flex flex-col py-2">
             {navItems.map((item, i) =>
               item.path ? (
-                <NavLink key={item.path} to={item.path} exact activeClassName="active" className="nav-item">
+                <NavLink key={item.path} to={item.path} exact activeClassName="active" className="block py-3 px-5 text-white/85 no-underline text-lg cursor-pointer transition-[color,background] duration-150 hover:text-white hover:bg-white/[0.12] [&.active]:text-white [&.active]:font-semibold [&.active]:border [&.active]:border-white/50 [&.active]:rounded">
                   {item.label}
                 </NavLink>
               ) : (<NavGroup key={i} item={item} />),
             )}
           </nav>
-          <div className="sidebar-user" title="当前登录用户">{user}</div>
+          <div className="mt-auto py-3 px-5 text-xs text-white/60 border-t border-white/15" title="当前登录用户">{user}</div>
         </aside>
-        <div className="app-body">
-          <header className="app-header">
-            <span className="header-breadcrumb">MechSim (机电仿真平台)</span>
-            <span className="header-user">{user}</span>
+        <div className="flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden">
+          <header className="py-3.5 px-6 bg-white border-b border-[#e8e8e8] flex items-center">
+            <span className="text-sm text-[#333] font-medium">MechSim (机电仿真平台)</span>
+            <span className="text-[13px] text-[#888] ml-auto">{user}</span>
           </header>
-          <main className="app-main">
+          <main className="flex-1 p-0 min-h-0 flex flex-col overflow-hidden">
             <Switch>
               <Route path={`${PREFIX}/cases`} component={CaseList} />
               <Route path={`${PREFIX}/tasks`} component={Tasks} />

@@ -30,11 +30,12 @@ export default function TreeNode({
 }: TreeNodeProps) {
   const nested = isObject(value);
   const childLast = isLastLayer(value);
+  const isSelected = selPath === path;
 
   return (
-    <div className="tree-node">
+    <div className="whitespace-nowrap">
       <label
-        className={selPath === path ? "selected" : ""}
+        className={`flex items-center gap-0.5 px-3 py-0.5 cursor-pointer text-xs transition-colors duration-100 select-none hover:bg-[#e6f4ff] ${isSelected ? "bg-[#bae0ff] !text-[#1677ff] font-medium" : ""}`}
         onClick={(e) => {
           e.stopPropagation();
           onSelect(path);
@@ -42,7 +43,7 @@ export default function TreeNode({
       >
         {nested && !childLast ? (
           <span
-            className="tree-toggle"
+            className="w-3.5 text-center text-[#999] shrink-0 cursor-pointer"
             onClick={(e) => {
               e.stopPropagation();
               onToggle(path);
@@ -51,14 +52,14 @@ export default function TreeNode({
             {expanded[path] ? "▼" : "▶"}
           </span>
         ) : (
-          <span className="tree-toggle" style={{ visibility: "hidden" }}>
+          <span className="w-3.5 text-center shrink-0" style={{ visibility: "hidden" }}>
             {"▶"}
           </span>
         )}
         <span>{name}</span>
       </label>
       {nested && !childLast && expanded[path] && (
-        <div className="tree-children">
+        <div className="pl-4">
           {Object.entries(value)
             .filter(([k]) => k !== "_labels" && k !== "_units" && k !== "ID")
             .map(([k, v]) => (
@@ -77,7 +78,4 @@ export default function TreeNode({
       )}
     </div>
   );
-};
-
-
-
+}

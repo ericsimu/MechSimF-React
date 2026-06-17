@@ -20,6 +20,14 @@ const STATUS_LABELS: Record<string, string> = {
   cancelled: "已取消",
 };
 
+const STATUS_CLASS: Record<string, string> = {
+  done: "bg-[#d1fae5] text-[#065f46]",
+  running: "bg-[#dbeafe] text-[#1e40af]",
+  pending: "bg-[#fef3c7] text-[#92400e]",
+  failed: "bg-[#fee2e2] text-[#991b1b]",
+  cancelled: "bg-[#f3f4f6] text-[#6b7280]",
+};
+
 export default function Tasks() {
   const [tasks, setTasks] = useState<SimTask[]>([]);
   const [loading, setLoading] = useState(true);
@@ -156,7 +164,7 @@ export default function Tasks() {
       dataIndex: "status",
       key: "status",
       render: (s: string) => (
-        <span className={`dv-status status-${s}`}>{STATUS_LABELS[s] || s}</span>
+        <span className={`text-xs px-2.5 py-0.5 rounded-[10px] font-medium ${STATUS_CLASS[s] || ""}`}>{STATUS_LABELS[s] || s}</span>
       ),
     },
     {
@@ -165,7 +173,7 @@ export default function Tasks() {
       key: "param_diff",
       render: (_: unknown, record: SimTask) =>
         record.param_diff ? (
-          <span className="task-id-link" onClick={() => showDiff(record)}>
+          <span className="text-[#3b82f6] cursor-pointer font-medium hover:underline" onClick={() => showDiff(record)}>
             查看
           </span>
         ) : (
@@ -208,9 +216,9 @@ export default function Tasks() {
   ];
 
   return (
-    <div className="tasks-page">
-      <div className="page-header">
-        <h2>任务列表</h2>
+    <div className="p-4 flex flex-col flex-1 min-h-0">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-base font-semibold m-0">任务列表</h2>
       </div>
       <Table
         columns={columns}
@@ -243,7 +251,7 @@ export default function Tasks() {
             ]}
           />
         ) : (
-          <div className="diff-empty">无变更</div>
+          <div className="text-center text-[#999] py-10 text-[13px]">无变更</div>
         )}
       </Modal>
     </div>

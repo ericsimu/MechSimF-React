@@ -35,8 +35,8 @@ export default function DisturbTab({
   startResizeLeft,
 }: Props) {
   return (
-    <div className="edit-body">
-      <div className="edit-left" style={{ width: leftWidth }}>
+    <div className="flex-1 flex overflow-hidden min-h-0">
+      <div className="shrink-0 overflow-y-auto overflow-x-hidden box-border border-r border-[#f0f0f0] bg-[#fafafa] pb-3 min-h-0" style={{ width: leftWidth }}>
         {disturbEntries.map(([k, v]) => (
           <DistTreeNode
             key={k}
@@ -54,8 +54,11 @@ export default function DisturbTab({
         {(disturbTree.files?.length ?? 0) > 0 && (
           <>
             {disturbTree.files!.map((f) => (
-              <div className="tree-node" key={f.path}>
-                <label onClick={(e) => e.stopPropagation()}>
+              <div className="whitespace-nowrap" key={f.path}>
+                <label
+                  className="flex items-center gap-0.5 px-3 py-0.5 cursor-pointer text-xs transition-colors duration-100 select-none hover:bg-[#e6f4ff]"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <input
                     type="checkbox"
                     checked={!!disturbChecked[f.path]}
@@ -64,10 +67,7 @@ export default function DisturbTab({
                   <span
                     style={{
                       cursor: "pointer",
-                      color:
-                        selDisturbFile === f.path
-                          ? "#3b82f6"
-                          : undefined,
+                      color: selDisturbFile === f.path ? "#3b82f6" : undefined,
                     }}
                     onClick={() => onLeafClick(f.path)}
                   >
@@ -80,23 +80,23 @@ export default function DisturbTab({
         )}
       </div>
       <div
-        className="h-resize-handle"
+        className="w-1 bg-[#f0f0f0] cursor-col-resize shrink-0 border-l border-r border-[#e8e8e8] transition-colors hover:bg-[#d9d9d9]"
         onMouseDown={startResizeLeft}
       />
-      <div className="edit-right">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden box-border px-4 py-3 min-w-0 min-h-0">
         {disturbColumns.length > 0 && (
           <>
-            <div ref={chartRef} className="chart-container" />
-            <div className="chart-legend">
+            <div ref={chartRef} className="mb-2" />
+            <div className="flex flex-wrap gap-x-4 gap-y-1 px-1.5 py-1.5 text-xs">
               {disturbColumns.map((c, i) => (
-                <label key={c.name} className="chart-legend-item">
+                <label key={c.name} className="inline-flex items-center gap-1 cursor-pointer select-none text-[#555] hover:line-through">
                   <input
                     type="checkbox"
                     checked={disturbVisible[c.name] !== false}
                     onChange={() => onToggleVisible(c.name)}
                   />
                   <span
-                    className="legend-dot"
+                    className="w-2 h-2 rounded-full shrink-0"
                     style={{
                       backgroundColor: `hsl(${(i * 60) % 360},70%,50%)`,
                     }}

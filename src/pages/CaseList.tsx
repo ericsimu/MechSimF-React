@@ -37,7 +37,6 @@ import IndicatorTab from "../components/IndicatorTab";
 import uPlot from "uplot";
 import "uplot/dist/uPlot.min.css";
 import { isNil } from "../utils/isNil";
-import "./CaseList.css";
 
 // ── Constants ──
 const PRODUCTIVITY_OPTIONS = ["100WPH", "150WPH"];
@@ -1095,8 +1094,8 @@ export default function CaseList() {
   ];
 
   return (
-    <div className="case-page">
-      <div className="case-layout">
+    <div className="h-[calc(100vh-49px)] flex flex-col overflow-hidden text-[13px] text-[#333]">
+      <div className="flex flex-1 overflow-hidden min-h-0">
         <CaseSidebar
           cases={cases}
           loading={loading}
@@ -1106,8 +1105,8 @@ export default function CaseList() {
         />
 
         {/* Main Content */}
-        <div className="case-main">
-          <div className="split-container">
+        <div className="flex-1 flex flex-col overflow-hidden min-w-0 min-h-0">
+          <div className="flex flex-col flex-1 overflow-hidden min-h-0">
             <CaseDetail
               editCase={editCase}
               editingCell={editingCell}
@@ -1122,18 +1121,18 @@ export default function CaseList() {
             />
 
             {editCase && (
-              <div className="edit-panel">
-                <div className="edit-toolbar">
-                  <div className="toolbar-actions">
+              <div className="flex-1 flex flex-col overflow-hidden min-h-0">
+                <div className="flex justify-end items-center px-4 py-2 bg-[#fafafa] border-b border-[#f0f0f0] shrink-0">
+                  <div className="flex gap-2">
                     <Button
-                      className="btn-outline"
+                      className="!text-[#3b82f6] !border-none !bg-transparent !font-medium !shadow-none hover:!bg-[rgba(59,130,246,0.08)]"
                       size="small"
                       onClick={openTaskModal}
                     >
                       创建任务
                     </Button>
                     <Button
-                      className="btn-outline"
+                      className="!text-[#3b82f6] !border-none !bg-transparent !font-medium !shadow-none hover:!bg-[rgba(59,130,246,0.08)]"
                       size="small"
                       loading={saving}
                       onClick={() => handleSave()}
@@ -1173,16 +1172,16 @@ export default function CaseList() {
           </Button>,
         ]}
       >
-        <div className="form-group">
-          <label className="form-label">用例名称</label>
+        <div className="mb-3">
+          <label className="block mb-1 text-[13px] font-medium text-[#333]">用例名称</label>
           <Input
             value={addName}
             onChange={(e) => setAddName(e.target.value)}
             placeholder="输入用例名称"
           />
         </div>
-        <div className="form-group">
-          <label className="form-label">用例描述</label>
+        <div className="mb-3">
+          <label className="block mb-1 text-[13px] font-medium text-[#333]">用例描述</label>
           <Input.TextArea
             value={addDesc}
             onChange={(e) => setAddDesc(e.target.value)}
@@ -1202,11 +1201,11 @@ export default function CaseList() {
         onCancel={() => setShareOpen(false)}
         footer={null}
       >
-        <div className="share-subtitle">已共享用户</div>
+        <div className="text-[13px] font-semibold text-[#555] mb-2">已共享用户</div>
         {shareUsers.length > 0 ? (
-          <div className="share-list">
+          <div className="mb-3">
             {shareUsers.map((u) => (
-              <div className="share-user-row" key={u}>
+              <div className="flex justify-between items-center px-2 py-1.5 border-b border-[#f0f0f0] text-[13px]" key={u}>
                 <span>{u}</span>
                 <Button size="small" danger onClick={() => handleUnshare(u)}>
                   移除
@@ -1215,9 +1214,9 @@ export default function CaseList() {
             ))}
           </div>
         ) : (
-          <div className="share-empty">暂无共享用户</div>
+          <div className="text-[#999] text-xs mb-3">暂无共享用户</div>
         )}
-        <div className="share-add-row">
+        <div className="flex gap-2 items-center">
           <Input
             value={shareNewUser}
             onChange={(e) => setShareNewUser(e.target.value)}
@@ -1250,7 +1249,7 @@ export default function CaseList() {
           </Button>,
         ]}
       >
-        <div className="diff-section-title">参数变更预览</div>
+        <div className="text-[13px] font-semibold text-[#333] mb-2">参数变更预览</div>
         {diffRows.length > 0 ? (
           <Table
             size="small"
@@ -1258,13 +1257,13 @@ export default function CaseList() {
             dataSource={diffRows.map((r, i) => ({ ...r, _key: i }))}
             rowKey="_key"
             columns={[
-              { title: "参数路径", dataIndex: "path", className: "diff-path" },
-              { title: "原值", dataIndex: "old", className: "diff-old" },
-              { title: "新值", dataIndex: "new", className: "diff-new" },
+              { title: "参数路径", dataIndex: "path", className: "font-mono text-xs" },
+              { title: "原值", dataIndex: "old", className: "text-[#ff4d4f] font-mono text-xs" },
+              { title: "新值", dataIndex: "new", className: "text-[#52c41a] font-mono text-xs" },
             ]}
           />
         ) : (
-          <div className="diff-empty">无变更</div>
+          <div className="text-[#999] text-[13px] py-6 text-center">无变更</div>
         )}
       </Modal>
 
@@ -1291,7 +1290,7 @@ export default function CaseList() {
         <p>
           确定要删除用例 <b>{deleteTarget?.name}</b> 吗？
         </p>
-        <p className="delete-hint">此操作不可撤销</p>
+        <p className="text-[#999] text-xs">此操作不可撤销</p>
       </Modal>
     </div>
   );

@@ -9,7 +9,7 @@ interface Props {
 
 export default function ModelTab({ systems, draft, onSysChange, onDraftChange }: Props) {
   return (
-    <div className="edit-right">
+    <div className="flex-1 overflow-y-auto overflow-x-hidden box-border px-4 py-3 min-w-0 min-h-0">
       <ModelSelectPanel
         systems={systems}
         draft={draft}
