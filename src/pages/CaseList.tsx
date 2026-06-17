@@ -28,12 +28,12 @@ import type {
   DisturbanceColumn,
   AddCaseRequest,
 } from "../types/api";
-import TreeNode from "../components/TreeNode";
-import DistTreeNode from "../components/DistTreeNode";
 import CaseSidebar from "../components/CaseSidebar";
 import CaseDetail from "../components/CaseDetail";
-import ModelSelectPanel from "../components/ModelSelectPanel";
-import ParamEditor from "../components/ParamEditor";
+import ModelTab from "../components/ModelTab";
+import ParamTab from "../components/ParamTab";
+import DisturbTab from "../components/DisturbTab";
+import IndicatorTab from "../components/IndicatorTab";
 import uPlot from "uplot";
 import "uplot/dist/uPlot.min.css";
 import { isNil } from "../utils/isNil";
@@ -693,6 +693,28 @@ export default function CaseList() {
     dirtyValues.current.clear();
   }
 
+  const handleDraftChange = useCallback(
+    (patch: Record<string, any>) => {
+      if ("model_verison" in patch && patch.model_verison !== editDraft.model_verison) {
+        setEditDraft((prev) => ({
+          ...prev,
+          ...patch,
+          sys_name: "",
+          model_name: "",
+          init_script: "",
+        }));
+        paramVarsRef.current = {};
+        setParamVars({});
+        setSelParamPath("");
+        setParamEditGroups([]);
+        dirtyValues.current.clear();
+      } else {
+        setEditDraft((prev) => ({ ...prev, ...patch }));
+      }
+    },
+    [editDraft.model_verison],
+  );
+
   /** 根据路径从 paramVarsRef 构建参数编辑分组，填充 paramEditGroups。
    *  activate=true 时同时切换到 param 区段（用于树节点点击）。 */
   function selectParamNode(path: string, activate: boolean) {
@@ -1005,6 +1027,73 @@ export default function CaseList() {
   }
 
   // ── Render ──
+  const tabItems = [
+    {
+      key: "model",
+      label: "模型选择",
+      children: (
+        <ModelTab
+          systems={systems}
+          draft={editDraft}
+          onSysChange={onSystemChange}
+          onDraftChange={handleDraftChange}
+        />
+      ),
+    },
+    {
+      key: "param",
+      label: "参数配置",
+      children: (
+        <ParamTab
+          leftWidth={leftWidth}
+          paramEntries={paramEntries}
+          selParamPath={selParamPath}
+          paramExpanded={paramExpanded}
+          onToggle={(p) =>
+            setParamExpanded((prev) => ({ ...prev, [p]: !prev[p] }))
+          }
+          onSelect={onParamSelect}
+          paramEditGroups={paramEditGroups}
+          dirtyValues={dirtyValues}
+          onSave={saveParamGroup}
+          onForceUpdate={() => setParamVars((prev) => ({ ...prev }))}
+          startResizeLeft={startResizeLeft}
+        />
+      ),
+    },
+    {
+      key: "disturb",
+      label: "扰动分析",
+      children: (
+        <DisturbTab
+          leftWidth={leftWidth}
+          disturbEntries={disturbEntries}
+          disturbChecked={disturbChecked}
+          disturbExpanded={disturbExpanded}
+          selDisturbFile={selDisturbFile}
+          onToggle={(p) =>
+            setDisturbExpanded((prev) => ({ ...prev, [p]: !prev[p] }))
+          }
+          onCheck={onDisturbCheck}
+          onLeafClick={onDisturbLeafClick}
+          disturbTree={disturbTree}
+          disturbColumns={disturbColumns}
+          disturbVisible={disturbVisible}
+          onToggleVisible={(name) =>
+            setDisturbVisible((prev) => ({ ...prev, [name]: !prev[name] }))
+          }
+          chartRef={chartRef}
+          startResizeLeft={startResizeLeft}
+        />
+      ),
+    },
+    {
+      key: "indicator",
+      label: "指标分析",
+      children: <IndicatorTab />,
+    },
+  ];
+
   return (
     <div className="case-page">
       <div className="case-layout">
@@ -1057,190 +1146,7 @@ export default function CaseList() {
                   className="edit-tabs"
                   activeKey={activeTab}
                   onChange={handleTabChange}
-                  items={[
-                    {
-                      key: "model",
-                      label: "模型选择",
-                      children: (
-                        <div className="edit-right">
-                          <ModelSelectPanel
-                            systems={systems}
-                            draft={editDraft}
-                            onSysChange={onSystemChange}
-                            onDraftChange={(patch) => {
-                              if ("model_verison" in patch && patch.model_verison !== editDraft.model_verison) {
-                                // 切换版本时清空系统选择和参数
-                                setEditDraft((prev) => ({
-                                  ...prev,
-                                  ...patch,
-                                  sys_name: "",
-                                  model_name: "",
-                                  init_script: "",
-                                }));
-                                paramVarsRef.current = {};
-                                setParamVars({});
-                                setSelParamPath("");
-                                setParamEditGroups([]);
-                                dirtyValues.current.clear();
-                              } else {
-                                setEditDraft((prev) => ({ ...prev, ...patch }));
-                              }
-                            }}
-                          />
-                        </div>
-                      ),
-                    },
-                    {
-                      key: "param",
-                      label: "参数配置",
-                      children: (
-                        <div className="edit-body">
-                          <div className="edit-left" style={{ width: leftWidth }}>
-                            {paramEntries.map(([k, v]) => (
-                              <TreeNode
-                                key={k}
-                                name={k}
-                                value={v}
-                                path={k}
-                                selPath={selParamPath}
-                                expanded={paramExpanded}
-                                onToggle={(p) =>
-                                  setParamExpanded((prev) => ({
-                                    ...prev,
-                                    [p]: !prev[p],
-                                  }))
-                                }
-                                onSelect={onParamSelect}
-                              />
-                            ))}
-                            {paramEntries.length === 0 && (
-                              <div className="tree-empty">暂无参数数据</div>
-                            )}
-                          </div>
-                          <div
-                            className="h-resize-handle"
-                            onMouseDown={startResizeLeft}
-                          />
-                          <div className="edit-right">
-                            {paramEditGroups.length > 0 && (
-                              <ParamEditor
-                                groups={paramEditGroups}
-                                dirtyValues={dirtyValues}
-                                onSave={saveParamGroup}
-                                forceUpdate={() =>
-                                  setParamVars((prev) => ({ ...prev }))
-                                }
-                              />
-                            )}
-                          </div>
-                        </div>
-                      ),
-                    },
-                    {
-                      key: "disturb",
-                      label: "扰动分析",
-                      children: (
-                        <div className="edit-body">
-                          <div className="edit-left" style={{ width: leftWidth }}>
-                            {disturbEntries.map(([k, v]) => (
-                              <DistTreeNode
-                                key={k}
-                                name={k}
-                                value={v}
-                                path={k}
-                                checked={disturbChecked}
-                                expanded={disturbExpanded}
-                                selFile={selDisturbFile}
-                                onToggle={(p) =>
-                                  setDisturbExpanded((prev) => ({
-                                    ...prev,
-                                    [p]: !prev[p],
-                                  }))
-                                }
-                                onCheck={onDisturbCheck}
-                                onLeafClick={onDisturbLeafClick}
-                              />
-                            ))}
-                            {(disturbTree.files?.length ?? 0) > 0 && (
-                              <>
-                                {disturbTree.files!.map((f) => (
-                                  <div className="tree-node" key={f.path}>
-                                    <label onClick={(e) => e.stopPropagation()}>
-                                      <input
-                                        type="checkbox"
-                                        checked={!!disturbChecked[f.path]}
-                                        onChange={() => onDisturbCheck(f.path)}
-                                      />
-                                      <span
-                                        style={{
-                                          cursor: "pointer",
-                                          color:
-                                            selDisturbFile === f.path
-                                              ? "#3b82f6"
-                                              : undefined,
-                                        }}
-                                        onClick={() => onDisturbLeafClick(f.path)}
-                                      >
-                                        {f.name}
-                                      </span>
-                                    </label>
-                                  </div>
-                                ))}
-                              </>
-                            )}
-                          </div>
-                          <div
-                            className="h-resize-handle"
-                            onMouseDown={startResizeLeft}
-                          />
-                          <div className="edit-right">
-                            {disturbColumns.length > 0 && (
-                              <>
-                                <div ref={chartRef} className="chart-container" />
-                                <div className="chart-legend">
-                                  {disturbColumns.map((c, i) => (
-                                    <label key={c.name} className="chart-legend-item">
-                                      <input
-                                        type="checkbox"
-                                        checked={disturbVisible[c.name] !== false}
-                                        onChange={() =>
-                                          setDisturbVisible((prev) => ({
-                                            ...prev,
-                                            [c.name]: !prev[c.name],
-                                          }))
-                                        }
-                                      />
-                                      <span
-                                        className="legend-dot"
-                                        style={{
-                                          backgroundColor: `hsl(${(i * 60) % 360},70%,50%)`,
-                                        }}
-                                      />
-                                      {c.name}
-                                    </label>
-                                  ))}
-                                </div>
-                              </>
-                            )}
-                            {disturbColumns.length === 0 && (
-                              <div className="edit-right-empty">
-                                点击左侧文件查看扰动数据
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      ),
-                    },
-                    {
-                      key: "indicator",
-                      label: "指标分析",
-                      children: (
-                        <div className="edit-right" style={{ padding: "40px", textAlign: "center", color: "#999" }}>
-                          此页面暂未填充内容
-                        </div>
-                      ),
-                    },
-                  ]}
+                  items={tabItems}
                 />
               </div>
             )}
