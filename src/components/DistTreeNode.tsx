@@ -65,9 +65,6 @@ export default function DistTreeNode({
     const fileNodes = files.map((f) => (
       <div className="tree-node" key={f.path}>
         <label onClick={(e) => e.stopPropagation()}>
-          <span className="tree-toggle" style={{ visibility: "hidden" }}>
-            {"▶"}
-          </span>
           <input
             type="checkbox"
             checked={!!checked[f.path]}
@@ -86,7 +83,7 @@ export default function DistTreeNode({
       </div>
     ));
     nodes.push(
-      <div className="tree-children" key={`files-${path}`}>
+      <div className="tree-files" key={`files-${path}`}>
         {fileNodes}
       </div>,
     );

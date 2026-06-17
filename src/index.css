@@ -103,8 +103,8 @@ body {
 /* ── MechSim App Layout (nested inside parent) ── */
 .app-shell {
   display: flex;
-  flex: 1;
-  min-height: 0;
+  height: 100%;
+  overflow: hidden;
 }
 
 /* ── Sidebar ── */
