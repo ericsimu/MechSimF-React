@@ -66,6 +66,22 @@ export interface SimTask extends BaseModel {
   sim_step: number | null;
 }
 
+/** 从用例信息构建的仿真参数（字段与 run_tasks 下发给引擎的一致）。
+ *  用例阶段尚无任务，task_id / workspace_path 为 null。 */
+export interface SimPayload {
+  task_id: number | null;
+  workspace_path: string | null;
+  sys_name: string;
+  model_name: string;
+  init_script: string;
+  model_version: string;
+  model_productivity: string;
+  param_diff: string;
+  disturbance: string;
+  sim_time: number | null;
+  sim_step: number | null;
+}
+
 // ── Share ──
 
 export interface CaseShare extends BaseModel {

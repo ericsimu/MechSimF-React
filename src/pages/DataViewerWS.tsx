@@ -1,13 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useParams, useHistory, useLocation } from "react-router-dom";
 import { Button, Input, Spin } from "antd";
-import {
-  getTaskDataColumns,
-  getTaskSignals,
-  getTaskStatus,
-  getWorkspaceDataColumns,
-  getWorkspaceSignals,
-} from "../api/index";
+import { getWorkspaceDataColumns, getWorkspaceSignals } from "../api/index";
 import type { DisturbanceColumn } from "../types/api";
 import uPlot from "uplot";
 import "uplot/dist/uPlot.min.css";
@@ -26,22 +19,6 @@ const COLORS = [
   "#6366f1",
 ];
 
-const STATUS_MAP: Record<string, string> = {
-  pending: "等待中",
-  running: "运行中",
-  done: "已完成",
-  failed: "失败",
-  cancelled: "已取消",
-};
-
-const STATUS_CLASS: Record<string, string> = {
-  done: "bg-[#d1fae5] text-[#065f46]",
-  running: "bg-[#dbeafe] text-[#1e40af]",
-  pending: "bg-[#fef3c7] text-[#92400e]",
-  failed: "bg-[#fee2e2] text-[#991b1b]",
-  cancelled: "bg-[#f3f4f6] text-[#6b7280]",
-};
-
 function fmtNum(v: number): string {
   if (!isFinite(v)) return String(v);
   const av = Math.abs(v);
@@ -50,7 +27,6 @@ function fmtNum(v: number): string {
   const s = v.toFixed(10);
   return s.includes(".") ? s.replace(/\.?0+$/, "") : s;
 }
-
 
 type CursorLabels = {
   hook: (u: any) => void;
@@ -106,22 +82,16 @@ function makeCursorLabels(
   };
 }
 
-export default function DataViewer() {
-  const { taskId } = useParams<{ taskId: string }>();
-  const history = useHistory();
-  const location = useLocation();
-  const tid = Number(taskId);
+interface Props {
+  /** 工作路径：绝对路径或相对 WORKSPACE_ROOT 的名称（如 "task_12"）。 */
+  workspace: string;
+}
 
-  // ── Data source: task (route param) or workspace (?workspace= query) ──
-  const workspace = new URLSearchParams(location.search).get("workspace") || "";
-  const isWs = workspace.length > 0;
-  const [wsInput, setWsInput] = useState(workspace);
-
+/** 独立的工作路径数据查看模块：按 workspace 读取并绘制时域/频域信号。 */
+export default function DataViewerWS({ workspace }: Props) {
   const [loading, setLoading] = useState(true);
   const [columns, setColumns] = useState<DisturbanceColumn[]>([]);
   const [fftColumns, setFftColumns] = useState<DisturbanceColumn[]>([]);
-  const [taskStatus, setTaskStatus] = useState("");
-  const [taskError, setTaskError] = useState("");
   const [checked, setChecked] = useState<Record<string, boolean>>({});
   const [searchText, setSearchText] = useState("");
 
@@ -143,43 +113,19 @@ export default function DataViewer() {
   const freqLabels = useRef<CursorLabels | null>(null);
 
   const columnsRef = useRef(columns);
-
-
   columnsRef.current = columns;
   const fftColumnsRef = useRef(fftColumns);
-
-
   fftColumnsRef.current = fftColumns;
   const checkedRef = useRef(checked);
-
-
   checkedRef.current = checked;
   const isTimeZoomedRef = useRef(isTimeZoomed);
-
-
   isTimeZoomedRef.current = isTimeZoomed;
   const isFreqZoomedRef = useRef(isFreqZoomed);
-
-
   isFreqZoomedRef.current = isFreqZoomed;
 
-  // Keep the current data source in a ref so memoized handlers (zoom/select)
-  // always fetch from the right source even if they captured an older closure.
-  const srcRef = useRef({ isWs, workspace, tid });
-  srcRef.current = { isWs, workspace, tid };
-
-  function fetchSignalsApi(
-    names: string[],
-    domain: "time" | "fft",
-    start?: number,
-    end?: number,
-    raw?: boolean,
-  ) {
-    const s = srcRef.current;
-    return s.isWs
-      ? getWorkspaceSignals(s.workspace, names, domain, start, end, raw)
-      : getTaskSignals(s.tid, names, domain, start, end, raw);
-  }
+  // Keep workspace in a ref so memoized handlers always read the latest value.
+  const wsRef = useRef(workspace);
+  wsRef.current = workspace;
 
   async function fetchSignals(
     names: string[],
@@ -224,7 +170,8 @@ export default function DataViewer() {
 
     const raw = domain === "fft" || (hasRange && rangeEnd! - rangeStart! < 1.0);
     try {
-      const r = await fetchSignalsApi(
+      const r = await getWorkspaceSignals(
+        wsRef.current,
         toFetch,
         domain,
         rangeStart,
@@ -251,17 +198,15 @@ export default function DataViewer() {
     }
   }
 
-  const toggleChecked = useCallback(
-    (name: string) => {
-      const newVal = !checkedRef.current[name];
-      setChecked((prev) => ({ ...prev, [name]: newVal }));
-      if (newVal) {
-        fetchSignals([name], "time");
-        fetchSignals([name], "fft");
-      }
-    },
-    [tid],
-  );
+  const toggleChecked = useCallback((name: string) => {
+    const newVal = !checkedRef.current[name];
+    setChecked((prev) => ({ ...prev, [name]: newVal }));
+    if (newVal) {
+      fetchSignals([name], "time");
+      fetchSignals([name], "fft");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function toggleAllOff() {
     setChecked({});
@@ -313,199 +258,168 @@ export default function DataViewer() {
   }
 
   // Zoom-in handler (drag-to-zoom)
-  const makeSelectHandler = useCallback(
-    (domain: "time" | "fft") => {
-      let timer: ReturnType<typeof setTimeout> | null = null;
-      let pending: { start: number; end: number } | null = null;
-      return (u: any) => {
-        const buildAt =
-          domain === "time" ? timeBuildAt.current : freqBuildAt.current;
-        if (Date.now() - buildAt < 500) return;
-        if (u.select && u.select.width > 5) {
-          const xMin = u.posToVal(u.select.left, "x");
-          const xMax = u.posToVal(u.select.left + u.select.width, "x");
-          pending = { start: Math.min(xMin, xMax), end: Math.max(xMin, xMax) };
+  const makeSelectHandler = useCallback((domain: "time" | "fft") => {
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    let pending: { start: number; end: number } | null = null;
+    return (u: any) => {
+      const buildAt =
+        domain === "time" ? timeBuildAt.current : freqBuildAt.current;
+      if (Date.now() - buildAt < 500) return;
+      if (u.select && u.select.width > 5) {
+        const xMin = u.posToVal(u.select.left, "x");
+        const xMax = u.posToVal(u.select.left + u.select.width, "x");
+        pending = { start: Math.min(xMin, xMax), end: Math.max(xMin, xMax) };
+      }
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(async () => {
+        if (!pending) return;
+        const rng = pending;
+        pending = null;
+        const zoomed =
+          domain === "time"
+            ? isTimeZoomedRef.current
+            : isFreqZoomedRef.current;
+        const target =
+          domain === "fft" ? fftColumnsRef.current : columnsRef.current;
+        if (!zoomed) {
+          if (domain === "time")
+            fullColumns.current = target.map((c) => ({
+              name: c.name,
+              data: [...c.data],
+            }));
+          else
+            fullFftColumns.current = target.map((c) => ({
+              name: c.name,
+              data: [...c.data],
+            }));
         }
-        if (timer) clearTimeout(timer);
-        timer = setTimeout(async () => {
-          if (!pending) return;
-          const rng = pending;
-          pending = null;
-          const zoomed =
-            domain === "time"
-              ? isTimeZoomedRef.current
-              : isFreqZoomedRef.current;
-          const target =
-            domain === "fft" ? fftColumnsRef.current : columnsRef.current;
-          if (!zoomed) {
-            if (domain === "time")
-              fullColumns.current = target.map((c) => ({
-                name: c.name,
-                data: [...c.data],
-              }));
-            else
-              fullFftColumns.current = target.map((c) => ({
-                name: c.name,
-                data: [...c.data],
-              }));
-          }
-          const sigs: string[] = u.series
-            .slice(1)
-            .map((s: any) => s.label)
-            .filter(Boolean);
-          if (sigs.length === 0) return;
-          const xName = domain === "fft" ? "frequency" : "time";
-          const zoomRange = rng.end - rng.start;
-          const raw = domain === "fft" || zoomRange < 1.0;
-          const r = await fetchSignalsApi(
-            [xName, ...sigs],
-            domain,
-            rng.start,
-            rng.end,
-            raw,
-          );
-          if (r.success && r.data) {
-            const setTarget = domain === "fft" ? setFftColumns : setColumns;
-            setTarget((prev) => {
-              const updated = [...prev];
-              for (const sc of r.data!.columns) {
-                const idx = updated.findIndex((c) => c.name === sc.name);
-                if (idx >= 0) updated[idx] = { ...updated[idx], data: sc.data };
-              }
-              return updated;
-            });
-            if (domain === "time") {
-              setIsTimeZoomed(true);
-              isTimeZoomedRef.current = true;
-            } else {
-              setIsFreqZoomed(true);
-              isFreqZoomedRef.current = true;
+        const sigs: string[] = u.series
+          .slice(1)
+          .map((s: any) => s.label)
+          .filter(Boolean);
+        if (sigs.length === 0) return;
+        const xName = domain === "fft" ? "frequency" : "time";
+        const zoomRange = rng.end - rng.start;
+        const raw = domain === "fft" || zoomRange < 1.0;
+        const r = await getWorkspaceSignals(
+          wsRef.current,
+          [xName, ...sigs],
+          domain,
+          rng.start,
+          rng.end,
+          raw,
+        );
+        if (r.success && r.data) {
+          const setTarget = domain === "fft" ? setFftColumns : setColumns;
+          setTarget((prev) => {
+            const updated = [...prev];
+            for (const sc of r.data!.columns) {
+              const idx = updated.findIndex((c) => c.name === sc.name);
+              if (idx >= 0) updated[idx] = { ...updated[idx], data: sc.data };
             }
+            return updated;
+          });
+          if (domain === "time") {
+            setIsTimeZoomed(true);
+            isTimeZoomedRef.current = true;
+          } else {
+            setIsFreqZoomed(true);
+            isFreqZoomedRef.current = true;
           }
-        }, 200);
-      };
-    },
-    [tid],
-  );
+        }
+      }, 200);
+    };
+  }, []);
 
   // Zoom-out restore (double-click)
-  const restoreZoom = useCallback(
-    (domain: "time" | "fft") => {
-      const zoomed =
-        domain === "time" ? isTimeZoomedRef.current : isFreqZoomedRef.current;
-      const full =
-        domain === "time" ? fullColumns.current : fullFftColumns.current;
-      if (!zoomed || !full) return;
+  const restoreZoom = useCallback((domain: "time" | "fft") => {
+    const zoomed =
+      domain === "time" ? isTimeZoomedRef.current : isFreqZoomedRef.current;
+    const full =
+      domain === "time" ? fullColumns.current : fullFftColumns.current;
+    if (!zoomed || !full) return;
 
-      if (domain === "time") {
-        fullColumns.current = null;
-        setIsTimeZoomed(false);
-        isTimeZoomedRef.current = false;
-        timeBuildAt.current = Date.now();
-        const checkedNames = Object.keys(checkedRef.current).filter(
-          (k) => checkedRef.current[k],
-        );
-        if (checkedNames.length > 0) {
-          // Sync-clear ref so fetchSignals sees empty data immediately (matching Vue behavior)
-          for (const name of checkedNames) {
-            const col = columnsRef.current.find((c) => c.name === name);
-            if (col) col.data = [];
-          }
-          const timeCol = columnsRef.current.find(
-            (c) => c.name.toLowerCase() === "time",
-          );
-          if (timeCol) timeCol.data = [];
-          setColumns([...columnsRef.current]);
-          fetchSignals(checkedNames, "time");
+    if (domain === "time") {
+      fullColumns.current = null;
+      setIsTimeZoomed(false);
+      isTimeZoomedRef.current = false;
+      timeBuildAt.current = Date.now();
+      const checkedNames = Object.keys(checkedRef.current).filter(
+        (k) => checkedRef.current[k],
+      );
+      if (checkedNames.length > 0) {
+        for (const name of checkedNames) {
+          const col = columnsRef.current.find((c) => c.name === name);
+          if (col) col.data = [];
         }
-      } else {
-        fullFftColumns.current = null;
-        setIsFreqZoomed(false);
-        isFreqZoomedRef.current = false;
-        freqBuildAt.current = Date.now();
-        const checkedNames = Object.keys(checkedRef.current).filter(
-          (k) => checkedRef.current[k],
+        const timeCol = columnsRef.current.find(
+          (c) => c.name.toLowerCase() === "time",
         );
-        if (checkedNames.length > 0) {
-          for (const name of checkedNames) {
-            const col = fftColumnsRef.current.find((c) => c.name === name);
-            if (col) col.data = [];
-          }
-          const freqCol = fftColumnsRef.current.find(
-            (c) => c.name.toLowerCase() === "frequency",
-          );
-          if (freqCol) freqCol.data = [];
-          setFftColumns([...fftColumnsRef.current]);
-          fetchSignals(checkedNames, "fft");
-        }
+        if (timeCol) timeCol.data = [];
+        setColumns([...columnsRef.current]);
+        fetchSignals(checkedNames, "time");
       }
-    },
-    [tid],
-  );
+    } else {
+      fullFftColumns.current = null;
+      setIsFreqZoomed(false);
+      isFreqZoomedRef.current = false;
+      freqBuildAt.current = Date.now();
+      const checkedNames = Object.keys(checkedRef.current).filter(
+        (k) => checkedRef.current[k],
+      );
+      if (checkedNames.length > 0) {
+        for (const name of checkedNames) {
+          const col = fftColumnsRef.current.find((c) => c.name === name);
+          if (col) col.data = [];
+        }
+        const freqCol = fftColumnsRef.current.find(
+          (c) => c.name.toLowerCase() === "frequency",
+        );
+        if (freqCol) freqCol.data = [];
+        setFftColumns([...fftColumnsRef.current]);
+        fetchSignals(checkedNames, "fft");
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  // Keep the input box in sync when the workspace query param changes.
+  // Load column names for the workspace
   useEffect(() => {
-    setWsInput(workspace);
-  }, [workspace]);
-
-  function loadWorkspace() {
-    const w = wsInput.trim();
-    if (!w) return;
-    history.push(`/data?workspace=${encodeURIComponent(w)}`);
-  }
-
-  function applyColumns(columnNames: string[], fftColumnNames: string[]) {
-    setColumns([
-      { name: "time", data: [] },
-      ...columnNames.map((n) => ({ name: n, data: [] })),
-    ]);
-    setFftColumns([
-      { name: "frequency", data: [] },
-      ...fftColumnNames.map((n) => ({ name: n, data: [] })),
-    ]);
-    setChecked({});
-  }
-
-  useEffect(() => {
-    if (!isWs && isNaN(tid)) {
+    if (!workspace) {
+      setColumns([]);
+      setFftColumns([]);
+      setChecked({});
       setLoading(false);
       return;
     }
     setLoading(true);
     (async () => {
       try {
-        if (isWs) {
-          setTaskStatus("");
-          setTaskError("");
-          const colsR = await getWorkspaceDataColumns(workspace);
-          if (colsR.success && colsR.data) {
-            applyColumns(
-              colsR.data.column_names,
-              colsR.data.fft_column_names || [],
-            );
-          }
-          return;
+        const colsR = await getWorkspaceDataColumns(workspace);
+        if (colsR.success && colsR.data) {
+          setColumns([
+            { name: "time", data: [] },
+            ...colsR.data.column_names.map((n: string) => ({
+              name: n,
+              data: [],
+            })),
+          ]);
+          setFftColumns([
+            { name: "frequency", data: [] },
+            ...(colsR.data.fft_column_names || []).map((n: string) => ({
+              name: n,
+              data: [],
+            })),
+          ]);
+          setChecked({});
         }
-        const statusR = await getTaskStatus(tid);
-        if (statusR.success && statusR.data) {
-          setTaskStatus(statusR.data.status || "");
-          setTaskError(statusR.data.error || "");
-        }
-        // For done tasks, also fetch columns
-        if (statusR.success && statusR.data && statusR.data.status === "done") {
-          const colsR = await getTaskDataColumns(tid);
-          if (colsR.success && colsR.data) {
-            applyColumns(
-              colsR.data.column_names,
-              colsR.data.fft_column_names || [],
-            );
-          }
-        }
-      } catch { /* */ }
-      finally { setLoading(false); }
+      } catch {
+        /* */
+      } finally {
+        setLoading(false);
+      }
     })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tid, workspace]);
+  }, [workspace]);
 
   // Build time-domain chart
   useEffect(() => {
@@ -733,62 +647,18 @@ export default function DataViewer() {
   const filteredSigCols = sigCols.filter((c) =>
     c.name.toLowerCase().includes(searchText.toLowerCase()),
   );
-  const exportBase = isWs
-    ? `ws_${workspace.split(/[/\\]/).filter(Boolean).pop() || "workspace"}`
-    : `task_${tid}`;
+  const exportBase = `ws_${workspace.split(/[/\\]/).filter(Boolean).pop() || "workspace"}`;
 
   return (
-    <div className="h-[calc(100vh-49px)] flex flex-col p-4">
-      <div className="flex items-center gap-4 mb-3">
-        <Button onClick={() => history.goBack()}>返回</Button>
-        <h2 className="text-base font-semibold m-0">数据查看{isWs ? ` — ${workspace}` : !isNaN(tid) ? ` — 任务 #${tid}` : ""}</h2>
-        {taskStatus && (
-          <span className={`text-xs px-2.5 py-0.5 rounded-[10px] font-medium ${STATUS_CLASS[taskStatus] || ""}`}>
-            {STATUS_MAP[taskStatus] || taskStatus}
-          </span>
-        )}
-        <div className="flex items-center gap-2 ml-auto">
-          <Input
-            placeholder="输入 workspace 路径查看"
-            value={wsInput}
-            onChange={(e) => setWsInput(e.target.value)}
-            onPressEnter={loadWorkspace}
-            allowClear
-            size="small"
-            style={{ width: 280 }}
-          />
-          <Button size="small" type="primary" onClick={loadWorkspace}>
-            查看
-          </Button>
-        </div>
-      </div>
-
-      {!isWs && isNaN(tid) ? (
-        <div className="text-center text-[#999] py-[120px] text-sm">请从任务列表中选择一个任务，或在右上角输入 workspace 路径查看</div>
-      ) : !isWs && taskStatus === "cancelled" ? (
-        <div className="text-center text-[#999] py-[120px] text-sm">该任务已被取消，无仿真数据</div>
-      ) : !isWs && taskStatus === "failed" ? (
-        <div style={{ textAlign: "center", padding: "80px 0" }}>
-          <div
-            style={{
-              fontSize: 16,
-              fontWeight: 600,
-              color: "#ef4444",
-              marginBottom: 16,
-            }}
-          >
-            任务执行失败
-          </div>
-          <div style={{ fontSize: 13, color: "#666" }}>
-            失败原因：{taskError || "未知错误"}
-          </div>
-        </div>
+    <div className="h-full flex flex-col min-h-0">
+      {!workspace ? (
+        <div className="text-center text-[#999] py-[120px] text-sm">未指定工作路径</div>
       ) : loading ? (
         <div style={{ textAlign: "center", padding: 120 }}>
           <Spin size="large" />
         </div>
       ) : columns.length === 0 ? (
-        <div className="text-center text-[#999] py-[120px] text-sm">{isWs ? "该 workspace 暂无输出数据" : "该任务暂无输出数据"}</div>
+        <div className="text-center text-[#999] py-[120px] text-sm">该工作路径暂无输出数据</div>
       ) : (
         <div className="flex flex-1 gap-3 overflow-hidden">
           <div className="w-[240px] shrink-0 border border-[#e8e8e8] rounded-md flex flex-col overflow-hidden">
@@ -862,7 +732,4 @@ export default function DataViewer() {
       )}
     </div>
   );
-};
-
-
-
+}

@@ -9,6 +9,7 @@ import type {
   ModelInfoMap,
   DisturbanceDirNode,
   DisturbanceColumn,
+  SimPayload,
 } from "../types/api";
 import { isNil } from "../utils/isNil";
 import { getCurrentUser } from "../utils/user";
@@ -141,6 +142,12 @@ export async function addTasks(
   });
 }
 
+export async function getSimPayload(
+  caseId: number,
+): Promise<ApiResponse<SimPayload>> {
+  return await request<SimPayload>(`/get_sim_payload/${caseId}`);
+}
+
 export async function queueTasks(): Promise<ApiResponse<SimTask[]>> {
   return await request<SimTask[]>("/queue_tasks");
 }
@@ -221,4 +228,58 @@ export async function getTaskSignals(
     method: "POST",
     body: JSON.stringify(body),
   });
+}
+
+// ── Workspace-based variants (read by workspace path, not task id) ──
+
+export async function getWorkspaceData(
+  workspace: string,
+): Promise<
+  ApiResponse<{
+    columns: DisturbanceColumn[];
+    column_names: string[];
+    fft_column_names?: string[];
+  }>
+> {
+  return await request(
+    `/workspace_data?workspace=${encodeURIComponent(workspace)}`,
+  );
+}
+
+export async function getWorkspaceDataColumns(
+  workspace: string,
+): Promise<
+  ApiResponse<{
+    column_names: string[];
+    fft_column_names?: string[];
+  }>
+> {
+  return await request(
+    `/workspace_data?workspace=${encodeURIComponent(workspace)}&names_only=true`,
+  );
+}
+
+export async function getWorkspaceSignals(
+  workspace: string,
+  signalNames: string[],
+  domain: string,
+  start?: number,
+  end?: number,
+  raw?: boolean,
+): Promise<ApiResponse<{ columns: DisturbanceColumn[] }>> {
+  const body: Record<string, unknown> = { signal_names: signalNames, domain };
+  if (!isNil(start) && !isNil(end)) {
+    body.start = start;
+    body.end = end;
+  }
+  if (raw) {
+    body.raw = true;
+  }
+  return await request(
+    `/workspace_data/signals?workspace=${encodeURIComponent(workspace)}`,
+    {
+      method: "POST",
+      body: JSON.stringify(body),
+    },
+  );
 }
