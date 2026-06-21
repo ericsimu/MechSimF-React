@@ -33,113 +33,138 @@ async function request<T = unknown>(
   return data;
 }
 
-export function queueCases(): Promise<ApiResponse<CaseModel[]>> {
-  return request<CaseModel[]>("/queue_cases");
+export async function queueCases(): Promise<ApiResponse<CaseModel[]>> {
+  return await request<CaseModel[]>("/queue_cases");
 }
 
-export function addCase(
+export async function getCase(id: number): Promise<ApiResponse<CaseModel>> {
+  return await request<CaseModel>(`/get_case/${id}`);
+}
+
+export async function queueCase(
+  flowInstanceId: string,
+): Promise<ApiResponse<CaseModel>> {
+  return await request<CaseModel>(
+    `/queue_case/${encodeURIComponent(flowInstanceId)}`,
+  );
+}
+
+export async function addCase(
   body: AddCaseRequest,
 ): Promise<ApiResponse<{ id: number }>> {
-  return request("/add_case", { method: "POST", body: JSON.stringify(body) });
+  return await request("/add_case", { method: "POST", body: JSON.stringify(body) });
 }
 
-export function updateCase(
+export async function updateCase(
   id: number,
   body: UpdateCaseRequest,
 ): Promise<ApiResponse> {
-  return request(`/update_case/${id}`, {
+  return await request(`/update_case/${id}`, {
     method: "PUT",
     body: JSON.stringify(body),
   });
 }
 
-export function queueModelInfo(): Promise<ApiResponse<ModelInfoMap>> {
-  return request<ModelInfoMap>("/queue_model_info", { method: "POST" });
+export async function updateCaseByFlow(
+  flowInstanceId: string,
+  body: UpdateCaseRequest,
+): Promise<ApiResponse> {
+  return await request(
+    `/update_case_by_flow/${encodeURIComponent(flowInstanceId)}`,
+    {
+      method: "PUT",
+      body: JSON.stringify(body),
+    },
+  );
 }
 
-export function queueDisturbances(): Promise<ApiResponse<DisturbanceDirNode>> {
-  return request<DisturbanceDirNode>("/queue_disturbances");
+export async function queueModelInfo(): Promise<ApiResponse<ModelInfoMap>> {
+  return await request<ModelInfoMap>("/queue_model_info", { method: "POST" });
 }
 
-export function getDisturbanceInfo(
+export async function queueDisturbances(): Promise<ApiResponse<DisturbanceDirNode>> {
+  return await request<DisturbanceDirNode>("/queue_disturbances");
+}
+
+export async function getDisturbanceInfo(
   filePath: string,
 ): Promise<ApiResponse<DisturbanceInfo>> {
-  return request<DisturbanceInfo>("/get_disturbance_info", {
+  return await request<DisturbanceInfo>("/get_disturbance_info", {
     method: "POST",
     body: JSON.stringify({ file_path: filePath }),
   });
 }
 
-export function shareCase(
+export async function shareCase(
   caseId: number,
   sharedToUser: string,
 ): Promise<ApiResponse> {
-  return request(`/share_case/${caseId}`, {
+  return await request(`/share_case/${caseId}`, {
     method: "POST",
     body: JSON.stringify({ shared_to_user: sharedToUser }),
   });
 }
 
-export function unshareCase(
+export async function unshareCase(
   caseId: number,
   sharedToUser: string,
 ): Promise<ApiResponse> {
-  return request(`/unshare_case/${caseId}`, {
+  return await request(`/unshare_case/${caseId}`, {
     method: "POST",
     body: JSON.stringify({ shared_to_user: sharedToUser }),
   });
 }
 
-export function getCaseShares(
+export async function getCaseShares(
   caseId: number,
 ): Promise<ApiResponse<CaseShare[]>> {
-  return request<CaseShare[]>(`/case_shares/${caseId}`);
+  return await request<CaseShare[]>(`/case_shares/${caseId}`);
 }
 
-export function diffCase(
+export async function diffCase(
   id: number,
   body: UpdateCaseRequest,
 ): Promise<ApiResponse<Record<string, unknown>>> {
-  return request(`/diff_case/${id}`, {
+  return await request(`/diff_case/${id}`, {
     method: "POST",
     body: JSON.stringify(body),
   });
 }
 
-export function addTasks(
+export async function addTasks(
   caseId: number,
   paramDiff?: string,
 ): Promise<ApiResponse<{ task_ids: number[] }>> {
-  return request("/add_tasks", {
+  return await request("/add_tasks", {
     method: "POST",
     body: JSON.stringify({ case_id: caseId, param_diff: paramDiff || "" }),
   });
 }
 
-export function queueTasks(): Promise<ApiResponse<SimTask[]>> {
-  return request<SimTask[]>("/queue_tasks");
+export async function queueTasks(): Promise<ApiResponse<SimTask[]>> {
+  return await request<SimTask[]>("/queue_tasks");
 }
 
-export function runTasks(
+export async function runTasks(
   taskIds: number[],
 ): Promise<ApiResponse<{ submitted: number[] }>> {
-  return request("/run_tasks", {
+  return await request("/run_tasks", {
     method: "POST",
     body: JSON.stringify({ task_ids: taskIds }),
   });
 }
 
-export function deleteTask(id: number): Promise<ApiResponse> {
-  return request(`/delete_task/${id}`, { method: "DELETE" });
+export async function deleteTask(id: number): Promise<ApiResponse> {
+  return await request(`/delete_task/${id}`, { method: "DELETE" });
 }
 
-export function cancelTask(
+export async function cancelTask(
   id: number,
 ): Promise<ApiResponse<{ task_id: number; cancelled: boolean }>> {
-  return request(`/cancel_task/${id}`, { method: "POST" });
+  return await request(`/cancel_task/${id}`, { method: "POST" });
 }
 
-export function getTaskStatus(
+export async function getTaskStatus(
   id: number,
 ): Promise<
   ApiResponse<{
@@ -149,10 +174,10 @@ export function getTaskStatus(
     error?: string;
   }>
 > {
-  return request(`/get_task_status/${id}`);
+  return await request(`/get_task_status/${id}`);
 }
 
-export function getTaskData(
+export async function getTaskData(
   taskId: number,
 ): Promise<
   ApiResponse<{
@@ -161,10 +186,10 @@ export function getTaskData(
     task_status: string;
   }>
 > {
-  return request(`/task_data/${taskId}`);
+  return await request(`/task_data/${taskId}`);
 }
 
-export function getTaskDataColumns(
+export async function getTaskDataColumns(
   taskId: number,
 ): Promise<
   ApiResponse<{
@@ -173,10 +198,10 @@ export function getTaskDataColumns(
     task_status: string;
   }>
 > {
-  return request(`/task_data/${taskId}?names_only=true`);
+  return await request(`/task_data/${taskId}?names_only=true`);
 }
 
-export function getTaskSignals(
+export async function getTaskSignals(
   taskId: number,
   signalNames: string[],
   domain: string,
@@ -192,7 +217,7 @@ export function getTaskSignals(
   if (raw) {
     body.raw = true;
   }
-  return request(`/task_data/${taskId}/signals`, {
+  return await request(`/task_data/${taskId}/signals`, {
     method: "POST",
     body: JSON.stringify(body),
   });

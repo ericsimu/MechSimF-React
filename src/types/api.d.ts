@@ -26,6 +26,7 @@ export interface CaseModel extends BaseModel {
   model_productivity: string;
   model_param: string;
   disturbance: string;
+  flow_instance_id: string;
 }
 
 export interface AddCaseRequest {
@@ -41,6 +42,7 @@ export interface AddCaseRequest {
   disturbance: string;
   sim_time?: number;
   sim_step?: number;
+  flow_instance_id: string;
 }
 
 export type UpdateCaseRequest = AddCaseRequest;

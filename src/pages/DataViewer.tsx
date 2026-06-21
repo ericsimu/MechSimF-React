@@ -425,37 +425,37 @@ export default function DataViewer() {
       return;
     }
     setLoading(true);
-    getTaskStatus(tid)
-      .then((statusR) => {
+    (async () => {
+      try {
+        const statusR = await getTaskStatus(tid);
         if (statusR.success && statusR.data) {
           setTaskStatus(statusR.data.status || "");
           setTaskError(statusR.data.error || "");
         }
         // For done tasks, also fetch columns
         if (statusR.success && statusR.data && statusR.data.status === "done") {
-          return getTaskDataColumns(tid).then((colsR) => {
-            if (colsR.success && colsR.data) {
-              setColumns([
-                { name: "time", data: [] },
-                ...colsR.data.column_names.map((n: string) => ({
-                  name: n,
-                  data: [],
-                })),
-              ]);
-              setFftColumns([
-                { name: "frequency", data: [] },
-                ...(colsR.data.fft_column_names || []).map((n: string) => ({
-                  name: n,
-                  data: [],
-                })),
-              ]);
-              setChecked({});
-            }
-          });
+          const colsR = await getTaskDataColumns(tid);
+          if (colsR.success && colsR.data) {
+            setColumns([
+              { name: "time", data: [] },
+              ...colsR.data.column_names.map((n: string) => ({
+                name: n,
+                data: [],
+              })),
+            ]);
+            setFftColumns([
+              { name: "frequency", data: [] },
+              ...(colsR.data.fft_column_names || []).map((n: string) => ({
+                name: n,
+                data: [],
+              })),
+            ]);
+            setChecked({});
+          }
         }
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+      } catch { /* */ }
+      finally { setLoading(false); }
+    })();
   }, [tid]);
 
   // Build time-domain chart
