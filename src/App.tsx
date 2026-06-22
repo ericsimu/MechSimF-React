@@ -5,6 +5,7 @@ import "./index.css";
 import CaseList from "./pages/CaseList";
 import Tasks from "./pages/Tasks";
 import DataViewer from "./pages/DataViewer";
+import DataWS from "./pages/DataWS";
 import Placeholder from "./pages/Placeholder";
 import { getCurrentUser } from "./utils/user";
 
@@ -19,6 +20,7 @@ const navItems: NavItem[] = [
   {
     label: "结果分析", children: [
       { path: `${PREFIX}/data`, label: "数据可视化" },
+      { path: `${PREFIX}/data-ws`, label: "工作路径数据" },
       { path: `${PREFIX}/indicators`, label: "指标查看" },
       { path: `${PREFIX}/reports`, label: "报告查看" },
       { path: `${PREFIX}/logs`, label: "日志查看" },
@@ -79,6 +81,7 @@ function App() {
             <Switch>
               <Route path={`${PREFIX}/cases`} component={CaseList} />
               <Route path={`${PREFIX}/tasks`} component={Tasks} />
+              <Route path={`${PREFIX}/data-ws`} component={DataWS} />
               <Route path={`${PREFIX}/data/:taskId?`} component={DataViewer} />
               <Route path={`${PREFIX}/data-manage`} component={Placeholder} />
               <Route path={`${PREFIX}/tools`} component={Placeholder} />

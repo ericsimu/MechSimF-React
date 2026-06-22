@@ -837,7 +837,7 @@ export default function DataViewer() {
                   导出SVG
                 </Button>
               </div>
-              <div ref={timeChartRef} className="min-h-[300px] min-w-full relative" />
+              <div ref={timeChartRef} className="dv-chart min-h-[300px] min-w-full relative" />
             </div>
             <div className="flex flex-col">
               <div className="text-[13px] font-semibold text-[#555] mb-0.5 flex justify-between items-center">
@@ -855,7 +855,7 @@ export default function DataViewer() {
                   导出SVG
                 </Button>
               </div>
-              <div ref={freqChartRef} className="min-h-[300px] min-w-full relative" />
+              <div ref={freqChartRef} className="dv-chart min-h-[300px] min-w-full relative" />
             </div>
           </div>
         </div>

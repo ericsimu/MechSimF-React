@@ -1,10 +1,73 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Button, Input, Spin } from "antd";
 import { getWorkspaceDataColumns, getWorkspaceSignals } from "../api/index";
-import type { DisturbanceColumn } from "../types/api";
 import uPlot from "uplot";
 import "uplot/dist/uPlot.min.css";
-import { isNil } from "../utils/isNil";
+
+// ── Inlined deps (kept self-contained for portability) ──
+type DisturbanceColumn = { name: string; data: (number | null)[] };
+function isNil(v: unknown): v is null | undefined {
+  return v === null || v === undefined;
+}
+
+// ── Inlined styles (no Tailwind / global CSS dependency) ──
+const S: Record<string, React.CSSProperties> = {
+  root: { height: "100%", display: "flex", flexDirection: "column", minHeight: 0 },
+  hint: { textAlign: "center", color: "#999", padding: "120px 0", fontSize: 13 },
+  spinWrap: { textAlign: "center", padding: 120 },
+  body: { display: "flex", flex: "1 1 0%", gap: 12, overflow: "hidden" },
+  side: {
+    width: 240,
+    flexShrink: 0,
+    border: "1px solid #e8e8e8",
+    borderRadius: 6,
+    display: "flex",
+    flexDirection: "column",
+    overflow: "hidden",
+  },
+  sideHead: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: "8px 10px",
+    borderBottom: "1px solid #e8e8e8",
+    fontWeight: 600,
+    fontSize: 13,
+  },
+  searchWrap: { padding: "4px 8px" },
+  list: {
+    flex: "1 1 0%",
+    overflowY: "auto",
+    padding: "6px 10px",
+    display: "flex",
+    flexDirection: "column",
+    gap: 2,
+  },
+  sigLabel: {
+    display: "flex",
+    alignItems: "center",
+    gap: 4,
+    cursor: "pointer",
+    fontSize: 13,
+    padding: "2px 0",
+  },
+  charts: { flex: "1 1 0%", overflowY: "auto", display: "flex", flexDirection: "column" },
+  chartSection: { display: "flex", flexDirection: "column" },
+  chartTitle: {
+    fontSize: 13,
+    fontWeight: 600,
+    color: "#555",
+    marginBottom: 2,
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  chart: { minHeight: 300, minWidth: "100%", position: "relative" },
+};
+
+// uPlot legend can't be inline-styled (DOM is generated), so inject a scoped rule.
+const LEGEND_CSS =
+  ".dvws-chart .u-legend{position:absolute;top:4px;right:8px;z-index:10;font-size:11px;background:rgba(255,255,255,0.85);padding:4px 8px;border-radius:4px;}";
 
 const COLORS = [
   "#3b82f6",
@@ -650,25 +713,26 @@ export default function DataViewerWS({ workspace }: Props) {
   const exportBase = `ws_${workspace.split(/[/\\]/).filter(Boolean).pop() || "workspace"}`;
 
   return (
-    <div className="h-full flex flex-col min-h-0">
+    <div style={S.root}>
+      <style>{LEGEND_CSS}</style>
       {!workspace ? (
-        <div className="text-center text-[#999] py-[120px] text-sm">未指定工作路径</div>
+        <div style={S.hint}>未指定工作路径</div>
       ) : loading ? (
-        <div style={{ textAlign: "center", padding: 120 }}>
+        <div style={S.spinWrap}>
           <Spin size="large" />
         </div>
       ) : columns.length === 0 ? (
-        <div className="text-center text-[#999] py-[120px] text-sm">该工作路径暂无输出数据</div>
+        <div style={S.hint}>该工作路径暂无输出数据</div>
       ) : (
-        <div className="flex flex-1 gap-3 overflow-hidden">
-          <div className="w-[240px] shrink-0 border border-[#e8e8e8] rounded-md flex flex-col overflow-hidden">
-            <div className="flex items-center justify-between px-2.5 py-2 border-b border-[#e8e8e8] font-semibold text-[13px]">
+        <div style={S.body}>
+          <div style={S.side}>
+            <div style={S.sideHead}>
               <span>信号列表 ({sigCols.length})</span>
               <Button size="small" onClick={toggleAllOff}>
                 全不选
               </Button>
             </div>
-            <div style={{ padding: "4px 8px" }}>
+            <div style={S.searchWrap}>
               <Input
                 placeholder="搜索信号..."
                 value={searchText}
@@ -677,9 +741,9 @@ export default function DataViewerWS({ workspace }: Props) {
                 size="small"
               />
             </div>
-            <div className="flex-1 overflow-y-auto px-2.5 py-1.5 flex flex-col gap-0.5">
+            <div style={S.list}>
               {filteredSigCols.map((c) => (
-                <label key={c.name} className="flex items-center gap-1 cursor-pointer text-[13px] py-0.5">
+                <label key={c.name} style={S.sigLabel}>
                   <input
                     type="checkbox"
                     checked={checked[c.name] === true}
@@ -690,9 +754,9 @@ export default function DataViewerWS({ workspace }: Props) {
               ))}
             </div>
           </div>
-          <div className="flex-1 overflow-y-auto flex flex-col">
-            <div className="flex flex-col">
-              <div className="text-[13px] font-semibold text-[#555] mb-0.5 flex justify-between items-center">
+          <div style={S.charts}>
+            <div style={S.chartSection}>
+              <div style={S.chartTitle}>
                 时域图
                 <Button
                   size="small"
@@ -707,10 +771,10 @@ export default function DataViewerWS({ workspace }: Props) {
                   导出SVG
                 </Button>
               </div>
-              <div ref={timeChartRef} className="min-h-[300px] min-w-full relative" />
+              <div ref={timeChartRef} className="dvws-chart" style={S.chart} />
             </div>
-            <div className="flex flex-col">
-              <div className="text-[13px] font-semibold text-[#555] mb-0.5 flex justify-between items-center">
+            <div style={S.chartSection}>
+              <div style={S.chartTitle}>
                 频域图
                 <Button
                   size="small"
@@ -725,7 +789,7 @@ export default function DataViewerWS({ workspace }: Props) {
                   导出SVG
                 </Button>
               </div>
-              <div ref={freqChartRef} className="min-h-[300px] min-w-full relative" />
+              <div ref={freqChartRef} className="dvws-chart" style={S.chart} />
             </div>
           </div>
         </div>
