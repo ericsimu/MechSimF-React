@@ -17,7 +17,9 @@
     "react-dom": "^18.2.0",
     "react-router-dom": "^5.3.4",
     "tailwindcss": "^4.3.1",
-    "uplot": "^1.6.32"
+    "uplot": "^1.6.32",
+    "react-markdown": "^9.0.1",
+    "remark-gfm": "^4.0.0"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

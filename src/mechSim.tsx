@@ -8,6 +8,7 @@ import Tasks from "./pages/Tasks";
 import DataViewer from "./pages/DataViewer";
 import DataWS from "./pages/DataWS";
 import Placeholder from "./pages/Placeholder";
+import Manual from "./pages/Manual";
 import { getCurrentUser, setCurrentUser } from "./utils/user";
 import { ALLOWED_USERS } from "./api/config";
 
@@ -112,7 +113,7 @@ function MechSim() {
               <Route path={`${PREFIX}/data/:taskId?`} component={DataViewer} />
               <Route path={`${PREFIX}/data-manage`} component={Placeholder} />
               <Route path={`${PREFIX}/tools`} component={Placeholder} />
-              <Route path={`${PREFIX}/manual`} component={Placeholder} />
+              <Route path={`${PREFIX}/manual`} component={Manual} />
               <Route path={`${PREFIX}/indicators`} component={Placeholder} />
               <Route path={`${PREFIX}/reports`} component={Placeholder} />
               <Route path={`${PREFIX}/logs`} component={Placeholder} />
