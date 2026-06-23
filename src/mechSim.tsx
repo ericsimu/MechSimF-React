@@ -1,7 +1,20 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { Switch, Route, Redirect, NavLink, useLocation } from "react-router-dom";
 import { ConfigProvider, Input, Button, message } from "antd";
 import zhCN from "antd/locale/zh_CN";
+import {
+  AppstoreOutlined,
+  ScheduleOutlined,
+  FundOutlined,
+  LineChartOutlined,
+  FolderOpenOutlined,
+  DashboardOutlined,
+  FileTextOutlined,
+  FileSearchOutlined,
+  DatabaseOutlined,
+  ToolOutlined,
+  BookOutlined,
+} from "@ant-design/icons";
 import "./index.css";
 import CaseList from "./pages/CaseList";
 import Tasks from "./pages/Tasks";
@@ -14,24 +27,24 @@ import { ALLOWED_USERS } from "./api/config";
 
 const PREFIX = "";
 
-interface NavChild { path?: string; label: string }
-interface NavItem { path?: string; label: string; children?: NavChild[] }
+interface NavChild { path?: string; label: string; icon?: ReactNode }
+interface NavItem { path?: string; label: string; children?: NavChild[]; icon?: ReactNode }
 
 const navItems: NavItem[] = [
-  { path: `${PREFIX}/cases`, label: "用例编排" },
-  { path: `${PREFIX}/tasks`, label: "任务管理" },
+  { path: `${PREFIX}/cases`, label: "用例编排", icon: <AppstoreOutlined /> },
+  { path: `${PREFIX}/tasks`, label: "任务管理", icon: <ScheduleOutlined /> },
   {
-    label: "结果分析", children: [
-      { path: `${PREFIX}/data`, label: "数据可视化" },
-      { path: `${PREFIX}/data-ws`, label: "工作路径数据" },
-      { path: `${PREFIX}/indicators`, label: "指标查看" },
-      { path: `${PREFIX}/reports`, label: "报告查看" },
-      { path: `${PREFIX}/logs`, label: "日志查看" },
+    label: "结果分析", icon: <FundOutlined />, children: [
+      { path: `${PREFIX}/data`, label: "数据可视化", icon: <LineChartOutlined /> },
+      { path: `${PREFIX}/data-ws`, label: "工作路径数据", icon: <FolderOpenOutlined /> },
+      { path: `${PREFIX}/indicators`, label: "指标查看", icon: <DashboardOutlined /> },
+      { path: `${PREFIX}/reports`, label: "报告查看", icon: <FileTextOutlined /> },
+      { path: `${PREFIX}/logs`, label: "日志查看", icon: <FileSearchOutlined /> },
     ],
   },
-  { path: `${PREFIX}/data-manage`, label: "数据管理" },
-  { path: `${PREFIX}/tools`, label: "工具箱" },
-  { path: `${PREFIX}/manual`, label: "用户手册" },
+  { path: `${PREFIX}/data-manage`, label: "数据管理", icon: <DatabaseOutlined /> },
+  { path: `${PREFIX}/tools`, label: "工具箱", icon: <ToolOutlined /> },
+  { path: `${PREFIX}/manual`, label: "用户手册", icon: <BookOutlined /> },
 ];
 
 function NavGroup({ item }: { item: NavItem }) {
@@ -41,12 +54,12 @@ function NavGroup({ item }: { item: NavItem }) {
   );
   return (
     <div className="m-0">
-      <div className={`py-3 px-5 pt-3 pb-1 text-white/50 text-lg font-medium select-none ${isChildActive ? "active" : ""}`}>{item.label}</div>
+      <div className={`py-3 px-5 pt-3 pb-1 text-white/50 text-lg font-medium select-none ${isChildActive ? "active" : ""}`}>{item.icon && <span className="mr-2">{item.icon}</span>}{item.label}</div>
       <div className="pb-2">
         {item.children!.map((c) =>
           c.path ? (
             <NavLink key={c.label} to={c.path} activeClassName="active" className="block py-2.5 px-5 pb-2 pl-10 text-white/70 no-underline text-[15px] hover:text-white hover:bg-white/10 [&.active]:text-white [&.active]:font-medium">
-              {c.label}
+              {c.icon && <span className="mr-1.5">{c.icon}</span>}{c.label}
             </NavLink>
           ) : (
             <span className="block py-2.5 px-5 pb-2 pl-10 text-white/70 no-underline text-[15px]" style={{ opacity: 0.5 }}>{c.label}</span>
@@ -81,7 +94,7 @@ function MechSim() {
             {navItems.map((item, i) =>
               item.path ? (
                 <NavLink key={item.path} to={item.path} exact activeClassName="active" className="block py-3 px-5 text-white/85 no-underline text-lg cursor-pointer transition-[color,background] duration-150 hover:text-white hover:bg-white/[0.12] [&.active]:text-white [&.active]:font-semibold [&.active]:border [&.active]:border-white/50 [&.active]:rounded">
-                  {item.label}
+                  {item.icon && <span className="mr-2">{item.icon}</span>}{item.label}
                 </NavLink>
               ) : (<NavGroup key={i} item={item} />),
             )}
