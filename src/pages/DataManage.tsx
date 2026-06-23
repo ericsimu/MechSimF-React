@@ -317,6 +317,7 @@ export default function DataManage() {
         overflowY: "auto",
         direction: "rtl",
         padding: "16px 20px",
+        position: "relative",
       }}
     >
     <div
@@ -632,6 +633,23 @@ export default function DataManage() {
         </div>
       </div>
     </div>
+      {/* 半透明幕布 */}
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          background: "rgba(255,255,255,0.75)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 1000,
+          cursor: "not-allowed",
+        }}
+      >
+        <span style={{ fontSize: 24, color: "#999", fontWeight: 500, letterSpacing: 4 }}>
+          功能开发中
+        </span>
+      </div>
     </div>
   );
 }
