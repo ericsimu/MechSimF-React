@@ -1,0 +1,111 @@
+@import "tailwindcss";
+
+html,
+body,
+#root {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #333;
+  background: #fff;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* antd overrides */
+.ant-table-wrapper {
+  height: 100%;
+}
+.ant-table {
+  font-size: 13px !important;
+}
+.ant-btn-sm {
+  font-size: 12px !important;
+}
+.ant-input-sm {
+  font-size: 12px !important;
+}
+.ant-select-sm {
+  font-size: 12px !important;
+}
+
+/* ── edit-tabs antd overrides (compound selectors not expressible in Tailwind) ── */
+.ant-tabs.edit-tabs {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+.ant-tabs.edit-tabs > .ant-tabs-nav {
+  margin-bottom: 0;
+  padding: 0 16px;
+  background: #fafafa;
+}
+.ant-tabs.edit-tabs > .ant-tabs-content-holder {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+.ant-tabs.edit-tabs > .ant-tabs-content-holder > .ant-tabs-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+.ant-tabs.edit-tabs .ant-tabs-tabpane {
+  flex: 1;
+  overflow: hidden;
+  min-height: 0;
+}
+.ant-tabs.edit-tabs .ant-tabs-tabpane-active {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── uPlot chart legend ── */
+.dv-chart .u-legend {
+  position: absolute;
+  top: 4px;
+  right: 8px;
+  z-index: 10;
+  font-size: 11px;
+  background: rgba(255, 255, 255, 0.85);
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+/* ── Thin Scrollbar ── */
+.edit-left::-webkit-scrollbar,
+.edit-right::-webkit-scrollbar,
+.sidebar-list::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.edit-left::-webkit-scrollbar-track,
+.edit-right::-webkit-scrollbar-track,
+.sidebar-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+.edit-left::-webkit-scrollbar-thumb,
+.edit-right::-webkit-scrollbar-thumb,
+.sidebar-list::-webkit-scrollbar-thumb {
+  background: #d9d9d9;
+  border-radius: 3px;
+}
+.edit-left::-webkit-scrollbar-thumb:hover,
+.edit-right::-webkit-scrollbar-thumb:hover,
+.sidebar-list::-webkit-scrollbar-thumb:hover {
+  background: #bbb;
+}
