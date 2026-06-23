@@ -1,12 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useParams, useHistory, useLocation } from "react-router-dom";
+import { useParams, useHistory } from "react-router-dom";
 import { Button, Input, Spin } from "antd";
 import {
   getTaskDataColumns,
   getTaskSignals,
   getTaskStatus,
-  getWorkspaceDataColumns,
-  getWorkspaceSignals,
 } from "../api/index";
 import type { DisturbanceColumn } from "../types/api";
 import uPlot from "uplot";
@@ -109,13 +107,7 @@ function makeCursorLabels(
 export default function DataViewer() {
   const { taskId } = useParams<{ taskId: string }>();
   const history = useHistory();
-  const location = useLocation();
   const tid = Number(taskId);
-
-  // ── Data source: task (route param) or workspace (?workspace= query) ──
-  const workspace = new URLSearchParams(location.search).get("workspace") || "";
-  const isWs = workspace.length > 0;
-  const [wsInput, setWsInput] = useState(workspace);
 
   const [loading, setLoading] = useState(true);
   const [columns, setColumns] = useState<DisturbanceColumn[]>([]);
@@ -163,24 +155,6 @@ export default function DataViewer() {
 
   isFreqZoomedRef.current = isFreqZoomed;
 
-  // Keep the current data source in a ref so memoized handlers (zoom/select)
-  // always fetch from the right source even if they captured an older closure.
-  const srcRef = useRef({ isWs, workspace, tid });
-  srcRef.current = { isWs, workspace, tid };
-
-  function fetchSignalsApi(
-    names: string[],
-    domain: "time" | "fft",
-    start?: number,
-    end?: number,
-    raw?: boolean,
-  ) {
-    const s = srcRef.current;
-    return s.isWs
-      ? getWorkspaceSignals(s.workspace, names, domain, start, end, raw)
-      : getTaskSignals(s.tid, names, domain, start, end, raw);
-  }
-
   async function fetchSignals(
     names: string[],
     domain: "time" | "fft",
@@ -224,7 +198,8 @@ export default function DataViewer() {
 
     const raw = domain === "fft" || (hasRange && rangeEnd! - rangeStart! < 1.0);
     try {
-      const r = await fetchSignalsApi(
+      const r = await getTaskSignals(
+        tid,
         toFetch,
         domain,
         rangeStart,
@@ -357,7 +332,8 @@ export default function DataViewer() {
           const xName = domain === "fft" ? "frequency" : "time";
           const zoomRange = rng.end - rng.start;
           const raw = domain === "fft" || zoomRange < 1.0;
-          const r = await fetchSignalsApi(
+          const r = await getTaskSignals(
+            tid,
             [xName, ...sigs],
             domain,
             rng.start,
@@ -443,49 +419,14 @@ export default function DataViewer() {
     [tid],
   );
 
-  // Keep the input box in sync when the workspace query param changes.
   useEffect(() => {
-    setWsInput(workspace);
-  }, [workspace]);
-
-  function loadWorkspace() {
-    const w = wsInput.trim();
-    if (!w) return;
-    history.push(`/data?workspace=${encodeURIComponent(w)}`);
-  }
-
-  function applyColumns(columnNames: string[], fftColumnNames: string[]) {
-    setColumns([
-      { name: "time", data: [] },
-      ...columnNames.map((n) => ({ name: n, data: [] })),
-    ]);
-    setFftColumns([
-      { name: "frequency", data: [] },
-      ...fftColumnNames.map((n) => ({ name: n, data: [] })),
-    ]);
-    setChecked({});
-  }
-
-  useEffect(() => {
-    if (!isWs && isNaN(tid)) {
+    if (isNaN(tid)) {
       setLoading(false);
       return;
     }
     setLoading(true);
     (async () => {
       try {
-        if (isWs) {
-          setTaskStatus("");
-          setTaskError("");
-          const colsR = await getWorkspaceDataColumns(workspace);
-          if (colsR.success && colsR.data) {
-            applyColumns(
-              colsR.data.column_names,
-              colsR.data.fft_column_names || [],
-            );
-          }
-          return;
-        }
         const statusR = await getTaskStatus(tid);
         if (statusR.success && statusR.data) {
           setTaskStatus(statusR.data.status || "");
@@ -495,17 +436,24 @@ export default function DataViewer() {
         if (statusR.success && statusR.data && statusR.data.status === "done") {
           const colsR = await getTaskDataColumns(tid);
           if (colsR.success && colsR.data) {
-            applyColumns(
-              colsR.data.column_names,
-              colsR.data.fft_column_names || [],
-            );
+            setColumns([
+              { name: "time", data: [] },
+              ...colsR.data.column_names.map((n) => ({ name: n, data: [] })),
+            ]);
+            setFftColumns([
+              { name: "frequency", data: [] },
+              ...(colsR.data.fft_column_names || []).map((n) => ({
+                name: n,
+                data: [],
+              })),
+            ]);
+            setChecked({});
           }
         }
       } catch { /* */ }
       finally { setLoading(false); }
     })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tid, workspace]);
+  }, [tid]);
 
   // Build time-domain chart
   useEffect(() => {
@@ -739,41 +687,25 @@ export default function DataViewer() {
   const filteredSigCols = sigCols.filter((c) =>
     c.name.toLowerCase().includes(searchText.toLowerCase()),
   );
-  const exportBase = isWs
-    ? `ws_${workspace.split(/[/\\]/).filter(Boolean).pop() || "workspace"}`
-    : `task_${tid}`;
+  const exportBase = `task_${tid}`;
 
   return (
     <div className="h-[calc(100vh-49px)] flex flex-col p-4">
       <div className="flex items-center gap-4 mb-3">
         <Button onClick={() => history.goBack()}>返回</Button>
-        <h2 className="text-base font-semibold m-0">数据查看{isWs ? ` — ${workspace}` : !isNaN(tid) ? ` — 任务 #${tid}` : ""}</h2>
+        <h2 className="text-base font-semibold m-0">数据查看{!isNaN(tid) ? ` — 任务 #${tid}` : ""}</h2>
         {taskStatus && (
           <span className={`text-xs px-2.5 py-0.5 rounded-[10px] font-medium ${STATUS_CLASS[taskStatus] || ""}`}>
             {STATUS_MAP[taskStatus] || taskStatus}
           </span>
         )}
-        <div className="flex items-center gap-2 ml-auto">
-          <Input
-            placeholder="输入 workspace 路径查看"
-            value={wsInput}
-            onChange={(e) => setWsInput(e.target.value)}
-            onPressEnter={loadWorkspace}
-            allowClear
-            size="small"
-            style={{ width: 280 }}
-          />
-          <Button size="small" type="primary" onClick={loadWorkspace}>
-            查看
-          </Button>
-        </div>
       </div>
 
-      {!isWs && isNaN(tid) ? (
-        <div className="text-center text-[#999] py-[120px] text-sm">请从任务列表中选择一个任务，或在右上角输入 workspace 路径查看</div>
-      ) : !isWs && taskStatus === "cancelled" ? (
+      {isNaN(tid) ? (
+        <div className="text-center text-[#999] py-[120px] text-sm">请从任务列表中选择一个任务查看数据</div>
+      ) : taskStatus === "cancelled" ? (
         <div className="text-center text-[#999] py-[120px] text-sm">该任务已被取消，无仿真数据</div>
-      ) : !isWs && taskStatus === "failed" ? (
+      ) : taskStatus === "failed" ? (
         <div style={{ textAlign: "center", padding: "80px 0" }}>
           <div
             style={{
@@ -794,7 +726,7 @@ export default function DataViewer() {
           <Spin size="large" />
         </div>
       ) : columns.length === 0 ? (
-        <div className="text-center text-[#999] py-[120px] text-sm">{isWs ? "该 workspace 暂无输出数据" : "该任务暂无输出数据"}</div>
+        <div className="text-center text-[#999] py-[120px] text-sm">该任务暂无输出数据</div>
       ) : (
         <div className="flex flex-1 gap-3 overflow-hidden">
           <div className="w-[240px] shrink-0 border border-[#e8e8e8] rounded-md flex flex-col overflow-hidden">
