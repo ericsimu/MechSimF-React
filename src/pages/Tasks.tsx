@@ -3,7 +3,6 @@ import { useHistory } from "react-router-dom";
 import { Table, Modal, Button, message } from "antd";
 import type { TableColumnsType } from "antd";
 import { queueTasks, deleteTask, cancelTask } from "../api/index";
-import { taskWorkspacePath } from "../api/config";
 import type { SimTask } from "../types/api";
 import { isNil } from "../utils/isNil";
 
@@ -195,13 +194,9 @@ export default function Tasks() {
           <Button
             type="link"
             size="small"
-            onClick={() =>
-              history.push(
-                `/data-ws?workspace=${encodeURIComponent(taskWorkspacePath(record.id!))}`,
-              )
-            }
+            onClick={() => history.push(`/data/${record.id}`)}
           >
-            详情
+            结果
           </Button>
           {(record.status === "pending" || record.status === "running") && (
             <Button

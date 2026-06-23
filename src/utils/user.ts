@@ -5,3 +5,7 @@ export function getCurrentUser(): string {
 export function setCurrentUser(name: string): void {
   localStorage.setItem("current_user", name);
 }
+
+export function clearCurrentUser(): void {
+  localStorage.removeItem("current_user");
+}
