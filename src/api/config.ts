@@ -14,3 +14,9 @@ export const WORKSPACE_ROOT = "D:\\Project\\ROOT\\WorkSpace";
 export function taskWorkspacePath(taskId: number): string {
   return `${WORKSPACE_ROOT}\\task_${taskId}`;
 }
+
+/**
+ * 允许登录的用户名单。切换用户时，输入的名字必须在此名单内，否则提示无权限。
+ * 按实际需要增删。
+ */
+export const ALLOWED_USERS = ["user1", "user2", "admin"];

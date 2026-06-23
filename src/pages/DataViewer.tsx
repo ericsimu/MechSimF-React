@@ -581,6 +581,8 @@ export default function DataViewer() {
             {
               stroke: "#888",
               grid: { stroke: "#e8e8e8" },
+              values: (_self: any, ticks: number[]) =>
+                ticks.map((t) => fmtNum(t)),
             },
           ],
           series,
@@ -673,7 +675,11 @@ export default function DataViewer() {
                 return Math.abs(log10 - Math.round(log10)) < 1e-10 ? fmtNum(t) : "";
               }),
           },
-          { stroke: "#888", grid: { stroke: "#e8e8e8" } },
+          {
+            stroke: "#888",
+            grid: { stroke: "#e8e8e8" },
+            values: (_self: any, ticks: number[]) => ticks.map((t) => fmtNum(t)),
+          },
         ],
         series,
         hooks: {
@@ -682,7 +688,7 @@ export default function DataViewer() {
         },
       },
       [
-        freqCol.data.map((v) => (v != null ? Math.pow(10, v) : null)),
+        freqCol.data.map((v) => (v != null ? v: null)),
         ...activeSigs.map((c) =>
           c.data.map((v) => (isNil(v) ? null : Number(v))),
         ),

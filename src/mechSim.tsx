@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { Switch, Route, Redirect, NavLink, useLocation } from "react-router-dom";
-import { ConfigProvider } from "antd";
+import { ConfigProvider, Input, Button, message } from "antd";
 import zhCN from "antd/locale/zh_CN";
 import "./index.css";
 import CaseList from "./pages/CaseList";
@@ -7,7 +8,8 @@ import Tasks from "./pages/Tasks";
 import DataViewer from "./pages/DataViewer";
 import DataWS from "./pages/DataWS";
 import Placeholder from "./pages/Placeholder";
-import { getCurrentUser } from "./utils/user";
+import { getCurrentUser, setCurrentUser } from "./utils/user";
+import { ALLOWED_USERS } from "./api/config";
 
 const PREFIX = "";
 
@@ -54,8 +56,21 @@ function NavGroup({ item }: { item: NavItem }) {
   );
 }
 
-function App() {
-  const user = getCurrentUser();
+function MechSim() {
+  const [user, setUser] = useState(getCurrentUser());
+  const [userInput, setUserInput] = useState(user);
+
+  function confirmUser() {
+    const u = userInput.trim();
+    if (!u || u === user) return;
+    if (!ALLOWED_USERS.includes(u)) {
+      message.error("无权限");
+      return;
+    }
+    setCurrentUser(u); // 写入后续请求使用的 X-User
+    setUser(u); // 触发 <main key={user}> 重挂载，各页面以新用户重新拉取数据
+  }
+
   return (
     <ConfigProvider theme={{ token: { colorPrimary: "#3b82f6" } }} locale={zhCN}>
       <div className="flex h-full overflow-hidden">
@@ -75,9 +90,21 @@ function App() {
         <div className="flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden">
           <header className="py-3.5 px-6 bg-white border-b border-[#e8e8e8] flex items-center">
             <span className="text-sm text-[#333] font-medium">MechSim (机电仿真平台)</span>
-            <span className="text-[13px] text-[#888] ml-auto">{user}</span>
+            <div className="ml-auto flex items-center gap-2">
+              <Input
+                size="small"
+                value={userInput}
+                onChange={(e) => setUserInput(e.target.value)}
+                onPressEnter={confirmUser}
+                placeholder="请输入用户名"
+                style={{ width: 160 }}
+              />
+              <Button size="small" type="primary" onClick={confirmUser}>
+                确定
+              </Button>
+            </div>
           </header>
-          <main className="flex-1 p-0 min-h-0 flex flex-col overflow-hidden">
+          <main key={user} className="flex-1 p-0 min-h-0 flex flex-col overflow-hidden">
             <Switch>
               <Route path={`${PREFIX}/cases`} component={CaseList} />
               <Route path={`${PREFIX}/tasks`} component={Tasks} />
@@ -98,4 +125,4 @@ function App() {
   );
 }
 
-export default App;
+export default MechSim;
