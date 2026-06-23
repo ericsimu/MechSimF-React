@@ -116,7 +116,7 @@ export default function CaseDetail({
                     共享
                   </Button>
                   <Button
-                    className="!text-[#ef4444] !border-none !bg-transparent !font-medium !px-2 !shadow-none hover:!text-[#ef4444] hover:!bg-[#fef2f2]"
+                    className="!text-[#3b82f6] !border-none !bg-transparent !font-medium !px-2 !shadow-none hover:!bg-[rgba(59,130,246,0.08)]"
                     size="small"
                     onClick={() => onDelete(editCase)}
                   >
