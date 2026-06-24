@@ -337,6 +337,14 @@ function ModelTab(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [caseId]);
 
+  // 系统列表就绪后，若当前未选系统则默认选中第一个
+  useEffect(() => {
+    if (!editDraft.sys_name && systems.length > 0) {
+      onSystemChange(systems[0]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [systems, editDraft.sys_name]);
+
   // ── Param Save Helpers ──
   function coerceByType(val: string, orig: unknown) {
     if (val === "" && (orig === null || orig === undefined)) return null;
