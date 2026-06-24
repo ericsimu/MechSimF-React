@@ -259,6 +259,45 @@ export async function getWorkspaceDataColumns(
   );
 }
 
+// ── 数据管理 ──
+
+export async function uploadRawData(
+  file: File,
+): Promise<ApiResponse<{ temp_path: string; filename: string }>> {
+  const formData = new FormData();
+  formData.append("file", file);
+  const res = await fetch(`${API_BASE}/upload_raw_data`, {
+    method: "POST",
+    headers: { "X-User": getCurrentUser() },
+    body: formData,
+  });
+  const data: ApiResponse<{ temp_path: string; filename: string }> = await res.json();
+  if (!res.ok || data.success === false) {
+    throw new Error(data.message || `HTTP ${res.status}`);
+  }
+  return data;
+}
+
+export async function importRawData(body: {
+  temp_path: string;
+  parts: string[];
+  version: string;
+  timestamp: string;
+}): Promise<ApiResponse<{ path: string; filename: string }>> {
+  return await request("/import_raw_data", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function queueDataSim(): Promise<ApiResponse<DisturbanceDirNode>> {
+  return await request<DisturbanceDirNode>("/queue_data_sim");
+}
+
+export async function processToSim(body: {
+  file_path: string;
+  method?: string;
+}): Promise<ApiResponse<{ path: string; filename: string }>> {
+  return await request("/process_to_sim", { method: "POST", body: JSON.stringify(body) });
+}
+
 export async function getWorkspaceSignals(
   workspace: string,
   signalNames: string[],
