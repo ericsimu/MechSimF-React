@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useHistory } from "react-router-dom";
 import { Table, Modal, Button, message } from "antd";
 import type { TableColumnsType } from "antd";
@@ -27,6 +27,142 @@ const STATUS_CLASS: Record<string, string> = {
   failed: "bg-[#fee2e2] text-[#991b1b]",
   cancelled: "bg-[#f3f4f6] text-[#6b7280]",
 };
+
+type FilterOpt = { text: string; value: string | number };
+
+/** 自定义列筛选下拉：纯 HTML 渲染，避免 antd 内置筛选按钮被 Tailwind 影响。 */
+function ColumnFilter(props: {
+  options: FilterOpt[];
+  search?: boolean;
+  selectedKeys: React.Key[];
+  setSelectedKeys: (keys: React.Key[]) => void;
+  confirm: () => void;
+  clearFilters?: () => void;
+}) {
+  const { options, search, selectedKeys, setSelectedKeys, confirm, clearFilters } = props;
+  const [q, setQ] = useState("");
+  const shown =
+    search && q
+      ? options.filter((o) => o.text.toLowerCase().includes(q.toLowerCase()))
+      : options;
+
+  const toggle = (v: string | number, checked: boolean) =>
+    setSelectedKeys(
+      checked
+        ? [...selectedKeys, v as React.Key]
+        : selectedKeys.filter((k) => k !== v),
+    );
+
+  return (
+    <div style={{ padding: 8, minWidth: 180 }}>
+      {search && (
+        <input
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="搜索"
+          style={{
+            width: "100%",
+            boxSizing: "border-box",
+            marginBottom: 6,
+            padding: "3px 6px",
+            border: "1px solid #d9d9d9",
+            borderRadius: 4,
+            fontSize: 12,
+            outline: "none",
+          }}
+        />
+      )}
+      <div style={{ maxHeight: 240, overflowY: "auto" }}>
+        {shown.length === 0 ? (
+          <div style={{ color: "#999", fontSize: 12, padding: "4px 0" }}>无选项</div>
+        ) : (
+          shown.map((o) => (
+            <label
+              key={String(o.value)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "3px 0",
+                cursor: "pointer",
+                fontSize: 13,
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={selectedKeys.includes(o.value as React.Key)}
+                onChange={(e) => toggle(o.value, e.target.checked)}
+              />
+              <span>{o.text}</span>
+            </label>
+          ))
+        )}
+      </div>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          gap: 8,
+          marginTop: 8,
+          borderTop: "1px solid #f0f0f0",
+          paddingTop: 8,
+        }}
+      >
+        <button
+          onClick={() => {
+            clearFilters?.();
+            setQ("");
+            confirm();
+          }}
+          style={{
+            background: "transparent",
+            color: "#3b82f6",
+            border: "none",
+            padding: "2px 8px",
+            fontSize: 12,
+            fontWeight: 500,
+            cursor: "pointer",
+          }}
+        >
+          重置
+        </button>
+        <button
+          onClick={() => confirm()}
+          style={{
+            background: "transparent",
+            color: "#3b82f6",
+            border: "none",
+            padding: "2px 8px",
+            fontSize: 12,
+            fontWeight: 500,
+            cursor: "pointer",
+          }}
+        >
+          确定
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/** 生成列的自定义 filterDropdown。 */
+function makeFilterDropdown(options: FilterOpt[], search = false) {
+  return (p: {
+    selectedKeys: React.Key[];
+    setSelectedKeys: (keys: React.Key[]) => void;
+    confirm: () => void;
+    clearFilters?: () => void;
+  }) => (
+    <ColumnFilter
+      options={options}
+      search={search}
+      selectedKeys={p.selectedKeys}
+      setSelectedKeys={p.setSelectedKeys}
+      confirm={p.confirm}
+      clearFilters={p.clearFilters}
+    />
+  );
+}
 
 export default function Tasks() {
   const [tasks, setTasks] = useState<SimTask[]>([]);
@@ -132,37 +268,86 @@ export default function Tasks() {
     });
   }
 
+  // 各列的去重筛选项，来源于全量任务数据（多列筛选自动叠加为 AND）
+  const filterOpts = useMemo(() => {
+    const uniq = (field: keyof SimTask, labelMap?: Record<string, string>) => {
+      const set = new Set<string | number>();
+      tasks.forEach((t) => {
+        const v = t[field] as unknown as string | number | null | undefined;
+        if (v !== null && v !== undefined && v !== "") set.add(v);
+      });
+      return Array.from(set)
+        .sort((a, b) =>
+          typeof a === "number" && typeof b === "number"
+            ? a - b
+            : String(a).localeCompare(String(b)),
+        )
+        .map((v) => ({ text: labelMap?.[String(v)] ?? String(v), value: v }));
+    };
+    return {
+      id: uniq("id"),
+      name: uniq("name"),
+      sys_name: uniq("sys_name"),
+      model_name: uniq("model_name"),
+      model_version: uniq("model_version"),
+      model_productivity: uniq("model_productivity"),
+      status: uniq("status", STATUS_LABELS),
+    };
+  }, [tasks]);
+
   const columns: TableColumnsType<SimTask> = [
-    { title: "ID", dataIndex: "id", key: "id" },
-    { title: "名称", dataIndex: "name", key: "name" },
+    {
+      title: "ID",
+      dataIndex: "id",
+      key: "id",
+      filterDropdown: makeFilterDropdown(filterOpts.id, true),
+      onFilter: (value, r) => r.id === value,
+    },
+    {
+      title: "名称",
+      dataIndex: "name",
+      key: "name",
+      filterDropdown: makeFilterDropdown(filterOpts.name, true),
+      onFilter: (value, r) => r.name === value,
+    },
     {
       title: "系统",
       dataIndex: "sys_name",
       key: "sys_name",
+      filterDropdown: makeFilterDropdown(filterOpts.sys_name, true),
+      onFilter: (value, r) => r.sys_name === value,
       render: (v: string) => v || "-",
     },
     {
       title: "模型",
       dataIndex: "model_name",
       key: "model_name",
+      filterDropdown: makeFilterDropdown(filterOpts.model_name, true),
+      onFilter: (value, r) => r.model_name === value,
       render: (v: string) => v || "-",
     },
     {
       title: "版本",
       dataIndex: "model_version",
       key: "model_version",
+      filterDropdown: makeFilterDropdown(filterOpts.model_version),
+      onFilter: (value, r) => r.model_version === value,
       render: (v: string) => v || "-",
     },
     {
       title: "产率",
       dataIndex: "model_productivity",
       key: "model_productivity",
+      filterDropdown: makeFilterDropdown(filterOpts.model_productivity),
+      onFilter: (value, r) => r.model_productivity === value,
       render: (v: string) => v || "-",
     },
     {
       title: "状态",
       dataIndex: "status",
       key: "status",
+      filterDropdown: makeFilterDropdown(filterOpts.status),
+      onFilter: (value, r) => r.status === value,
       render: (s: string) => (
         <span className={`text-xs px-2.5 py-0.5 rounded-[10px] font-medium ${STATUS_CLASS[s] || ""}`}>{STATUS_LABELS[s] || s}</span>
       ),
@@ -173,7 +358,7 @@ export default function Tasks() {
       key: "param_diff",
       render: (_: unknown, record: SimTask) =>
         record.param_diff ? (
-          <span className="text-[#3b82f6] cursor-pointer font-medium hover:underline" onClick={() => showDiff(record)}>
+          <span className="text-[#3b82f6] cursor-pointer hover:underline" style={{ fontWeight: 500 }} onClick={() => showDiff(record)}>
             查看
           </span>
         ) : (
@@ -194,6 +379,7 @@ export default function Tasks() {
           <Button
             type="link"
             size="small"
+            style={{ fontWeight: 500 }}
             onClick={() => history.push(`/data/${record.id}`)}
           >
             结果
@@ -202,12 +388,13 @@ export default function Tasks() {
             <Button
               type="link"
               size="small"
+              style={{ fontWeight: 500 }}
               onClick={() => handleCancel(record)}
             >
               取消
             </Button>
           )}
-          <Button type="link" size="small" onClick={() => handleDelete(record)}>
+          <Button type="link" size="small" style={{ fontWeight: 500 }} onClick={() => handleDelete(record)}>
             删除
           </Button>
         </div>
