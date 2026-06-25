@@ -31,7 +31,7 @@ import uPlot from "uplot";
 import "uplot/dist/uPlot.min.css";
 
 // ── Constants ──
-const PRODUCTIVITY_OPTIONS = ["100WPH", "150WPH"];
+const PRODUCTIVITY_OPTIONS = ["100WPH", "150WPH", "200WPH", "295WPH", "340WPH"];
 const VERSION_OPTIONS = ["3X", "5X"];
 
 // ── Helpers ──

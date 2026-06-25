@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { useHistory } from "react-router-dom";
 import { Table, Modal, Button, message } from "antd";
 import type { TableColumnsType } from "antd";
+import type { FilterValue } from "antd/es/table/interface";
 import { queueTasks, deleteTask, cancelTask } from "../api/index";
 import type { SimTask } from "../types/api";
 import { isNil } from "../utils/isNil";
@@ -27,6 +28,9 @@ const STATUS_CLASS: Record<string, string> = {
   failed: "bg-[#fee2e2] text-[#991b1b]",
   cancelled: "bg-[#f3f4f6] text-[#6b7280]",
 };
+
+// 记住任务表的表头过滤状态（模块级，跨页面切换/组件重挂载保留）
+let savedTaskFilters: Record<string, FilterValue | null> = {};
 
 type FilterOpt = { text: string; value: string | number };
 
@@ -169,6 +173,8 @@ export default function Tasks() {
   const [loading, setLoading] = useState(true);
   const [diffOpen, setDiffOpen] = useState(false);
   const [diffRows, setDiffRows] = useState<DiffRow[]>([]);
+  const [tableFilters, setTableFilters] =
+    useState<Record<string, FilterValue | null>>(savedTaskFilters);
   const history = useHistory();
 
   const loadTasks = useCallback(async () => {
@@ -206,14 +212,12 @@ export default function Tasks() {
           .replace(/^\./, "");
       for (const [changeType, items] of Object.entries(parsed)) {
         if (!items || typeof items !== "object") continue;
-        const prefix = changeType.includes("added")
-          ? "+ "
-          : changeType.includes("removed")
-            ? "- "
-            : "";
+        // 只显示参数变更，跳过参数新增/删除
+        if (changeType.includes("added") || changeType.includes("removed"))
+          continue;
         for (const [path, v] of Object.entries(items as Record<string, any>)) {
           rows.push({
-            path: prefix + cleanPath(path),
+            path: cleanPath(path),
             old: fmt(v.old_value),
             new: fmt(v.new_value),
           });
@@ -301,6 +305,7 @@ export default function Tasks() {
       dataIndex: "id",
       key: "id",
       filterDropdown: makeFilterDropdown(filterOpts.id, true),
+      filteredValue: tableFilters.id ?? null,
       onFilter: (value, r) => r.id === value,
     },
     {
@@ -308,6 +313,7 @@ export default function Tasks() {
       dataIndex: "name",
       key: "name",
       filterDropdown: makeFilterDropdown(filterOpts.name, true),
+      filteredValue: tableFilters.name ?? null,
       onFilter: (value, r) => r.name === value,
     },
     {
@@ -315,6 +321,7 @@ export default function Tasks() {
       dataIndex: "sys_name",
       key: "sys_name",
       filterDropdown: makeFilterDropdown(filterOpts.sys_name, true),
+      filteredValue: tableFilters.sys_name ?? null,
       onFilter: (value, r) => r.sys_name === value,
       render: (v: string) => v || "-",
     },
@@ -323,6 +330,7 @@ export default function Tasks() {
       dataIndex: "model_name",
       key: "model_name",
       filterDropdown: makeFilterDropdown(filterOpts.model_name, true),
+      filteredValue: tableFilters.model_name ?? null,
       onFilter: (value, r) => r.model_name === value,
       render: (v: string) => v || "-",
     },
@@ -331,6 +339,7 @@ export default function Tasks() {
       dataIndex: "model_version",
       key: "model_version",
       filterDropdown: makeFilterDropdown(filterOpts.model_version),
+      filteredValue: tableFilters.model_version ?? null,
       onFilter: (value, r) => r.model_version === value,
       render: (v: string) => v || "-",
     },
@@ -339,6 +348,7 @@ export default function Tasks() {
       dataIndex: "model_productivity",
       key: "model_productivity",
       filterDropdown: makeFilterDropdown(filterOpts.model_productivity),
+      filteredValue: tableFilters.model_productivity ?? null,
       onFilter: (value, r) => r.model_productivity === value,
       render: (v: string) => v || "-",
     },
@@ -347,6 +357,7 @@ export default function Tasks() {
       dataIndex: "status",
       key: "status",
       filterDropdown: makeFilterDropdown(filterOpts.status),
+      filteredValue: tableFilters.status ?? null,
       onFilter: (value, r) => r.status === value,
       render: (s: string) => (
         <span className={`text-xs px-2.5 py-0.5 rounded-[10px] font-medium ${STATUS_CLASS[s] || ""}`}>{STATUS_LABELS[s] || s}</span>
@@ -416,6 +427,10 @@ export default function Tasks() {
         pagination={false}
         scroll={{ y: 'calc(100vh - 200px)' }}
         locale={{ emptyText: "暂无数据" }}
+        onChange={(_pagination, filters) => {
+          savedTaskFilters = filters; // 持久化到模块级，切换页面后保留
+          setTableFilters(filters);
+        }}
       />
 
       <Modal

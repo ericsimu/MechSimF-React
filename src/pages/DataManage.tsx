@@ -499,7 +499,7 @@ export default function DataManage() {
                     loadPreview(key);
                   }
                 }}
-                defaultExpandAll={false}
+                defaultExpandAll={true}
                 style={{ fontSize: 13 }}
               />
             )}
@@ -574,7 +574,7 @@ export default function DataManage() {
                     loadPreview(key);
                   }
                 }}
-                defaultExpandAll={false}
+                defaultExpandAll={true}
                 style={{ fontSize: 13 }}
               />
             )}

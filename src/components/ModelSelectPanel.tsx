@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Select, Input, message } from "antd";
 import { API_BASE } from "../api/config";
 
-const PRODUCTIVITY_OPTIONS = ["100WPH", "150WPH"];
+const PRODUCTIVITY_OPTIONS = ["100WPH", "150WPH", "200WPH", "295WPH", "340WPH"];
 const VERSION_OPTIONS = ["3X", "5X"];
 
 interface Props {
@@ -99,7 +99,7 @@ export default function ModelSelectPanel({
           <label className="block mb-1 text-xs font-semibold text-[#555]">仿真时间 (s)</label>
           <Input
             type="number"
-            placeholder="留空使用默认值"
+            placeholder="留空使用默认值0.35s"
             value={draft.sim_time ?? ""}
             onChange={(e) =>
               onDraftChange({

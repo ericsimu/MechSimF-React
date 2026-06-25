@@ -165,8 +165,8 @@ export default function CaseList() {
           if (found) openEdit(found);
         }
       }
-    } catch {
-      message.error("添加失败");
+    } catch (e) {
+      message.error(e instanceof Error ? e.message : "添加失败");
     } finally {
       setSubmitting(false);
     }
@@ -181,8 +181,8 @@ export default function CaseList() {
         create_by: getCurrentUser(),
       });
       if (r.success) await loadCases();
-    } catch {
-      message.error("复制失败");
+    } catch (e) {
+      message.error(e instanceof Error ? e.message : "复制失败");
     }
   }
 
@@ -202,8 +202,8 @@ export default function CaseList() {
         await loadCases();
         message.success("删除成功");
       }
-    } catch {
-      message.error("删除失败");
+    } catch (e) {
+      message.error(e instanceof Error ? e.message : "删除失败");
     } finally {
       setDeleting(false);
     }
@@ -263,14 +263,12 @@ export default function CaseList() {
               : String(v);
         for (const [changeType, items] of Object.entries(diffDict)) {
           if (!items || typeof items !== "object") continue;
-          const prefix = changeType.includes("added")
-            ? "+ "
-            : changeType.includes("removed")
-              ? "- "
-              : "";
+          // 只显示参数变更，跳过参数新增/删除
+          if (changeType.includes("added") || changeType.includes("removed"))
+            continue;
           for (const [path, v] of Object.entries(items)) {
             rows.push({
-              path: prefix + cleanPath(path),
+              path: cleanPath(path),
               old: fmt(v.old_value),
               new: fmt(v.new_value),
             });
@@ -278,8 +276,8 @@ export default function CaseList() {
         }
         setDiffRows(rows);
       }
-    } catch {
-      message.error("获取差异失败");
+    } catch (e) {
+      message.error(e instanceof Error ? e.message : "获取差异失败");
     }
     setTaskModalOpen(true);
   }
@@ -297,8 +295,8 @@ export default function CaseList() {
         message.success(`任务已提交 (ID: ${taskIds.join(",")})`);
         setTaskModalOpen(false);
       }
-    } catch {
-      message.error("任务提交失败");
+    } catch (e) {
+      message.error(e instanceof Error ? e.message : "任务提交失败");
     } finally {
       setTaskSubmitting(false);
     }
