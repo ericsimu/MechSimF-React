@@ -49,11 +49,11 @@ export default function TreeNode({
               onToggle(path);
             }}
           >
-            {expanded[path] ? "▼" : "▶"}
+            {expanded[path] ? "▼︎" : "▶︎"}
           </span>
         ) : (
           <span className="w-3.5 text-center shrink-0" style={{ visibility: "hidden" }}>
-            {"▶"}
+            {"▶︎"}
           </span>
         )}
         <span>{name}</span>

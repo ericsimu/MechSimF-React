@@ -328,29 +328,13 @@ export default function CaseList() {
               onCopy={handleCopy}
               onShare={openShare}
               onDelete={confirmDelete}
+              onCreateTask={openTaskModal}
+              onSave={() => handleSave()}
+              saving={saving}
             />
 
             {editCase && (
               <div className="flex-1 flex flex-col overflow-hidden min-h-0">
-                <div className="flex justify-end items-center px-4 py-2 bg-[#fafafa] border-b border-[#f0f0f0] shrink-0">
-                  <div className="flex gap-2">
-                    <Button
-                      className="!text-[#3b82f6] !border-none !bg-transparent !font-medium !shadow-none hover:!bg-[rgba(59,130,246,0.08)]"
-                      size="small"
-                      onClick={openTaskModal}
-                    >
-                      创建任务
-                    </Button>
-                    <Button
-                      className="!text-[#3b82f6] !border-none !bg-transparent !font-medium !shadow-none hover:!bg-[rgba(59,130,246,0.08)]"
-                      size="small"
-                      loading={saving}
-                      onClick={() => handleSave()}
-                    >
-                      保存
-                    </Button>
-                  </div>
-                </div>
                 <ModelTab
                   key={editCase.id}
                   ref={modelTabRef}

@@ -96,12 +96,12 @@ function MechSim() {
   return (
     <ConfigProvider theme={{ token: { colorPrimary: "#3b82f6" } }} locale={zhCN}>
       <div className="flex h-full overflow-hidden">
-        <aside className="w-[200px] shrink-0 flex flex-col bg-gradient-to-b from-[#0f1b3d] via-[#1e3a8a] to-[#2563eb]">
+        <aside className="w-[160px] shrink-0 flex flex-col bg-gradient-to-b from-[#0f1b3d] via-[#1e3a8a] to-[#2563eb]">
           <div className="py-5 px-5 text-lg font-bold text-white tracking-[0.5px]">MechSim</div>
           <nav className="flex flex-col py-2">
             {navItems.map((item, i) =>
               item.path ? (
-                <NavLink key={item.path} to={item.path} exact={item.exact ?? true} activeClassName="active" className="block py-3 px-5 text-white/85 no-underline text-lg cursor-pointer transition-[color,background] duration-150 hover:text-white hover:bg-white/[0.12] [&.active]:text-white [&.active]:font-semibold [&.active]:border [&.active]:border-white/50 [&.active]:rounded">
+                <NavLink key={item.path} to={item.path} exact={item.exact ?? true} activeClassName="active" className="block py-3 px-5 text-white/85 no-underline text-[16px] cursor-pointer transition-[color,background] duration-150 hover:text-white hover:bg-white/[0.12] [&.active]:text-white [&.active]:font-semibold [&.active]:border [&.active]:border-white/50 [&.active]:rounded">
                   {item.icon && <span className="mr-2">{item.icon}</span>}{item.label}
                 </NavLink>
               ) : (<NavGroup key={i} item={item} />),

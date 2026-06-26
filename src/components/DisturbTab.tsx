@@ -55,14 +55,12 @@ export default function DisturbTab({
           <>
             {disturbTree.files!.map((f) => (
               <div className="whitespace-nowrap" key={f.path}>
-                <label
-                  className="flex items-center gap-0.5 px-3 py-0.5 cursor-pointer text-xs transition-colors duration-100 select-none hover:bg-[#e6f4ff]"
-                  onClick={(e) => e.stopPropagation()}
-                >
+                <div className="flex items-center gap-0.5 px-3 py-0.5 text-xs transition-colors duration-100 select-none hover:bg-[#e6f4ff]">
                   <input
                     type="checkbox"
                     checked={!!disturbChecked[f.path]}
                     onChange={() => onCheck(f.path)}
+                    style={{ cursor: "pointer" }}
                   />
                   <span
                     style={{
@@ -73,7 +71,7 @@ export default function DisturbTab({
                   >
                     {f.name}
                   </span>
-                </label>
+                </div>
               </div>
             ))}
           </>

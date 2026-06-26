@@ -18,7 +18,7 @@ export default function CaseSidebar({
 }: Props) {
   return (
     <div className="w-[200px] shrink-0 bg-white border-r border-[#f0f0f0] flex flex-col">
-      <div className="flex items-center justify-between px-4 py-3.5 border-b border-[#f0f0f0]">
+      <div className="flex items-center justify-between h-[48px] px-4 border-b border-[#f0f0f0] bg-[#fafafa]">
         <span className="text-sm font-semibold">用例列表</span>
         <Button className="!min-w-[56px] !h-8 !px-3 !text-[13px] !font-medium !border-none !bg-transparent !text-[#3b82f6] hover:!bg-[rgba(59,130,246,0.08)]" onClick={onAdd}>
           新建

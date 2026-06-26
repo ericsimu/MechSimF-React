@@ -17,6 +17,9 @@ interface Props {
   onCopy: (c: CaseModel) => void;
   onShare: (c: CaseModel) => void;
   onDelete: (c: CaseModel) => void;
+  onCreateTask: () => void;
+  onSave: () => void;
+  saving: boolean;
 }
 
 export default function CaseDetail({
@@ -30,10 +33,13 @@ export default function CaseDetail({
   onCopy,
   onShare,
   onDelete,
+  onCreateTask,
+  onSave,
+  saving,
 }: Props) {
   return (
     <div className="shrink-0 bg-white">
-      <div className="flex justify-between items-center px-4 py-3 border-b border-[#f0f0f0] bg-[#fafafa]">
+      <div className="flex justify-between items-center h-[48px] px-4 border-b border-[#f0f0f0] bg-[#fafafa]">
         <h2 className="text-[15px] font-semibold m-0">用例详情</h2>
       </div>
       <table className="w-full border-collapse text-[13px]">
@@ -104,6 +110,14 @@ export default function CaseDetail({
                   <Button
                     className="!text-[#3b82f6] !border-none !bg-transparent !font-medium !px-2 !shadow-none hover:!bg-[rgba(59,130,246,0.08)]"
                     size="small"
+                    loading={saving}
+                    onClick={onSave}
+                  >
+                    保存
+                  </Button>
+                  <Button
+                    className="!text-[#3b82f6] !border-none !bg-transparent !font-medium !px-2 !shadow-none hover:!bg-[rgba(59,130,246,0.08)]"
+                    size="small"
                     onClick={() => onCopy(editCase)}
                   >
                     复制
@@ -121,6 +135,13 @@ export default function CaseDetail({
                     onClick={() => onDelete(editCase)}
                   >
                     删除
+                  </Button>
+                                    <Button
+                    className="!text-[#3b82f6] !border-none !bg-transparent !font-medium !px-2 !shadow-none hover:!bg-[rgba(59,130,246,0.08)]"
+                    size="small"
+                    onClick={onCreateTask}
+                  >
+                    创建任务
                   </Button>
                 </div>
               </td>

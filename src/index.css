@@ -49,6 +49,8 @@ body {
   margin-bottom: 0;
   padding: 0 16px;
   background: #fafafa;
+  border-top: 2px solid #e8e8e8;
+  height: 48px;
 }
 .ant-tabs.edit-tabs > .ant-tabs-content-holder {
   flex: 1;
