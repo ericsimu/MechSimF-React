@@ -444,12 +444,13 @@ export default function Tasks() {
           <Table
             size="small"
             pagination={false}
+            tableLayout="fixed"
             dataSource={diffRows.map((r, i) => ({ ...r, _key: i }))}
             rowKey="_key"
             columns={[
-              { title: "参数路径", dataIndex: "path" },
-              { title: "原值", dataIndex: "old" },
-              { title: "新值", dataIndex: "new" },
+              { title: "参数路径", dataIndex: "path", className: "font-mono text-xs", onCell: () => ({ style: { wordBreak: "break-all" } }) },
+              { title: "原值", dataIndex: "old", className: "text-[#ff4d4f] font-mono text-xs", onCell: () => ({ style: { wordBreak: "break-all" } }) },
+              { title: "新值", dataIndex: "new", className: "text-[#52c41a] font-mono text-xs", onCell: () => ({ style: { wordBreak: "break-all" } }) },
             ]}
           />
         ) : (
