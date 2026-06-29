@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from "react";
-import { useLocation, useHistory } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { Button, Input, Spin } from "antd";
 import { getTaskStatus, getTaskDataColumns, getTaskSignals } from "../api/index";
 import uPlot from "uplot";
@@ -58,7 +58,6 @@ type TaskInfo = {
 /** 数据查看页：/data?ids=1,2,3（支持单/多任务数据查看） */
 export default function DataViewer() {
   const location = useLocation();
-  const history = useHistory();
   const ids = useMemo(
     () => (new URLSearchParams(location.search).get("ids") || "")
       .split(",").map((s) => Number(s)).filter((n) => !isNaN(n) && n > 0),
@@ -279,7 +278,6 @@ export default function DataViewer() {
   return (
     <div className="h-[calc(100vh-49px)] flex flex-col p-4">
       <div className="flex items-center gap-4 mb-3">
-        <Button onClick={() => history.goBack()}>返回</Button>
         <h2 className="text-base font-semibold m-0">{title}</h2>
       </div>
 

@@ -186,34 +186,6 @@ export default function Tasks() {
     setSelectedRowKeys(keys);
   }
 
-  async function handleBatchDelete() {
-    if (selectedRowKeys.length === 0) return;
-    Modal.confirm({
-      title: "批量删除",
-      content: `确定要删除选中的 ${selectedRowKeys.length} 个任务吗？`,
-      okText: "确认",
-      cancelText: "取消",
-      okButtonProps: { danger: true },
-      onOk: async () => {
-        let ok = 0;
-        let fail = 0;
-        for (const key of selectedRowKeys) {
-          try {
-            const r = await deleteTask(Number(key));
-            if (r.success) ok++;
-            else fail++;
-          } catch {
-            fail++;
-          }
-        }
-        updateSelection([]);
-        await loadTasks();
-        if (fail === 0) message.success(`已删除 ${ok} 个任务`);
-        else message.warning(`成功 ${ok} 个，失败 ${fail} 个`);
-      },
-    });
-  }
-
   function gotoDataView() {
     if (selectedRowKeys.length === 0) return;
     const ids = selectedRowKeys.map(String).join(",");
@@ -468,14 +440,6 @@ export default function Tasks() {
             onClick={gotoDataView}
           >
             数据查看（{selectedRowKeys.length}）
-          </Button>
-          <Button
-            danger
-            size="small"
-            disabled={selectedRowKeys.length === 0}
-            onClick={handleBatchDelete}
-          >
-            批量删除（{selectedRowKeys.length}）
           </Button>
         </div>
       </div>
