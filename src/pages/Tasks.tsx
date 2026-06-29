@@ -214,7 +214,7 @@ export default function Tasks() {
     });
   }
 
-  function gotoCompare() {
+  function gotoDataView() {
     if (selectedRowKeys.length === 0) return;
     const ids = selectedRowKeys.map(String).join(",");
     history.push(`/data?ids=${ids}`);
@@ -434,7 +434,7 @@ export default function Tasks() {
             type="link"
             size="small"
             style={{ fontWeight: 500 }}
-            onClick={() => history.push(`/compare?ids=${record.id}`)}
+            onClick={() => history.push(`/data?ids=${record.id}`)}
           >
             结果
           </Button>
@@ -465,7 +465,7 @@ export default function Tasks() {
             type="primary"
             size="small"
             disabled={selectedRowKeys.length === 0}
-            onClick={gotoCompare}
+            onClick={gotoDataView}
           >
             数据查看（{selectedRowKeys.length}）
           </Button>

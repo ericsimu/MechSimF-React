@@ -55,7 +55,7 @@ type TaskInfo = {
   cache: Record<string, number[] | null>;
 };
 
-/** 数据查看页：/data?ids=1,2,3（支持单/多任务叠加比对） */
+/** 数据查看页：/data?ids=1,2,3（支持单/多任务数据查看） */
 export default function DataViewer() {
   const location = useLocation();
   const history = useHistory();
@@ -304,7 +304,7 @@ export default function DataViewer() {
                 const ti = tasks.findIndex((x) => x.id === t.id);
                 const color = COLORS[ti % COLORS.length];
                 const names = t.sigNames.filter((n) => n.toLowerCase().includes(searchText.toLowerCase()));
-                const open = taskExpanded[t.id] !== false;
+                const open = taskExpanded[t.id] === true;
                 return (
                   <div key={t.id} className="mb-2">
                     <div className="flex items-center gap-1 text-[13px] font-semibold py-1 cursor-pointer select-none" onClick={() => setTaskExpanded((p) => ({ ...p, [t.id]: !open }))}>
