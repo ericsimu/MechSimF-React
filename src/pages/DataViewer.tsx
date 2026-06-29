@@ -302,7 +302,7 @@ export default function DataViewer() {
                 const ti = tasks.findIndex((x) => x.id === t.id);
                 const color = COLORS[ti % COLORS.length];
                 const names = t.sigNames.filter((n) => n.toLowerCase().includes(searchText.toLowerCase()));
-                const open = taskExpanded[t.id] === true;
+                const open = searchText ? names.length > 0 : taskExpanded[t.id] === true;
                 return (
                   <div key={t.id} className="mb-2">
                     <div className="flex items-center gap-1 text-[13px] font-semibold py-1 cursor-pointer select-none" onClick={() => setTaskExpanded((p) => ({ ...p, [t.id]: !open }))}>
