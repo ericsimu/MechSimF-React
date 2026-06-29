@@ -200,7 +200,9 @@ export default function DataViewer() {
         const raw = domain === "fft" || (rng.end - rng.start < 1.0);
         await Promise.all(
           Array.from(byTask.entries()).map(async ([tid, names]) => {
-            const r = await getTaskSignals(tid, names, domain, rng.start, rng.end, raw);
+            // 时域缩放时附带 time 列，以便后续图表用缩放后的时间轴
+            const reqNames = domain === "time" && !names.includes("time") ? ["time", ...names] : names;
+            const r = await getTaskSignals(tid, reqNames, domain, rng.start, rng.end, raw);
             if (r.success && r.data) {
               setTasks((prev) => {
                 const idx = prev.findIndex((t) => t.id === tid);
