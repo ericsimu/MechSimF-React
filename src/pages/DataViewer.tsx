@@ -320,15 +320,8 @@ export default function DataViewer() {
                         <label key={key} className="flex items-center gap-1 cursor-pointer text-[13px] py-0.5 pl-3">
                           <input type="checkbox" checked={checked[key] === true && checked[fftKey] === true}
                             onChange={() => {
-                              const toCheck = !(checked[key] && checked[fftKey]);
-                              toggle(key, t.id, n, "time"); toggle(fftKey, t.id, n, "fft");
-                              if (!toCheck) {
-                                setChecked((prev) => ({ ...prev, [key]: false, [fftKey]: false }));
-                              } else {
-                                setChecked((prev) => ({ ...prev, [key]: true, [fftKey]: true }));
-                                fetchOne(t.id, n, "time");
-                                fetchOne(t.id, n, "fft");
-                              }
+                              toggle(key, t.id, n, "time");
+                              toggle(fftKey, t.id, n, "fft");
                             }}
                           />
                           <span>{n}</span>
