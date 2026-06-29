@@ -6,6 +6,8 @@ import uPlot from "uplot";
 import "uplot/dist/uPlot.min.css";
 import { isNil } from "../utils/isNil";
 
+// ── 常量 / 工具函数 ──
+
 const COLORS = ["#3b82f6","#ef4444","#10b981","#f59e0b","#8b5cf6","#ec4899","#06b6d4","#f97316"];
 
 function fmtNum(v: number): string {
@@ -17,12 +19,14 @@ function fmtNum(v: number): string {
   return s.includes(".") ? s.replace(/\.?0+$/, "") : s;
 }
 
+// ── 光标标签 ──
+
 type Cursors = { hook: (u: any) => void; destroy: () => void };
+
 function makeCursorLabels(container: HTMLElement, xUnit: string): Cursors {
   const labels: HTMLDivElement[] = [];
   const removeAll = () => { labels.forEach((l) => l.remove()); labels.length = 0; };
-  const onLeave = () => removeAll();
-  container.addEventListener("mouseleave", onLeave);
+  container.addEventListener("mouseleave", removeAll);
   return {
     hook(u: any) {
       try {
@@ -32,22 +36,24 @@ function makeCursorLabels(container: HTMLElement, xUnit: string): Cursors {
         const xVal = u.data[0][idx];
         const xLeft = u.valToPos(xVal, "x");
         const xl = document.createElement("div");
-        xl.style.cssText = `position:absolute;left:${xLeft + 4}px;bottom:22px;font-size:10px;color:#fff;background:rgba(0,0,0,0.72);padding:1px 4px;border-radius:2px;pointer-events:none;white-space:nowrap;z-index:100;`;
+        xl.style.cssText = `position:absolute;left:${xLeft+4}px;bottom:22px;font-size:10px;color:#fff;background:rgba(0,0,0,0.72);padding:1px 4px;border-radius:2px;pointer-events:none;white-space:nowrap;z-index:100;`;
         xl.textContent = `${fmtNum(xVal)} ${xUnit}`;
         container.appendChild(xl); labels.push(xl);
         for (let i = 1; i < u.series.length; i++) {
           const y = u.data[i]?.[idx];
           if (isNil(y)) continue;
           const d = document.createElement("div");
-          d.style.cssText = `position:absolute;left:${xLeft + 6}px;top:${u.valToPos(y,"y") - 14}px;font-size:10px;color:#fff;background:rgba(0,0,0,0.78);padding:1px 5px;border-radius:2px;border-left:2px solid ${u.series[i].stroke || "#888"};pointer-events:none;white-space:nowrap;z-index:100;line-height:1.5;`;
-          d.textContent = `${u.series[i].label || ""}:${fmtNum(y)}`;
+          d.style.cssText = `position:absolute;left:${xLeft+6}px;top:${u.valToPos(y,"y")-14}px;font-size:10px;color:#fff;background:rgba(0,0,0,0.78);padding:1px 5px;border-radius:2px;border-left:2px solid ${u.series[i].stroke||"#888"};pointer-events:none;white-space:nowrap;z-index:100;line-height:1.5;`;
+          d.textContent = `${u.series[i].label||""}:${fmtNum(y)}`;
           container.appendChild(d); labels.push(d);
         }
       } catch { /* keep cursor working */ }
     },
-    destroy() { removeAll(); container.removeEventListener("mouseleave", onLeave); },
+    destroy() { removeAll(); container.removeEventListener("mouseleave", removeAll); },
   };
 }
+
+// ── 数据类型 ──
 
 type TaskInfo = {
   id: number; name: string; status: string;
@@ -55,12 +61,17 @@ type TaskInfo = {
   cache: Record<string, number[] | null>;
 };
 
-/** 数据查看页：/data?ids=1,2,3（支持单/多任务数据查看） */
+type Plot = { taskId: number; label: string; color: string; data: number[] | null };
+
+// ── 组件 ──
+
+/** 数据查看页：/data?ids=1,2,3（单/多任务信号叠加） */
 export default function DataViewer() {
+  // ── state ──
   const location = useLocation();
   const ids = useMemo(
     () => (new URLSearchParams(location.search).get("ids") || "")
-      .split(",").map((s) => Number(s)).filter((n) => !isNaN(n) && n > 0),
+      .split(",").map(Number).filter((n) => !isNaN(n) && n > 0),
     [location.search],
   );
 
@@ -71,14 +82,26 @@ export default function DataViewer() {
   const [taskExpanded, setTaskExpanded] = useState<Record<number, boolean>>({});
   const [leftWidth, setLeftWidth] = useState(260);
 
+  // ── refs ──
+  const tasksRef = useRef(tasks); tasksRef.current = tasks;
+  const izTimeRef = useRef(false);  // 时域是否已缩放
+  const izFreqRef = useRef(false);  // 频域是否已缩放
+  const fullCacheRef = useRef<Record<string, Record<string, number[] | null>>>({});
+
+  const timeChartRef = useRef<HTMLDivElement>(null);
+  const freqChartRef = useRef<HTMLDivElement>(null);
+  const timeInst = useRef<any>(null);
+  const freqInst = useRef<any>(null);
+  const timeLbls = useRef<Cursors | null>(null);
+  const freqLbls = useRef<Cursors | null>(null);
+
+  // ── 侧边栏宽度拖拽 ──
   function startResize(e: React.MouseEvent) {
     const body = (e.target as HTMLElement).parentElement!;
     const bodyLeft = body.getBoundingClientRect().left;
     const bodyW = body.offsetWidth;
     document.body.style.userSelect = "none";
-    function onMove(ev: MouseEvent) {
-      setLeftWidth(Math.min(bodyW * 0.6, Math.max(180, ev.clientX - bodyLeft)));
-    }
+    function onMove(ev: MouseEvent) { setLeftWidth(Math.min(bodyW*.6, Math.max(180, ev.clientX-bodyLeft))); }
     function onUp() {
       document.body.style.userSelect = "";
       document.removeEventListener("mousemove", onMove);
@@ -88,21 +111,24 @@ export default function DataViewer() {
     document.addEventListener("mouseup", onUp);
   }
 
-  // Zoom state
-  const [isTimeZoomed, setIsTimeZoomed] = useState(false);
-  const [isFreqZoomed, setIsFreqZoomed] = useState(false);
-  const izTimeRef = useRef(false); izTimeRef.current = isTimeZoomed;
-  const izFreqRef = useRef(false); izFreqRef.current = isFreqZoomed;
-  const fullCacheRef = useRef<Record<string, Record<string, number[] | null>>>({}); // taskId -> {cacheKey: data}
+  // ── 还原全量缓存（zoom → full） ──
+  function restoreFullCache() {
+    const full = fullCacheRef.current;
+    if (!Object.keys(full).length) return;
+    setTasks((prev) => {
+      const next = [...prev];
+      for (const tidStr of Object.keys(full)) {
+        const idx = next.findIndex((t) => String(t.id) === tidStr);
+        if (idx >= 0) next[idx] = { ...next[idx], cache: { ...full[tidStr] } };
+      }
+      return next;
+    });
+    fullCacheRef.current = {};
+    izTimeRef.current = false;
+    izFreqRef.current = false;
+  }
 
-  const timeChartRef = useRef<HTMLDivElement>(null);
-  const freqChartRef = useRef<HTMLDivElement>(null);
-  const timeInst = useRef<any>(null);
-  const freqInst = useRef<any>(null);
-  const timeLbls = useRef<Cursors | null>(null);
-  const freqLbls = useRef<Cursors | null>(null);
-
-  // 加载各任务
+  // ── 加载任务 ──
   useEffect(() => {
     let cancelled = false;
     if (ids.length === 0) { setLoading(false); return; }
@@ -132,7 +158,7 @@ export default function DataViewer() {
     return () => { cancelled = true; };
   }, [ids]);
 
-  // 拉取单个信号
+  // ── 获取单个信号 ──
   async function fetchOne(taskId: number, sigName: string, domain: "time" | "fft") {
     const task = tasks.find((t) => t.id === taskId);
     if (!task) return;
@@ -150,35 +176,19 @@ export default function DataViewer() {
     });
   }
 
+  // ── 勾选/取消信号 ──
   function toggle(key: string, taskId: number, sigName: string, domain: "time" | "fft") {
     const newVal = !checked[key];
     setChecked((prev) => ({ ...prev, [key]: newVal }));
     if (!newVal) return;
-    // 勾选新信号时若处于缩放状态，先还原全量数据再加载
-    if (izTimeRef.current || izFreqRef.current) {
-      const full = fullCacheRef.current;
-      if (Object.keys(full).length) {
-        setTasks((prev) => {
-          const next = [...prev];
-          for (const taskIdStr of Object.keys(full)) {
-            const idx = next.findIndex((t) => String(t.id) === taskIdStr);
-            if (idx >= 0) next[idx] = { ...next[idx], cache: { ...full[taskIdStr] } };
-          }
-          return next;
-        });
-        fullCacheRef.current = {};
-        setIsTimeZoomed(false); izTimeRef.current = false;
-        setIsFreqZoomed(false); izFreqRef.current = false;
-      }
-    }
+    // 缩放状态下勾选新信号 → 先还原全量
+    if (izTimeRef.current || izFreqRef.current) restoreFullCache();
     fetchOne(taskId, sigName, domain);
   }
 
   function toggleAllOff() { setChecked({}); }
 
-  const tasksRef = useRef(tasks); tasksRef.current = tasks;
-
-  // drag-to-zoom: 通过 uPlot 选区回调，按区间重新拉取信号高精度数据
+  // ── 拖拽缩放 ──
   const makeSelectHandler = useCallback((domain: "time" | "fft") => {
     let timer: ReturnType<typeof setTimeout> | null = null;
     let pending: { start: number; end: number } | null = null;
@@ -194,31 +204,23 @@ export default function DataViewer() {
         const rng = pending; pending = null;
         const zoomed = domain === "time" ? izTimeRef.current : izFreqRef.current;
 
-        // 首次缩放前保存全量缓存
         if (!zoomed) {
           const full: Record<string, Record<string, number[] | null>> = {};
           tasksRef.current.forEach((t) => { full[String(t.id)] = { ...t.cache }; });
           fullCacheRef.current = full;
         }
 
-        // 从 uPlot 当前 series 收集勾选的信号
+        // 解析图例标签 → 按任务分组
         const sigLabels: string[] = u.series.slice(1).map((s: any) => s.label).filter(Boolean);
-        // group by taskId: parse "任务#N/sigName" labels
         const byTask = new Map<number, string[]>();
         sigLabels.forEach((label: string) => {
           const m = label.match(/^任务#(\d+)\/(.+)$/);
-          if (m) {
-            const tid = Number(m[1]);
-            const arr = byTask.get(tid) || [];
-            arr.push(m[2]);
-            byTask.set(tid, arr);
-          }
+          if (m) { const a = byTask.get(Number(m[1])) || []; a.push(m[2]); byTask.set(Number(m[1]), a); }
         });
 
         const raw = domain === "fft" || (rng.end - rng.start < 1.0);
         await Promise.all(
           Array.from(byTask.entries()).map(async ([tid, names]) => {
-            // 时域缩放时附带 time 列，以便后续图表用缩放后的时间轴
             const reqNames = domain === "time" && !names.includes("time") ? ["time", ...names] : names;
             const r = await getTaskSignals(tid, reqNames, domain, rng.start, rng.end, raw);
             if (r.success && r.data) {
@@ -237,44 +239,28 @@ export default function DataViewer() {
             }
           }),
         );
-
-        if (domain === "time") { setIsTimeZoomed(true); izTimeRef.current = true; }
-        else { setIsFreqZoomed(true); izFreqRef.current = true; }
+        if (domain === "time") izTimeRef.current = true;
+        else izFreqRef.current = true;
       }, 200);
     };
   }, []);
 
-  // 双击还原全量数据
+  // ── 双击还原 ──
   const makeDblHandler = useCallback((domain: "time" | "fft") => {
     return () => {
-      const zoomed = domain === "time" ? izTimeRef.current : izFreqRef.current;
-      if (!zoomed) return;
-      const full = fullCacheRef.current;
-      if (!Object.keys(full).length) return;
-      setTasks((prev) => {
-        const next = [...prev];
-        for (const taskIdStr of Object.keys(full)) {
-          const idx = next.findIndex((t) => String(t.id) === taskIdStr);
-          if (idx >= 0) next[idx] = { ...next[idx], cache: { ...full[taskIdStr] } };
-        }
-        return next;
-      });
-      fullCacheRef.current = {};
-      if (domain === "time") { setIsTimeZoomed(false); izTimeRef.current = false; }
-      else { setIsFreqZoomed(false); izFreqRef.current = false; }
+      if (!(domain === "time" ? izTimeRef.current : izFreqRef.current)) return;
+      restoreFullCache();
     };
   }, []);
 
-  // 时域图
+  // ── 时域图 ──
   useEffect(() => {
-    if (timeLbls.current) { timeLbls.current.destroy(); timeLbls.current = null; }
-    if (timeInst.current) { timeInst.current.destroy(); timeInst.current = null; }
+    timeLbls.current?.destroy(); timeLbls.current = null;
+    timeInst.current?.destroy(); timeInst.current = null;
     const el = timeChartRef.current; if (!el) return;
 
-    type Plot = { taskId: number; label: string; color: string; data: number[] | null };
     const plots: Plot[] = [];
-    const timeKeys = Object.entries(checked).filter(([k, v]) => v && !k.includes("::fft::"));
-    timeKeys.forEach(([k], pi) => {
+    Object.entries(checked).filter(([k, v]) => v && !k.includes("::fft::")).forEach(([k], pi) => {
       const [tidStr, sigName] = k.split("::");
       const tt = tasks.find((t) => t.id === Number(tidStr));
       if (!tt) return;
@@ -282,7 +268,6 @@ export default function DataViewer() {
     });
     if (plots.length === 0) return;
 
-    // 优先从有勾选信号的任务取 time，避免 zoom 后仍用其他任务的全量旧 time
     const xTask =
       tasks.find((t) => t.cache["time"] && (t.cache["time"] as number[]).length > 0 && plots.some((p) => p.taskId === t.id)) ||
       tasks.find((t) => t.cache["time"] && (t.cache["time"] as number[]).length > 0);
@@ -308,22 +293,19 @@ export default function DataViewer() {
         },
         [xAxis, ...arrays], el,
       );
-      const dblH = makeDblHandler("time");
       const overEl = el.querySelector(".u-over") as HTMLElement | null;
-      (overEl || el).addEventListener("dblclick", dblH);
+      (overEl || el).addEventListener("dblclick", makeDblHandler("time"));
     } catch { /* */ }
   }, [tasks, checked, makeSelectHandler, makeDblHandler]);
 
-  // 频域图
+  // ── 频域图 ──
   useEffect(() => {
-    if (freqLbls.current) { freqLbls.current.destroy(); freqLbls.current = null; }
-    if (freqInst.current) { freqInst.current.destroy(); freqInst.current = null; }
+    freqLbls.current?.destroy(); freqLbls.current = null;
+    freqInst.current?.destroy(); freqInst.current = null;
     const el = freqChartRef.current; if (!el) return;
 
-    type Plot = { taskId: number; label: string; color: string; data: number[] | null };
     const plots: Plot[] = [];
-    const fftKeys = Object.entries(checked).filter(([k, v]) => v && k.includes("::fft::"));
-    fftKeys.forEach(([k], pi) => {
+    Object.entries(checked).filter(([k, v]) => v && k.includes("::fft::")).forEach(([k], pi) => {
       const m = k.match(/^(\d+)::fft::(.+)$/); if (!m) return;
       const tt = tasks.find((t) => t.id === Number(m[1]));
       if (!tt) return;
@@ -354,13 +336,12 @@ export default function DataViewer() {
         },
         [freq.map((v: number | null) => (v != null ? v : null)), ...plots.map((p) => (p.data || []).slice(0, freq.length))], el,
       );
-      const dblH = makeDblHandler("fft");
       const overEl = el.querySelector(".u-over") as HTMLElement | null;
-      (overEl || el).addEventListener("dblclick", dblH);
+      (overEl || el).addEventListener("dblclick", makeDblHandler("fft"));
     } catch { /* */ }
   }, [tasks, checked, makeSelectHandler, makeDblHandler]);
 
-  // Resize
+  // ── Resize / cleanup ──
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout>;
     const onResize = () => { clearTimeout(timer); timer = setTimeout(() => setChecked((prev) => ({ ...prev })), 200); };
@@ -369,13 +350,11 @@ export default function DataViewer() {
   }, []);
 
   useEffect(() => () => {
-    if (timeLbls.current) timeLbls.current.destroy();
-    if (freqLbls.current) freqLbls.current.destroy();
-    if (timeInst.current) timeInst.current.destroy();
-    if (freqInst.current) freqInst.current.destroy();
+    timeLbls.current?.destroy(); freqLbls.current?.destroy();
+    timeInst.current?.destroy(); freqInst.current?.destroy();
   }, []);
 
-  // 预取首个 done 任务的 time/frequency
+  // ── 预取共享轴 ──
   useEffect(() => {
     (async () => {
       const first = tasks.find((t) => t.status === "done");
@@ -403,6 +382,7 @@ export default function DataViewer() {
     })();
   }, [tasks]);
 
+  // ── SVG 导出 ──
   function exportSVG(container: HTMLDivElement | null, defaultName: string) {
     if (!container) return;
     const canvas = container.querySelector("canvas"); if (!canvas) return;
@@ -415,11 +395,13 @@ export default function DataViewer() {
     URL.revokeObjectURL(url);
   }
 
+  // ── 派生值 ──
   const doneTasks = tasks.filter((t) => t.status === "done");
   const sigCount = doneTasks.reduce((n, t) => n + t.sigNames.length, 0);
   const title = ids.length > 1 ? `数据查看 — ${ids.length} 个任务 (${ids.join(", ")})` : `数据查看 — 任务 #${ids[0] || "?"}`;
   const exportBase = ids.length > 1 ? `data_${ids.join("_")}` : `data_task_${ids[0] || "x"}`;
 
+  // ── 渲染 ──
   return (
     <div className="h-[calc(100vh-49px)] flex flex-col p-4">
       <div className="flex items-center gap-4 mb-3">
@@ -434,12 +416,12 @@ export default function DataViewer() {
         <div className="text-center text-[#999] py-[120px] text-sm">所选任务暂无可查看的仿真数据</div>
       ) : (
         <div className="flex flex-1 gap-3 overflow-hidden">
+
+          {/* ── 信号列表面板 ── */}
           <div
             className="sig-sidebar"
             style={{ width: leftWidth, minWidth: 0, flexShrink: 0, position: "relative", border: "1px solid #e8e8e8", borderRadius: 6, display: "flex", flexDirection: "column", overflow: "hidden" }}
-            onMouseDown={(e) => {
-              if (e.nativeEvent.offsetX >= (e.currentTarget as HTMLElement).offsetWidth - 8) startResize(e);
-            }}
+            onMouseDown={(e) => { if (e.nativeEvent.offsetX >= (e.currentTarget as HTMLElement).offsetWidth - 8) startResize(e); }}
           >
             <div className="flex items-center justify-between px-2.5 py-2 border-b border-[#e8e8e8] font-semibold text-[13px]" style={{ cursor: "default" }}>
               <span>信号列表 ({sigCount})</span>
@@ -461,15 +443,11 @@ export default function DataViewer() {
                       <span className="text-[#999] text-xs font-normal">({t.sigNames.length})</span>
                     </div>
                     {open && names.map((n) => {
-                      const key = `${t.id}::${n}`;
-                      const fftKey = `${t.id}::fft::${n}`;
+                      const key = `${t.id}::${n}`, fftKey = `${t.id}::fft::${n}`;
                       return (
                         <label key={key} className="flex items-center gap-1 cursor-pointer text-[13px] py-0.5 pl-3">
                           <input type="checkbox" checked={checked[key] === true && checked[fftKey] === true}
-                            onChange={() => {
-                              toggle(key, t.id, n, "time");
-                              toggle(fftKey, t.id, n, "fft");
-                            }}
+                            onChange={() => { toggle(key, t.id, n, "time"); toggle(fftKey, t.id, n, "fft"); }}
                           />
                           <span>{n}</span>
                         </label>
@@ -480,6 +458,8 @@ export default function DataViewer() {
               })}
             </div>
           </div>
+
+          {/* ── 图表区 ── */}
           <div className="flex-1 overflow-y-auto flex flex-col">
             <div className="flex flex-col">
               <div className="text-[13px] font-semibold text-[#555] mb-0.5 flex justify-between items-center">
@@ -496,6 +476,7 @@ export default function DataViewer() {
               <div ref={freqChartRef} className="dv-chart min-h-[300px] min-w-full relative" />
             </div>
           </div>
+
         </div>
       )}
     </div>
