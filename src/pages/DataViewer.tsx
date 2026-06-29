@@ -253,18 +253,21 @@ export default function DataViewer() {
     if (timeInst.current) { timeInst.current.destroy(); timeInst.current = null; }
     const el = timeChartRef.current; if (!el) return;
 
-    type Plot = { label: string; color: string; data: number[] | null };
+    type Plot = { taskId: number; label: string; color: string; data: number[] | null };
     const plots: Plot[] = [];
     const timeKeys = Object.entries(checked).filter(([k, v]) => v && !k.includes("::fft::"));
     timeKeys.forEach(([k], pi) => {
       const [tidStr, sigName] = k.split("::");
       const tt = tasks.find((t) => t.id === Number(tidStr));
       if (!tt) return;
-      plots.push({ label: `${tt.name}/${sigName}`, color: COLORS[pi % COLORS.length], data: tt.cache[sigName] ?? null });
+      plots.push({ taskId: tt.id, label: `${tt.name}/${sigName}`, color: COLORS[pi % COLORS.length], data: tt.cache[sigName] ?? null });
     });
     if (plots.length === 0) return;
 
-    const xTask = tasks.find((t) => t.cache["time"] && (t.cache["time"] as number[]).length > 0);
+    // 优先从有勾选信号的任务取 time，避免 zoom 后仍用其他任务的全量旧 time
+    const xTask =
+      tasks.find((t) => t.cache["time"] && (t.cache["time"] as number[]).length > 0 && plots.some((p) => p.taskId === t.id)) ||
+      tasks.find((t) => t.cache["time"] && (t.cache["time"] as number[]).length > 0);
     const maxLen = plots.reduce((m, p) => p.data ? Math.max(m, p.data.length) : m, 0);
     const xAxis: number[] = xTask ? (xTask.cache["time"] as number[]).slice(0, maxLen) : Array.from({ length: maxLen }, (_, i) => i);
 
@@ -299,18 +302,20 @@ export default function DataViewer() {
     if (freqInst.current) { freqInst.current.destroy(); freqInst.current = null; }
     const el = freqChartRef.current; if (!el) return;
 
-    type Plot = { label: string; color: string; data: number[] | null };
+    type Plot = { taskId: number; label: string; color: string; data: number[] | null };
     const plots: Plot[] = [];
     const fftKeys = Object.entries(checked).filter(([k, v]) => v && k.includes("::fft::"));
     fftKeys.forEach(([k], pi) => {
       const m = k.match(/^(\d+)::fft::(.+)$/); if (!m) return;
       const tt = tasks.find((t) => t.id === Number(m[1]));
       if (!tt) return;
-      plots.push({ label: `${tt.name}/${m[2]}`, color: COLORS[pi % COLORS.length], data: tt.cache[`fft::${m[2]}`] ?? null });
+      plots.push({ taskId: tt.id, label: `${tt.name}/${m[2]}`, color: COLORS[pi % COLORS.length], data: tt.cache[`fft::${m[2]}`] ?? null });
     });
     if (plots.length === 0) return;
 
-    const xTask = tasks.find((t) => t.cache["frequency"] && (t.cache["frequency"] as number[]).length > 0);
+    const xTask =
+      tasks.find((t) => t.cache["frequency"] && (t.cache["frequency"] as number[]).length > 0 && plots.some((p) => p.taskId === t.id)) ||
+      tasks.find((t) => t.cache["frequency"] && (t.cache["frequency"] as number[]).length > 0);
     if (!xTask) return;
     const freq = xTask.cache["frequency"] as number[];
 
