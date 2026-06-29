@@ -69,6 +69,25 @@ export default function DataViewer() {
   const [checked, setChecked] = useState<Record<string, boolean>>({});
   const [searchText, setSearchText] = useState("");
   const [taskExpanded, setTaskExpanded] = useState<Record<number, boolean>>({});
+  const [leftWidth, setLeftWidth] = useState(260);
+
+  function startResize(e: React.MouseEvent) {
+    const target = e.target as HTMLElement;
+    const body = target.parentElement!;
+    const bodyLeft = body.getBoundingClientRect().left;
+    const bodyW = body.offsetWidth;
+    document.body.style.userSelect = "none";
+    function onMove(ev: MouseEvent) {
+      setLeftWidth(Math.min(bodyW * 0.6, Math.max(180, ev.clientX - bodyLeft)));
+    }
+    function onUp() {
+      document.body.style.userSelect = "";
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
+    }
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
+  }
 
   const timeChartRef = useRef<HTMLDivElement>(null);
   const freqChartRef = useRef<HTMLDivElement>(null);
@@ -289,7 +308,7 @@ export default function DataViewer() {
         <div className="text-center text-[#999] py-[120px] text-sm">所选任务暂无可查看的仿真数据</div>
       ) : (
         <div className="flex flex-1 gap-3 overflow-hidden">
-          <div className="w-[260px] shrink-0 border border-[#e8e8e8] rounded-md flex flex-col overflow-hidden">
+          <div style={{ width: leftWidth, flexShrink: 0, border: "1px solid #e8e8e8", borderRadius: 6, display: "flex", flexDirection: "column", overflow: "hidden" }}>
             <div className="flex items-center justify-between px-2.5 py-2 border-b border-[#e8e8e8] font-semibold text-[13px]">
               <span>信号列表 ({sigCount})</span>
               <Button size="small" onClick={toggleAllOff}>全不选</Button>
@@ -331,6 +350,10 @@ export default function DataViewer() {
               })}
             </div>
           </div>
+          <div
+            className="w-1 bg-[#f0f0f0] cursor-col-resize shrink-0 border-l border-r border-[#e8e8e8] transition-colors hover:bg-[#d9d9d9]"
+            onMouseDown={startResize}
+          />
           <div className="flex-1 overflow-y-auto flex flex-col">
             <div className="flex flex-col">
               <div className="text-[13px] font-semibold text-[#555] mb-0.5 flex justify-between items-center">
