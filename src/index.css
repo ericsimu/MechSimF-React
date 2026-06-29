@@ -24,6 +24,15 @@ body {
 .ant-table-wrapper {
   height: 100%;
 }
+.sig-sidebar::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 8px;
+  cursor: col-resize;
+}
 .ant-table {
   font-size: 13px !important;
 }

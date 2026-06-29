@@ -308,7 +308,8 @@ export default function DataViewer() {
       ) : (
         <div className="flex flex-1 gap-3 overflow-hidden">
           <div
-            style={{ width: leftWidth, flexShrink: 0, border: "1px solid #e8e8e8", borderRightWidth: 4, borderRightColor: "#e0e0e0", borderRadius: 6, display: "flex", flexDirection: "column", overflow: "hidden", cursor: "auto" }}
+            className="sig-sidebar"
+            style={{ width: leftWidth, flexShrink: 0, position: "relative", border: "1px solid #e8e8e8", borderRadius: 6, display: "flex", flexDirection: "column", overflow: "hidden" }}
             onMouseDown={(e) => {
               if (e.nativeEvent.offsetX >= (e.target as HTMLElement).offsetWidth - 8) startResize(e);
             }}
