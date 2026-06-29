@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useLocation } from "react-router-dom";
 import { Button, Input, Spin } from "antd";
 import { getTaskStatus, getTaskDataColumns, getTaskSignals } from "../api/index";
@@ -88,6 +88,13 @@ export default function DataViewer() {
     document.addEventListener("mouseup", onUp);
   }
 
+  // Zoom state
+  const [isTimeZoomed, setIsTimeZoomed] = useState(false);
+  const [isFreqZoomed, setIsFreqZoomed] = useState(false);
+  const izTimeRef = useRef(false); izTimeRef.current = isTimeZoomed;
+  const izFreqRef = useRef(false); izFreqRef.current = isFreqZoomed;
+  const fullCacheRef = useRef<Record<string, Record<string, number[] | null>>>({}); // taskId -> {cacheKey: data}
+
   const timeChartRef = useRef<HTMLDivElement>(null);
   const freqChartRef = useRef<HTMLDivElement>(null);
   const timeInst = useRef<any>(null);
@@ -151,6 +158,93 @@ export default function DataViewer() {
 
   function toggleAllOff() { setChecked({}); }
 
+  const tasksRef = useRef(tasks); tasksRef.current = tasks;
+
+  // drag-to-zoom: 通过 uPlot 选区回调，按区间重新拉取信号高精度数据
+  const makeSelectHandler = useCallback((domain: "time" | "fft") => {
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    let pending: { start: number; end: number } | null = null;
+    return (u: any) => {
+      if (u.select && u.select.width > 5) {
+        const xMin = u.posToVal(u.select.left, "x");
+        const xMax = u.posToVal(u.select.left + u.select.width, "x");
+        pending = { start: Math.min(xMin, xMax), end: Math.max(xMin, xMax) };
+      }
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(async () => {
+        if (!pending) return;
+        const rng = pending; pending = null;
+        const zoomed = domain === "time" ? izTimeRef.current : izFreqRef.current;
+
+        // 首次缩放前保存全量缓存
+        if (!zoomed) {
+          const full: Record<string, Record<string, number[] | null>> = {};
+          tasksRef.current.forEach((t) => { full[String(t.id)] = { ...t.cache }; });
+          fullCacheRef.current = full;
+        }
+
+        // 从 uPlot 当前 series 收集勾选的信号
+        const sigLabels: string[] = u.series.slice(1).map((s: any) => s.label).filter(Boolean);
+        // group by taskId: parse "任务#N/sigName" labels
+        const byTask = new Map<number, string[]>();
+        sigLabels.forEach((label: string) => {
+          const m = label.match(/^任务#(\d+)\/(.+)$/);
+          if (m) {
+            const tid = Number(m[1]);
+            const arr = byTask.get(tid) || [];
+            arr.push(m[2]);
+            byTask.set(tid, arr);
+          }
+        });
+
+        const raw = domain === "fft" || (rng.end - rng.start < 1.0);
+        await Promise.all(
+          Array.from(byTask.entries()).map(async ([tid, names]) => {
+            const r = await getTaskSignals(tid, names, domain, rng.start, rng.end, raw);
+            if (r.success && r.data) {
+              setTasks((prev) => {
+                const idx = prev.findIndex((t) => t.id === tid);
+                if (idx < 0) return prev;
+                const next = [...prev];
+                const newCache = { ...next[idx].cache };
+                r.data!.columns.forEach((c: any) => {
+                  const cacheKey = domain === "fft" ? `fft::${c.name}` : c.name;
+                  newCache[cacheKey] = c.data.map((v: any) => (isNil(v) ? null : Number(v)));
+                });
+                next[idx] = { ...next[idx], cache: newCache };
+                return next;
+              });
+            }
+          }),
+        );
+
+        if (domain === "time") { setIsTimeZoomed(true); izTimeRef.current = true; }
+        else { setIsFreqZoomed(true); izFreqRef.current = true; }
+      }, 200);
+    };
+  }, []);
+
+  // 双击还原全量数据
+  const makeDblHandler = useCallback((domain: "time" | "fft") => {
+    return () => {
+      const zoomed = domain === "time" ? izTimeRef.current : izFreqRef.current;
+      if (!zoomed) return;
+      const full = fullCacheRef.current;
+      if (!Object.keys(full).length) return;
+      setTasks((prev) => {
+        const next = [...prev];
+        for (const taskIdStr of Object.keys(full)) {
+          const idx = next.findIndex((t) => String(t.id) === taskIdStr);
+          if (idx >= 0) next[idx] = { ...next[idx], cache: { ...full[taskIdStr] } };
+        }
+        return next;
+      });
+      fullCacheRef.current = {};
+      if (domain === "time") { setIsTimeZoomed(false); izTimeRef.current = false; }
+      else { setIsFreqZoomed(false); izFreqRef.current = false; }
+    };
+  }, []);
+
   // 时域图
   useEffect(() => {
     if (timeLbls.current) { timeLbls.current.destroy(); timeLbls.current = null; }
@@ -159,11 +253,12 @@ export default function DataViewer() {
 
     type Plot = { label: string; color: string; data: number[] | null };
     const plots: Plot[] = [];
-    Object.entries(checked).filter(([k, v]) => v && !k.includes("::fft::")).forEach(([k]) => {
+    const timeKeys = Object.entries(checked).filter(([k, v]) => v && !k.includes("::fft::"));
+    timeKeys.forEach(([k], pi) => {
       const [tidStr, sigName] = k.split("::");
       const tt = tasks.find((t) => t.id === Number(tidStr));
       if (!tt) return;
-      plots.push({ label: `${tt.name}/${sigName}`, color: COLORS[tasks.findIndex((t) => t.id === tt.id) % COLORS.length], data: tt.cache[sigName] ?? null });
+      plots.push({ label: `${tt.name}/${sigName}`, color: COLORS[pi % COLORS.length], data: tt.cache[sigName] ?? null });
     });
     if (plots.length === 0) return;
 
@@ -181,17 +276,20 @@ export default function DataViewer() {
 
     try {
       timeInst.current = new (uPlot as any)(
-        { width: el.offsetWidth || 800, height: 300, cursor: { show: true }, legend: { show: true }, scales: { x: { time: false } },
+        { width: el.offsetWidth || 800, height: 300, cursor: { show: true, drag: { setScale: true, x: true, y: false } }, legend: { show: true }, scales: { x: { time: false } },
           axes: [
             { label: xTask ? "Time (s)" : "Index", grid: { stroke: "#e8e8e8" }, stroke: "#888", values: (_s: any, ticks: number[]) => ticks.map((t: number) => fmtNum(t) + " s") },
             { stroke: "#888", grid: { stroke: "#e8e8e8" }, size: 85, values: (_s: any, ticks: number[]) => ticks.map((t: number) => fmtNum(t)) },
           ],
-          series, hooks: { setCursor: [lbls.hook] },
+          series, hooks: { setCursor: [lbls.hook], setSelect: [makeSelectHandler("time")] },
         },
         [xAxis, ...arrays], el,
       );
+      const dblH = makeDblHandler("time");
+      const overEl = el.querySelector(".u-over") as HTMLElement | null;
+      (overEl || el).addEventListener("dblclick", dblH);
     } catch { /* */ }
-  }, [tasks, checked]);
+  }, [tasks, checked, makeSelectHandler, makeDblHandler]);
 
   // 频域图
   useEffect(() => {
@@ -201,11 +299,12 @@ export default function DataViewer() {
 
     type Plot = { label: string; color: string; data: number[] | null };
     const plots: Plot[] = [];
-    Object.entries(checked).filter(([k, v]) => v && k.includes("::fft::")).forEach(([k]) => {
+    const fftKeys = Object.entries(checked).filter(([k, v]) => v && k.includes("::fft::"));
+    fftKeys.forEach(([k], pi) => {
       const m = k.match(/^(\d+)::fft::(.+)$/); if (!m) return;
       const tt = tasks.find((t) => t.id === Number(m[1]));
       if (!tt) return;
-      plots.push({ label: `${tt.name}/${m[2]}`, color: COLORS[tasks.findIndex((t) => t.id === tt.id) % COLORS.length], data: tt.cache[`fft::${m[2]}`] ?? null });
+      plots.push({ label: `${tt.name}/${m[2]}`, color: COLORS[pi % COLORS.length], data: tt.cache[`fft::${m[2]}`] ?? null });
     });
     if (plots.length === 0) return;
 
@@ -221,17 +320,20 @@ export default function DataViewer() {
 
     try {
       freqInst.current = new (uPlot as any)(
-        { width: el.offsetWidth || 800, height: 300, cursor: { show: true }, legend: { show: true }, scales: { x: { time: false, distr: 3, log: 10, range: [1, 20000] } },
+        { width: el.offsetWidth || 800, height: 300, cursor: { show: true, drag: { setScale: true, x: true, y: false } }, legend: { show: true }, scales: { x: { time: false, distr: 3, log: 10, range: [1, 20000] } },
           axes: [
             { label: "Frequency (Hz)", grid: { stroke: "#e8e8e8" }, stroke: "#888", values: (_s: any, ticks: number[]) => ticks.map((t: number) => { const lg = Math.log10(t); return Math.abs(lg - Math.round(lg)) < 1e-10 ? fmtNum(t) : ""; }) },
             { stroke: "#888", grid: { stroke: "#e8e8e8" }, size: 85, values: (_s: any, ticks: number[]) => ticks.map((t: number) => fmtNum(t)) },
           ],
-          series, hooks: { setCursor: [lbls.hook] },
+          series, hooks: { setCursor: [lbls.hook], setSelect: [makeSelectHandler("fft")] },
         },
         [freq.map((v: number | null) => (v != null ? v : null)), ...plots.map((p) => (p.data || []).slice(0, freq.length))], el,
       );
+      const dblH = makeDblHandler("fft");
+      const overEl = el.querySelector(".u-over") as HTMLElement | null;
+      (overEl || el).addEventListener("dblclick", dblH);
     } catch { /* */ }
-  }, [tasks, checked]);
+  }, [tasks, checked, makeSelectHandler, makeDblHandler]);
 
   // Resize
   useEffect(() => {
@@ -311,7 +413,7 @@ export default function DataViewer() {
             className="sig-sidebar"
             style={{ width: leftWidth, minWidth: 0, flexShrink: 0, position: "relative", border: "1px solid #e8e8e8", borderRadius: 6, display: "flex", flexDirection: "column", overflow: "hidden" }}
             onMouseDown={(e) => {
-              if (e.nativeEvent.offsetX >= (e.target as HTMLElement).offsetWidth - 8) startResize(e);
+              if (e.nativeEvent.offsetX >= (e.currentTarget as HTMLElement).offsetWidth - 8) startResize(e);
             }}
           >
             <div className="flex items-center justify-between px-2.5 py-2 border-b border-[#e8e8e8] font-semibold text-[13px]" style={{ cursor: "default" }}>
@@ -321,7 +423,7 @@ export default function DataViewer() {
             <div style={{ padding: "4px 8px" }}>
               <Input placeholder="搜索信号..." value={searchText} onChange={(e) => setSearchText(e.target.value)} allowClear size="small" />
             </div>
-            <div className="flex-1 overflow-y-scroll px-2.5 py-1.5">
+            <div className="flex-1 overflow-y-auto px-2.5 py-1.5" style={{ scrollbarGutter: "stable" }}>
               {doneTasks.map((t) => {
                 const ti = tasks.findIndex((x) => x.id === t.id);
                 const color = COLORS[ti % COLORS.length];
@@ -331,7 +433,7 @@ export default function DataViewer() {
                   <div key={t.id} className="mb-2">
                     <div className="flex items-center gap-1 text-[13px] font-semibold py-1 cursor-pointer select-none" onClick={() => setTaskExpanded((p) => ({ ...p, [t.id]: !open }))}>
                       <span className="w-3 text-center text-[#999] shrink-0 text-[10px]">{open ? "▼︎" : "▶︎"}</span>
-                      <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ background: color }} />
+                      <span className="inline-block w-3 h-3 rounded-[3px] border border-white/30 shrink-0" style={{ background: color }} />
                       <span>{t.name}</span>
                       <span className="text-[#999] text-xs font-normal">({t.sigNames.length})</span>
                     </div>
