@@ -72,8 +72,7 @@ export default function DataViewer() {
   const [leftWidth, setLeftWidth] = useState(260);
 
   function startResize(e: React.MouseEvent) {
-    const target = e.target as HTMLElement;
-    const body = target.parentElement!;
+    const body = (e.target as HTMLElement).parentElement!;
     const bodyLeft = body.getBoundingClientRect().left;
     const bodyW = body.offsetWidth;
     document.body.style.userSelect = "none";
@@ -308,8 +307,13 @@ export default function DataViewer() {
         <div className="text-center text-[#999] py-[120px] text-sm">所选任务暂无可查看的仿真数据</div>
       ) : (
         <div className="flex flex-1 gap-3 overflow-hidden">
-          <div style={{ width: leftWidth, flexShrink: 0, border: "1px solid #e8e8e8", borderRadius: 6, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-            <div className="flex items-center justify-between px-2.5 py-2 border-b border-[#e8e8e8] font-semibold text-[13px]">
+          <div
+            style={{ width: leftWidth, flexShrink: 0, border: "1px solid #e8e8e8", borderRightWidth: 4, borderRightColor: "#e0e0e0", borderRadius: 6, display: "flex", flexDirection: "column", overflow: "hidden", cursor: "auto" }}
+            onMouseDown={(e) => {
+              if (e.nativeEvent.offsetX >= (e.target as HTMLElement).offsetWidth - 8) startResize(e);
+            }}
+          >
+            <div className="flex items-center justify-between px-2.5 py-2 border-b border-[#e8e8e8] font-semibold text-[13px]" style={{ cursor: "default" }}>
               <span>信号列表 ({sigCount})</span>
               <Button size="small" onClick={toggleAllOff}>全不选</Button>
             </div>
@@ -350,10 +354,6 @@ export default function DataViewer() {
               })}
             </div>
           </div>
-          <div
-            className="w-1 bg-[#f0f0f0] cursor-col-resize shrink-0 border-l border-r border-[#e8e8e8] transition-colors hover:bg-[#d9d9d9]"
-            onMouseDown={startResize}
-          />
           <div className="flex-1 overflow-y-auto flex flex-col">
             <div className="flex flex-col">
               <div className="text-[13px] font-semibold text-[#555] mb-0.5 flex justify-between items-center">
