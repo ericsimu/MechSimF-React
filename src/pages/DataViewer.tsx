@@ -153,7 +153,25 @@ export default function DataViewer() {
   function toggle(key: string, taskId: number, sigName: string, domain: "time" | "fft") {
     const newVal = !checked[key];
     setChecked((prev) => ({ ...prev, [key]: newVal }));
-    if (newVal) fetchOne(taskId, sigName, domain);
+    if (!newVal) return;
+    // 勾选新信号时若处于缩放状态，先还原全量数据再加载
+    if (izTimeRef.current || izFreqRef.current) {
+      const full = fullCacheRef.current;
+      if (Object.keys(full).length) {
+        setTasks((prev) => {
+          const next = [...prev];
+          for (const taskIdStr of Object.keys(full)) {
+            const idx = next.findIndex((t) => String(t.id) === taskIdStr);
+            if (idx >= 0) next[idx] = { ...next[idx], cache: { ...full[taskIdStr] } };
+          }
+          return next;
+        });
+        fullCacheRef.current = {};
+        setIsTimeZoomed(false); izTimeRef.current = false;
+        setIsFreqZoomed(false); izFreqRef.current = false;
+      }
+    }
+    fetchOne(taskId, sigName, domain);
   }
 
   function toggleAllOff() { setChecked({}); }
