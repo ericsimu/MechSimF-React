@@ -89,6 +89,7 @@ export default function CompareViewer() {
   // 选中的信号：key = `${taskId}::${sigName}`，time 域；fft 域用 `${taskId}::fft::${sigName}`
   const [checked, setChecked] = useState<Record<string, boolean>>({});
   const [searchText, setSearchText] = useState("");
+  const [taskExpanded, setTaskExpanded] = useState<Record<number, boolean>>({});
 
   const timeChartRef = useRef<HTMLDivElement>(null);
   const freqChartRef = useRef<HTMLDivElement>(null);
@@ -430,14 +431,19 @@ export default function CompareViewer() {
                 const ti = tasks.findIndex((x) => x.id === t.id);
                 const color = COLORS[ti % COLORS.length];
                 const names = t.sigNames.filter((n) => n.toLowerCase().includes(searchText.toLowerCase()));
+                const open = taskExpanded[t.id] !== false; // 默认展开
                 return (
                   <div key={t.id} className="mb-2">
-                    <div className="flex items-center gap-1 text-[13px] font-semibold py-1">
+                    <div
+                      className="flex items-center gap-1 text-[13px] font-semibold py-1 cursor-pointer select-none"
+                      onClick={() => setTaskExpanded((p) => ({ ...p, [t.id]: !open }))}
+                    >
+                      <span className="w-3 text-center text-[#999] shrink-0 text-[10px]">{open ? "▼︎" : "▶︎"}</span>
                       <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ background: color }} />
                       <span>{t.name}</span>
                       <span className="text-[#999] text-xs font-normal">({t.sigNames.length})</span>
                     </div>
-                    {names.map((n) => {
+                    {open && names.map((n) => {
                       const key = `${t.id}::${n}`;
                       const fftKey = `${t.id}::fft::${n}`;
                       return (

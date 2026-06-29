@@ -31,8 +31,8 @@ const STATUS_CLASS: Record<string, string> = {
 
 // 记住任务表的表头过滤状态（模块级，跨页面切换/组件重挂载保留）
 let savedTaskFilters: Record<string, FilterValue | null> = {};
-// 记住勾选的任务（跨页面切换保留）
-let savedTaskSelection: React.Key[] = [];
+// 记住勾选的任务（跨页面切换保留，导出供导航栏读取）
+export let savedTaskSelection: React.Key[] = [];
 
 type FilterOpt = { text: string; value: string | number };
 
@@ -465,10 +465,10 @@ export default function Tasks() {
           <Button
             type="primary"
             size="small"
-            disabled={selectedRowKeys.length < 2}
+            disabled={selectedRowKeys.length === 0}
             onClick={gotoCompare}
           >
-            数据比对（{selectedRowKeys.length}）
+            数据查看（{selectedRowKeys.length}）
           </Button>
           <Button
             danger
@@ -490,6 +490,9 @@ export default function Tasks() {
         rowSelection={{
           selectedRowKeys,
           onChange: (keys) => updateSelection(keys as React.Key[]),
+          getCheckboxProps: (r) => ({
+            disabled: r.status === "failed" || r.status === "cancelled" || r.status === "running",
+          }),
         }}
         scroll={{ y: 'calc(100vh - 200px)' }}
         locale={{ emptyText: "暂无数据" }}

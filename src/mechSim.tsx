@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { Switch, Route, Redirect, NavLink, useLocation } from "react-router-dom";
+import { Switch, Route, Redirect, NavLink, useLocation, useHistory } from "react-router-dom";
 import { ConfigProvider, Button } from "antd";
 import zhCN from "antd/locale/zh_CN";
 import {
@@ -12,7 +12,7 @@ import {
 } from "@ant-design/icons";
 import "./index.css";
 import CaseList from "./pages/CaseList";
-import Tasks from "./pages/Tasks";
+import Tasks, { savedTaskSelection } from "./pages/Tasks";
 import DataViewer from "./pages/DataViewer";
 import CompareViewer from "./pages/CompareViewer";
 import DataWS from "./pages/DataWS";
@@ -71,6 +71,7 @@ function NavGroup({ item }: { item: NavItem }) {
 
 function MechSim() {
   // 从 localStorage 自动登录：仅当已存合法（在允许名单内）用户时直接进主界面，否则进登录页
+  const history = useHistory();
   const [user, setUser] = useState(() => {
     const u = getCurrentUser();
     return ALLOWED_USERS.includes(u) ? u : "";
@@ -102,7 +103,19 @@ function MechSim() {
           <nav className="flex flex-col py-2">
             {navItems.map((item, i) =>
               item.path ? (
-                <NavLink key={item.path} to={item.path} exact={item.exact ?? true} activeClassName="active" className="block py-3 px-5 text-white/85 no-underline text-[16px] cursor-pointer transition-[color,background] duration-150 hover:text-white hover:bg-white/[0.12] [&.active]:text-white [&.active]:font-semibold [&.active]:border [&.active]:border-white/50 [&.active]:rounded">
+                <NavLink
+                  key={item.path}
+                  to={item.path}
+                  exact={item.exact ?? true}
+                  activeClassName="active"
+                  className="block py-3 px-5 text-white/85 no-underline text-[16px] cursor-pointer transition-[color,background] duration-150 hover:text-white hover:bg-white/[0.12] [&.active]:text-white [&.active]:font-semibold [&.active]:border [&.active]:border-white/50 [&.active]:rounded"
+                  onClick={(e) => {
+                    if (item.path === `${PREFIX}/data` && savedTaskSelection.length > 0) {
+                      e.preventDefault();
+                      history.push(`/compare?ids=${savedTaskSelection.map(String).join(",")}`);
+                    }
+                  }}
+                >
                   {item.icon && <span className="mr-2">{item.icon}</span>}{item.label}
                 </NavLink>
               ) : (<NavGroup key={i} item={item} />),
