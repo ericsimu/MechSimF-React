@@ -14,7 +14,6 @@ import "./index.css";
 import CaseList from "./pages/CaseList";
 import Tasks, { savedTaskSelection } from "./pages/Tasks";
 import DataViewer from "./pages/DataViewer";
-import CompareViewer from "./pages/CompareViewer";
 import DataWS from "./pages/DataWS";
 import Placeholder from "./pages/Placeholder";
 import Manual from "./pages/Manual";
@@ -112,7 +111,7 @@ function MechSim() {
                   onClick={(e) => {
                     if (item.path === `${PREFIX}/data` && savedTaskSelection.length > 0) {
                       e.preventDefault();
-                      history.push(`/compare?ids=${savedTaskSelection.map(String).join(",")}`);
+                      history.push(`/data?ids=${savedTaskSelection.map(String).join(",")}`);
                     }
                   }}
                 >
@@ -138,8 +137,7 @@ function MechSim() {
               <Route path={`${PREFIX}/cases`} component={CaseList} />
               <Route path={`${PREFIX}/tasks`} component={Tasks} />
               <Route path={`${PREFIX}/data-ws`} component={DataWS} />
-              <Route path={`${PREFIX}/compare`} component={CompareViewer} />
-              <Route path={`${PREFIX}/data/:taskId?`} component={DataViewer} />
+              <Route path={`${PREFIX}/data`} component={DataViewer} />
               <Route path={`${PREFIX}/data-manage`} component={DataManage} />
               <Route path={`${PREFIX}/tools`} component={Placeholder} />
               <Route path={`${PREFIX}/manual`} component={Manual} />

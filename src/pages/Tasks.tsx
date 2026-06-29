@@ -218,7 +218,7 @@ export default function Tasks() {
     if (selectedRowKeys.length === 0) return;
     const ids = selectedRowKeys.map(String).join(",");
     updateSelection([]); // 进入比对后清空选中
-    history.push(`/compare?ids=${ids}`);
+    history.push(`/data?ids=${ids}`);
   }
 
   const loadTasks = useCallback(async () => {
