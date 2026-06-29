@@ -14,6 +14,7 @@ import "./index.css";
 import CaseList from "./pages/CaseList";
 import Tasks from "./pages/Tasks";
 import DataViewer from "./pages/DataViewer";
+import CompareViewer from "./pages/CompareViewer";
 import DataWS from "./pages/DataWS";
 import Placeholder from "./pages/Placeholder";
 import Manual from "./pages/Manual";
@@ -124,6 +125,7 @@ function MechSim() {
               <Route path={`${PREFIX}/cases`} component={CaseList} />
               <Route path={`${PREFIX}/tasks`} component={Tasks} />
               <Route path={`${PREFIX}/data-ws`} component={DataWS} />
+              <Route path={`${PREFIX}/compare`} component={CompareViewer} />
               <Route path={`${PREFIX}/data/:taskId?`} component={DataViewer} />
               <Route path={`${PREFIX}/data-manage`} component={DataManage} />
               <Route path={`${PREFIX}/tools`} component={Placeholder} />

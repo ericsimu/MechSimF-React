@@ -31,6 +31,8 @@ const STATUS_CLASS: Record<string, string> = {
 
 // 记住任务表的表头过滤状态（模块级，跨页面切换/组件重挂载保留）
 let savedTaskFilters: Record<string, FilterValue | null> = {};
+// 记住勾选的任务（跨页面切换保留）
+let savedTaskSelection: React.Key[] = [];
 
 type FilterOpt = { text: string; value: string | number };
 
@@ -175,7 +177,49 @@ export default function Tasks() {
   const [diffRows, setDiffRows] = useState<DiffRow[]>([]);
   const [tableFilters, setTableFilters] =
     useState<Record<string, FilterValue | null>>(savedTaskFilters);
+  const [selectedRowKeys, setSelectedRowKeys] =
+    useState<React.Key[]>(savedTaskSelection);
   const history = useHistory();
+
+  function updateSelection(keys: React.Key[]) {
+    savedTaskSelection = keys;
+    setSelectedRowKeys(keys);
+  }
+
+  async function handleBatchDelete() {
+    if (selectedRowKeys.length === 0) return;
+    Modal.confirm({
+      title: "批量删除",
+      content: `确定要删除选中的 ${selectedRowKeys.length} 个任务吗？`,
+      okText: "确认",
+      cancelText: "取消",
+      okButtonProps: { danger: true },
+      onOk: async () => {
+        let ok = 0;
+        let fail = 0;
+        for (const key of selectedRowKeys) {
+          try {
+            const r = await deleteTask(Number(key));
+            if (r.success) ok++;
+            else fail++;
+          } catch {
+            fail++;
+          }
+        }
+        updateSelection([]);
+        await loadTasks();
+        if (fail === 0) message.success(`已删除 ${ok} 个任务`);
+        else message.warning(`成功 ${ok} 个，失败 ${fail} 个`);
+      },
+    });
+  }
+
+  function gotoCompare() {
+    if (selectedRowKeys.length === 0) return;
+    const ids = selectedRowKeys.map(String).join(",");
+    updateSelection([]); // 进入比对后清空选中
+    history.push(`/compare?ids=${ids}`);
+  }
 
   const loadTasks = useCallback(async () => {
     try {
@@ -391,7 +435,7 @@ export default function Tasks() {
             type="link"
             size="small"
             style={{ fontWeight: 500 }}
-            onClick={() => history.push(`/data/${record.id}`)}
+            onClick={() => history.push(`/compare?ids=${record.id}`)}
           >
             结果
           </Button>
@@ -417,6 +461,24 @@ export default function Tasks() {
     <div className="p-4 flex flex-col flex-1 min-h-0">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-base font-semibold m-0">任务列表</h2>
+        <div className="flex gap-2">
+          <Button
+            type="primary"
+            size="small"
+            disabled={selectedRowKeys.length < 2}
+            onClick={gotoCompare}
+          >
+            数据比对（{selectedRowKeys.length}）
+          </Button>
+          <Button
+            danger
+            size="small"
+            disabled={selectedRowKeys.length === 0}
+            onClick={handleBatchDelete}
+          >
+            批量删除（{selectedRowKeys.length}）
+          </Button>
+        </div>
       </div>
       <Table
         columns={columns}
@@ -425,6 +487,10 @@ export default function Tasks() {
         loading={loading}
         size="small"
         pagination={false}
+        rowSelection={{
+          selectedRowKeys,
+          onChange: (keys) => updateSelection(keys as React.Key[]),
+        }}
         scroll={{ y: 'calc(100vh - 200px)' }}
         locale={{ emptyText: "暂无数据" }}
         onChange={(_pagination, filters) => {
