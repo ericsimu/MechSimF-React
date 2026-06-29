@@ -321,7 +321,7 @@ export default function DataViewer() {
             <div style={{ padding: "4px 8px" }}>
               <Input placeholder="搜索信号..." value={searchText} onChange={(e) => setSearchText(e.target.value)} allowClear size="small" />
             </div>
-            <div className="flex-1 overflow-y-auto px-2.5 py-1.5">
+            <div className="flex-1 overflow-y-scroll px-2.5 py-1.5">
               {doneTasks.map((t) => {
                 const ti = tasks.findIndex((x) => x.id === t.id);
                 const color = COLORS[ti % COLORS.length];
