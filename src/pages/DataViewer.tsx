@@ -433,7 +433,7 @@ export default function DataViewer() {
                   <div key={t.id} className="mb-2">
                     <div className="flex items-center gap-1 text-[13px] font-semibold py-1 cursor-pointer select-none" onClick={() => setTaskExpanded((p) => ({ ...p, [t.id]: !open }))}>
                       <span className="w-3 text-center text-[#999] shrink-0 text-[10px]">{open ? "▼︎" : "▶︎"}</span>
-                      <span className="inline-block shrink-0" style={{ width: 10, height: 10, borderRadius: 2, background: color, boxShadow: `inset 1px 1px 0 rgba(255,255,255,.35), inset -1px -1px 0 rgba(0,0,0,.15)` }} />
+                      <span className="inline-block shrink-0" style={{ width: 10, height: 10, borderRadius: "50%", background: `radial-gradient(circle at 35% 35%, rgba(255,255,255,.5), ${color} 70%)`, boxShadow: `0 0 4px ${color}66` }} />
                       <span>{t.name}</span>
                       <span className="text-[#999] text-xs font-normal">({t.sigNames.length})</span>
                     </div>
