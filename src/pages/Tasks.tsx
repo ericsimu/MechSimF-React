@@ -319,6 +319,7 @@ export default function Tasks() {
       title: "ID",
       dataIndex: "id",
       key: "id",
+      width: 70,
       filterDropdown: makeFilterDropdown(filterOpts.id, true),
       filteredValue: tableFilters.id ?? null,
       onFilter: (value, r) => r.id === value,
