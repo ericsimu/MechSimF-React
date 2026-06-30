@@ -858,7 +858,7 @@ function ModelTab(
     },
     {
       key: "disturb",
-      label: "扰动分析",
+      label: "扰动选择",
       children: (
         <DisturbTab
           leftWidth={leftWidth}
@@ -884,7 +884,7 @@ function ModelTab(
     },
     {
       key: "indicator",
-      label: "指标分析",
+      label: "参数扫描",
       children: <IndicatorTab />,
     },
   ];
