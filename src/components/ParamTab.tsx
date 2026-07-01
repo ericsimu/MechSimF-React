@@ -44,7 +44,7 @@ export default function ParamTab({
 }: Props) {
   return (
     <div className="flex-1 flex overflow-hidden min-h-0">
-      <div className="shrink-0 overflow-y-auto overflow-x-hidden box-border border-r border-[#f0f0f0] bg-[#fafafa] pb-3 min-h-0" style={{ width: leftWidth }}>
+      <div className="shrink-0 overflow-y-auto overflow-x-hidden box-border border-r border-[#f0f0f0] bg-white pb-3 min-h-0" style={{ width: leftWidth }}>
         {paramEntries.map(([k, v]) => (
           <TreeNode
             key={k}
@@ -62,7 +62,7 @@ export default function ParamTab({
         )}
       </div>
       <div
-        className="w-1 bg-[#f0f0f0] cursor-col-resize shrink-0 border-l border-r border-[#e8e8e8] transition-colors hover:bg-[#d9d9d9]"
+        className="w-1 bg-[#f0f0f0] cursor-col-resize shrink-0 border-l border-r border-[#f0f0f0] transition-colors hover:bg-[#d9d9d9]"
         onMouseDown={startResizeLeft}
       />
       <div className="flex-1 overflow-y-auto overflow-x-hidden box-border px-4 py-3 min-w-0 min-h-0">

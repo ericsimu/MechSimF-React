@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useLocation } from "react-router-dom";
-import { Button, Input, Spin } from "antd";
+import { Button, Input, Spin, Tabs } from "antd";
+import { BarChartOutlined } from "@ant-design/icons";
 import { getTaskStatus, getTaskDataColumns, getTaskSignals } from "../api/index";
 import uPlot from "uplot";
 import "uplot/dist/uPlot.min.css";
@@ -56,7 +57,7 @@ function makeCursorLabels(container: HTMLElement, xUnit: string): Cursors {
 // ── 数据类型 ──
 
 type TaskInfo = {
-  id: number; name: string; status: string;
+  id: number; name: string; status: string; error: string;
   sigNames: string[]; fftNames: string[];
   cache: Record<string, number[] | null>;
 };
@@ -139,6 +140,7 @@ export default function DataViewer() {
         try {
           const sr = await getTaskStatus(id);
           const status = sr.success && sr.data ? sr.data.status || "" : "";
+          const error = sr.success && sr.data ? sr.data.error || "" : "";
           let sigNames: string[] = [];
           let fftNames: string[] = [];
           if (status === "done") {
@@ -148,9 +150,9 @@ export default function DataViewer() {
               fftNames = (cr.data.fft_column_names || []).filter((n: string) => n.toLowerCase() !== "frequency");
             }
           }
-          results.push({ id, name: `任务#${id}`, status, sigNames, fftNames, cache: {} });
+          results.push({ id, name: `任务#${id}`, status, error, sigNames, fftNames, cache: {} });
         } catch {
-          results.push({ id, name: `任务#${id}`, status: "failed", sigNames: [], fftNames: [], cache: {} });
+          results.push({ id, name: `任务#${id}`, status: "failed", error: "加载任务信息失败", sigNames: [], fftNames: [], cache: {} });
         }
       }
       if (!cancelled) { setTasks(results); setChecked({}); setLoading(false); }
@@ -278,7 +280,7 @@ export default function DataViewer() {
     const series: Array<object> = [{ label: xTask ? "Time (s)" : "Index" }];
     const arrays: Array<Array<number | null>> = [];
     plots.forEach((p) => {
-      series.push({ label: p.label, stroke: p.color, width: 1.5, value: (_u: unknown, v: number) => v == null ? "" : fmtNum(v) });
+      series.push({ label: p.label, stroke: p.color, width: 2, value: (_u: unknown, v: number) => v == null ? "" : fmtNum(v) });
       arrays.push((p.data || []).slice(0, maxLen).map((v) => (v == null ? null : v)));
     });
 
@@ -286,8 +288,8 @@ export default function DataViewer() {
       timeInst.current = new (uPlot as any)(
         { width: el.offsetWidth || 800, height: 300, cursor: { show: true, drag: { setScale: true, x: true, y: false } }, legend: { show: true }, scales: { x: { time: false } },
           axes: [
-            { label: xTask ? "Time (s)" : "Index", grid: { stroke: "#e8e8e8" }, stroke: "#888", values: (_s: any, ticks: number[]) => ticks.map((t: number) => fmtNum(t) + " s") },
-            { stroke: "#888", grid: { stroke: "#e8e8e8" }, size: 85, values: (_s: any, ticks: number[]) => ticks.map((t: number) => fmtNum(t)) },
+            { label: xTask ? "Time (s)" : "Index", grid: { stroke: "#f0f0f0" }, stroke: "#888", values: (_s: any, ticks: number[]) => ticks.map((t: number) => fmtNum(t) + " s") },
+            { stroke: "#888", grid: { stroke: "#f0f0f0" }, size: 85, values: (_s: any, ticks: number[]) => ticks.map((t: number) => fmtNum(t)) },
           ],
           series, hooks: { setCursor: [lbls.hook], setSelect: [makeSelectHandler("time")] },
         },
@@ -322,15 +324,15 @@ export default function DataViewer() {
     const lbls = makeCursorLabels(el, ""); freqLbls.current = lbls;
     const series: Array<object> = [{ label: "Frequency (Hz)" }];
     plots.forEach((p) => {
-      series.push({ label: p.label, stroke: p.color, width: 1.5, value: (_u: unknown, v: number) => v == null ? "" : fmtNum(v) });
+      series.push({ label: p.label, stroke: p.color, width: 2, value: (_u: unknown, v: number) => v == null ? "" : fmtNum(v) });
     });
 
     try {
       freqInst.current = new (uPlot as any)(
         { width: el.offsetWidth || 800, height: 300, cursor: { show: true, drag: { setScale: true, x: true, y: false } }, legend: { show: true }, scales: { x: { time: false, distr: 3, log: 10, range: [1, 20000] } },
           axes: [
-            { label: "Frequency (Hz)", grid: { stroke: "#e8e8e8" }, stroke: "#888", values: (_s: any, ticks: number[]) => ticks.map((t: number) => { const lg = Math.log10(t); return Math.abs(lg - Math.round(lg)) < 1e-10 ? fmtNum(t) : ""; }) },
-            { stroke: "#888", grid: { stroke: "#e8e8e8" }, size: 85, values: (_s: any, ticks: number[]) => ticks.map((t: number) => fmtNum(t)) },
+            { label: "Frequency (Hz)", grid: { stroke: "#f0f0f0" }, stroke: "#888", values: (_s: any, ticks: number[]) => ticks.map((t: number) => { const lg = Math.log10(t); return Math.abs(lg - Math.round(lg)) < 1e-10 ? fmtNum(t) : ""; }) },
+            { stroke: "#888", grid: { stroke: "#f0f0f0" }, size: 85, values: (_s: any, ticks: number[]) => ticks.map((t: number) => fmtNum(t)) },
           ],
           series, hooks: { setCursor: [lbls.hook], setSelect: [makeSelectHandler("fft")] },
         },
@@ -398,32 +400,76 @@ export default function DataViewer() {
   // ── 派生值 ──
   const doneTasks = tasks.filter((t) => t.status === "done");
   const sigCount = doneTasks.reduce((n, t) => n + t.sigNames.length, 0);
-  const title = ids.length > 1 ? `数据查看 — ${ids.length} 个任务 (${ids.join(", ")})` : `数据查看 — 任务 #${ids[0] || "?"}`;
+  const title = ids.length > 1 ? `${ids.length} 个任务 (${ids.join(", ")})` : `任务 #${ids[0] || "?"}`;
   const exportBase = ids.length > 1 ? `data_${ids.join("_")}` : `data_task_${ids[0] || "x"}`;
 
   // ── 渲染 ──
   return (
+    <>
+      <style>{`
+        .sig-sidebar::after { content:""; position:absolute; right:0; top:0; bottom:0; width:8px; cursor:col-resize; }
+        .dv-chart .u-legend { position:absolute; top:4px; right:8px; z-index:10; font-size:11px; background:rgba(255,255,255,0.85); padding:4px 8px; border-radius:4px; }
+        .uplot .u-cursor-pt { border-radius:50%!important; box-shadow:0 0 0 3px rgba(59,130,246,0.2)!important; }
+        .ant-tabs.data-tabs { flex:1; display:flex; flex-direction:column; overflow:hidden; min-height:0; }
+        .ant-tabs.data-tabs>.ant-tabs-nav { margin-bottom:0; padding:0 16px; background:#fff; border-bottom:1px solid #f0f0f0; }
+        .ant-tabs.data-tabs>.ant-tabs-content-holder { flex:1; display:flex; flex-direction:column; overflow:hidden; min-height:0; }
+      `}</style>
     <div className="h-[calc(100vh-49px)] flex flex-col p-4">
       <div className="flex items-center gap-4 mb-3">
         <h2 className="text-base font-semibold m-0">{title}</h2>
       </div>
 
-      {ids.length === 0 ? (
-        <div className="text-center text-[#999] py-[120px] text-sm">请从任务列表中选择一个任务查看数据</div>
-      ) : loading ? (
-        <div style={{ textAlign: "center", padding: 120 }}><Spin size="large" /></div>
-      ) : doneTasks.length === 0 ? (
-        <div className="text-center text-[#999] py-[120px] text-sm">所选任务暂无可查看的仿真数据</div>
-      ) : (
-        <div className="flex flex-1 gap-3 overflow-hidden">
+      <Tabs
+        className="data-tabs"
+        items={[
+          {
+            key: "data",
+            label: "数据查看",
+            children: (
+              ids.length === 0 ? (
+                <div className="text-center text-[#999] py-[120px] text-sm flex flex-col items-center gap-3">
+                  <BarChartOutlined style={{ fontSize: 36, color: "#d0d5dd" }} />
+                  <span>请从任务列表中选择任务查看数据</span>
+                </div>
+              ) : loading ? (
+                <div style={{ textAlign: "center", padding: 120 }}><Spin size="large" /></div>
+              ) : doneTasks.length === 0 ? (
+                <div className="text-center text-[#999] py-[40px] text-sm flex flex-col items-center gap-3">
+                  {tasks.some((t) => t.status !== "done") ? (
+                    tasks.filter((t) => t.status !== "done").map((t) => (
+                      <div key={t.id} className="rounded-lg border border-[#fee2e2] p-3 text-left max-w-md w-full" style={{ background: "#fef2f2" }}>
+                        <div className="text-[#991b1b] font-semibold text-[13px] mb-1">{t.name} — {t.status === "failed" ? "执行失败" : t.status === "cancelled" ? "已取消" : t.status === "running" ? "运行中" : "等待中"}</div>
+                        {t.error && <div className="text-[#991b1b]/70 text-xs">{t.error}</div>}
+                      </div>
+                    ))
+                  ) : (
+                    <span>所选任务暂无可查看的仿真数据</span>
+                  )}
+                </div>
+              ) : (
+                <>
+                  {tasks.some((t) => t.status !== "done") && doneTasks.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-2">
+                      {tasks.filter((t) => t.status !== "done").map((t) => (
+                        <div key={t.id} className="rounded-full border border-[#fecaca] px-3 py-0.5 text-xs" style={{ background: "#fef2f2" }}>
+                          <span className="text-[#991b1b] font-medium">{t.name}</span>
+                          <span className="text-[#991b1b]/70 ml-1">
+                            {t.status === "failed" ? "执行失败" : t.status === "cancelled" ? "已取消" : t.status === "running" ? "运行中" : "等待中"}
+                            {t.error ? `：${t.error}` : ""}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <div className="flex flex-1 gap-3 overflow-hidden min-h-0">
 
           {/* ── 信号列表面板 ── */}
           <div
             className="sig-sidebar"
-            style={{ width: leftWidth, minWidth: 0, flexShrink: 0, position: "relative", border: "1px solid #e8e8e8", borderRadius: 6, display: "flex", flexDirection: "column", overflow: "hidden" }}
+            style={{ width: leftWidth, minWidth: 0, flexShrink: 0, position: "relative", border: "1px solid #f0f0f0", borderRadius: 8, display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}
             onMouseDown={(e) => { if (e.nativeEvent.offsetX >= (e.currentTarget as HTMLElement).offsetWidth - 8) startResize(e); }}
           >
-            <div className="flex items-center justify-between px-2.5 py-2 border-b border-[#e8e8e8] font-semibold text-[13px]" style={{ cursor: "default" }}>
+            <div className="flex items-center justify-between px-2.5 py-2 border-b border-[#f0f0f0] font-semibold text-[13px]" style={{ cursor: "default" }}>
               <span>信号列表 ({sigCount})</span>
               <Button size="small" onClick={toggleAllOff}>全不选</Button>
             </div>
@@ -476,9 +522,19 @@ export default function DataViewer() {
               <div ref={freqChartRef} className="dv-chart min-h-[300px] min-w-full relative" />
             </div>
           </div>
-
-        </div>
-      )}
+                  </div>
+        </>
+      )
+            ),
+          },
+          {
+            key: "perf",
+            label: "性能分析",
+            children: <div className="text-center text-[#999] py-20">性能分析功能开发中...</div>,
+          },
+        ]}
+      />
     </div>
+    </>
   );
 }

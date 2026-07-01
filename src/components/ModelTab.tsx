@@ -420,7 +420,7 @@ function ModelTab(
           cursor: { show: true },
           legend: { show: false },
           scales: { x: { time: false } },
-          axes: [{}, { stroke: "#888", grid: { stroke: "#e8e8e8" } }],
+          axes: [{}, { stroke: "#888", grid: { stroke: "#f0f0f0" } }],
           series,
         },
         data,
@@ -457,6 +457,20 @@ function ModelTab(
       ...editDraft,
       model_param: buildFullModelParam(),
     };
+    // 剔除已不存在的扰动文件，防止过期勾选进入任务
+    const validFiles = new Set<string>();
+    (function walk(n: any) {
+      (n.files || []).forEach((f: any) => validFiles.add(f.path));
+      Object.values(n.dirs || {}).forEach((v: any) => walk(v));
+    })(disturbTree);
+    let distStr = src.disturbance || "";
+    try {
+      const arr = JSON.parse(distStr);
+      if (Array.isArray(arr)) {
+        const clean = arr.filter((x: any) => validFiles.has(x.path));
+        distStr = JSON.stringify(clean);
+      }
+    } catch { /* */ }
     return {
       name: caseName,
       description: caseDescription,
@@ -467,7 +481,7 @@ function ModelTab(
       model_verison: src.model_verison || "",
       model_productivity: src.model_productivity || "",
       model_param: src.model_param || "",
-      disturbance: src.disturbance || "",
+      disturbance: distStr,
       sim_time: src.sim_time ?? null,
       sim_step: src.sim_step ?? null,
       flow_instance_id: src.flow_instance_id || "",
@@ -700,27 +714,8 @@ function ModelTab(
       }
 
       if (key === "param") {
-        // Auto-expand all param tree nodes
-        function expandAllParams(
-          node: Record<string, any>,
-          path = "",
-        ): Record<string, boolean> {
-          const keys: Record<string, boolean> = {};
-          if (isObject(node)) {
-            for (const [k, v] of Object.entries(node)) {
-              if (k === "_labels") continue;
-              const p = path ? `${path}.${k}` : k;
-              keys[p] = true;
-              if (isObject(v) && !isLastLayer(v))
-                Object.assign(keys, expandAllParams(v, p));
-            }
-          }
-          return keys;
-        }
-        // Use setTimeout to ensure paramVars is populated from latest state
+        // 编辑器为空时自动选中第一个可编辑节点，免去手动点击
         setTimeout(() => {
-          setParamExpanded(expandAllParams(paramVars));
-          // 编辑器为空时自动选中第一个可编辑节点，免去手动点击
           if (
             paramEditGroups.length === 0 &&
             Object.keys(paramVarsRef.current).length > 0
@@ -738,20 +733,6 @@ function ModelTab(
               const r = await queueDisturbances();
               if (r.success && r.data) {
                 setDisturbTree(r.data);
-                function expandAll(
-                  node: DisturbanceDirNode,
-                  path = "",
-                ): Record<string, boolean> {
-                  const keys: Record<string, boolean> = {};
-                  const dirs = node.dirs || {};
-                  Object.entries(dirs).forEach(([k, v]) => {
-                    const p = path ? `${path}/${k}` : k;
-                    keys[p] = true;
-                    Object.assign(keys, expandAll(v, p));
-                  });
-                  return keys;
-                }
-                setDisturbExpanded(expandAll(r.data));
               }
             } catch {
               /* */
@@ -890,12 +871,22 @@ function ModelTab(
   ];
 
   return (
-    <Tabs
+    <>
+      <style>{`
+        .ant-tabs.edit-tabs { flex:1; display:flex; flex-direction:column; overflow:hidden; min-height:0; }
+        .ant-tabs.edit-tabs>.ant-tabs-nav { margin-bottom:0; padding:0 16px; background:#fff; border-bottom:1px solid #f0f0f0; height:48px; }
+        .ant-tabs.edit-tabs>.ant-tabs-content-holder { flex:1; display:flex; flex-direction:column; overflow:hidden; min-height:0; }
+        .ant-tabs.edit-tabs>.ant-tabs-content-holder>.ant-tabs-content { flex:1; display:flex; flex-direction:column; overflow:hidden; min-height:0; }
+        .ant-tabs.edit-tabs .ant-tabs-tabpane { flex:1; overflow:hidden; min-height:0; }
+        .ant-tabs.edit-tabs .ant-tabs-tabpane-active { display:flex; flex-direction:column; }
+      `}</style>
+      <Tabs
       className="edit-tabs"
       activeKey={activeTab}
       onChange={handleTabChange}
       items={tabItems}
     />
+    </>
   );
 }
 

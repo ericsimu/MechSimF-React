@@ -1,3 +1,4 @@
+import { StockOutlined } from "@ant-design/icons";
 import type { DisturbanceDirNode } from "../types/api";
 
 interface DistTreeNodeProps {
@@ -72,6 +73,7 @@ export default function DistTreeNode({
                   onChange={() => onCheck(f.path)}
                   style={{ cursor: "pointer" }}
                 />
+                <StockOutlined style={{ fontSize: 11, color: "#3b82f6" }} className="shrink-0" />
                 <span
                   style={{
                     cursor: "pointer",

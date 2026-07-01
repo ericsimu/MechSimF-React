@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useHistory } from "react-router-dom";
 import { Table, Modal, Button, message } from "antd";
 import type { TableColumnsType } from "antd";
@@ -27,6 +27,13 @@ const STATUS_CLASS: Record<string, string> = {
   pending: "bg-[#fef3c7] text-[#92400e]",
   failed: "bg-[#fee2e2] text-[#991b1b]",
   cancelled: "bg-[#f3f4f6] text-[#6b7280]",
+};
+const STATUS_DOT: Record<string, string> = {
+  done: "#10b981",
+  running: "#3b82f6",
+  pending: "#f59e0b",
+  failed: "#ef4444",
+  cancelled: "#9ca3af",
 };
 
 // 记住任务表的表头过滤状态（模块级，跨页面切换/组件重挂载保留）
@@ -175,11 +182,69 @@ export default function Tasks() {
   const [loading, setLoading] = useState(true);
   const [diffOpen, setDiffOpen] = useState(false);
   const [diffRows, setDiffRows] = useState<DiffRow[]>([]);
+  const [failInfo, setFailInfo] = useState<{ taskId: number; taskName: string; error: string } | null>(null);
   const [tableFilters, setTableFilters] =
     useState<Record<string, FilterValue | null>>(savedTaskFilters);
   const [selectedRowKeys, setSelectedRowKeys] =
     useState<React.Key[]>(savedTaskSelection);
+  const [colWidths, setColWidths] = useState<Record<string, number>>({});
   const history = useHistory();
+
+  // ── Column Resize ──
+  const resizeRef = useRef<{
+    key: string;
+    startX: number;
+    startWidth: number;
+  } | null>(null);
+
+  const handleResizeStart = useCallback(
+    (key: string, currentWidth: number) =>
+      (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        resizeRef.current = { key, startX: e.clientX, startWidth: currentWidth };
+        document.body.classList.add("col-resizing");
+        const onMove = (ev: MouseEvent) => {
+          if (!resizeRef.current) return;
+          const dx = ev.clientX - resizeRef.current.startX;
+          const w = Math.max(50, resizeRef.current.startWidth + dx);
+          setColWidths((prev) => ({ ...prev, [resizeRef.current!.key]: w }));
+        };
+        const onUp = () => {
+          resizeRef.current = null;
+          document.body.classList.remove("col-resizing");
+          document.removeEventListener("mousemove", onMove);
+          document.removeEventListener("mouseup", onUp);
+        };
+        document.addEventListener("mousemove", onMove);
+        document.addEventListener("mouseup", onUp);
+      },
+    [],
+  );
+
+  const defaultWidths: Record<string, number> = {
+    id: 70,
+    name: 160,
+    sys_name: 100,
+    model_name: 100,
+    model_version: 70,
+    model_productivity: 80,
+    status: 90,
+    param_diff: 90,
+    create_time: 160,
+    actions: 120,
+  };
+  function colW(key: string) {
+    return colWidths[key] ?? defaultWidths[key] ?? 100;
+  }
+  function resizeHeaderCell(key: string) {
+    const w = colW(key);
+    return {
+      width: w,
+      onMouseDown: handleResizeStart(key, w),
+      className: "col-resizable-header",
+    };
+  }
 
   function updateSelection(keys: React.Key[]) {
     savedTaskSelection = keys;
@@ -319,7 +384,8 @@ export default function Tasks() {
       title: "ID",
       dataIndex: "id",
       key: "id",
-      width: 70,
+      width: colW("id"),
+      onHeaderCell: () => resizeHeaderCell("id"),
       filterDropdown: makeFilterDropdown(filterOpts.id, true),
       filteredValue: tableFilters.id ?? null,
       onFilter: (value, r) => r.id === value,
@@ -328,6 +394,8 @@ export default function Tasks() {
       title: "名称",
       dataIndex: "name",
       key: "name",
+      width: colW("name"),
+      onHeaderCell: () => resizeHeaderCell("name"),
       filterDropdown: makeFilterDropdown(filterOpts.name, true),
       filteredValue: tableFilters.name ?? null,
       onFilter: (value, r) => r.name === value,
@@ -336,6 +404,8 @@ export default function Tasks() {
       title: "系统",
       dataIndex: "sys_name",
       key: "sys_name",
+      width: colW("sys_name"),
+      onHeaderCell: () => resizeHeaderCell("sys_name"),
       filterDropdown: makeFilterDropdown(filterOpts.sys_name, true),
       filteredValue: tableFilters.sys_name ?? null,
       onFilter: (value, r) => r.sys_name === value,
@@ -345,6 +415,8 @@ export default function Tasks() {
       title: "模型",
       dataIndex: "model_name",
       key: "model_name",
+      width: colW("model_name"),
+      onHeaderCell: () => resizeHeaderCell("model_name"),
       filterDropdown: makeFilterDropdown(filterOpts.model_name, true),
       filteredValue: tableFilters.model_name ?? null,
       onFilter: (value, r) => r.model_name === value,
@@ -354,6 +426,8 @@ export default function Tasks() {
       title: "版本",
       dataIndex: "model_version",
       key: "model_version",
+      width: colW("model_version"),
+      onHeaderCell: () => resizeHeaderCell("model_version"),
       filterDropdown: makeFilterDropdown(filterOpts.model_version),
       filteredValue: tableFilters.model_version ?? null,
       onFilter: (value, r) => r.model_version === value,
@@ -363,6 +437,8 @@ export default function Tasks() {
       title: "产率",
       dataIndex: "model_productivity",
       key: "model_productivity",
+      width: colW("model_productivity"),
+      onHeaderCell: () => resizeHeaderCell("model_productivity"),
       filterDropdown: makeFilterDropdown(filterOpts.model_productivity),
       filteredValue: tableFilters.model_productivity ?? null,
       onFilter: (value, r) => r.model_productivity === value,
@@ -372,17 +448,24 @@ export default function Tasks() {
       title: "状态",
       dataIndex: "status",
       key: "status",
+      width: colW("status"),
+      onHeaderCell: () => resizeHeaderCell("status"),
       filterDropdown: makeFilterDropdown(filterOpts.status),
       filteredValue: tableFilters.status ?? null,
       onFilter: (value, r) => r.status === value,
       render: (s: string) => (
-        <span className={`text-xs px-2.5 py-0.5 rounded-[10px] font-medium ${STATUS_CLASS[s] || ""}`}>{STATUS_LABELS[s] || s}</span>
+        <span className={`inline-flex items-center gap-1 text-xs px-2.5 py-0.5 rounded-[10px] font-medium ${STATUS_CLASS[s] || ""}`}>
+          <span className="inline-block w-[6px] h-[6px] rounded-full shrink-0" style={{ background: STATUS_DOT[s] || "#888" }} />
+          {STATUS_LABELS[s] || s}
+        </span>
       ),
     },
     {
       title: "参数变更",
       dataIndex: "param_diff",
       key: "param_diff",
+      width: colW("param_diff"),
+      onHeaderCell: () => resizeHeaderCell("param_diff"),
       render: (_: unknown, record: SimTask) =>
         record.param_diff ? (
           <span className="text-[#3b82f6] cursor-pointer hover:underline" style={{ fontWeight: 500 }} onClick={() => showDiff(record)}>
@@ -396,34 +479,30 @@ export default function Tasks() {
       title: "创建时间",
       dataIndex: "create_time",
       key: "create_time",
+      width: colW("create_time"),
+      onHeaderCell: () => resizeHeaderCell("create_time"),
       render: (t: string) => (t ? new Date(t).toLocaleString() : "-"),
     },
     {
       title: "操作",
       key: "actions",
+      width: colW("actions"),
+      onHeaderCell: () => resizeHeaderCell("actions"),
       render: (_: unknown, record: SimTask) => (
         <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
-          <Button
-            type="link"
-            size="small"
-            style={{ fontWeight: 500 }}
-            onClick={() => history.push(`/data?ids=${record.id}`)}
-          >
-            结果
-          </Button>
-          {(record.status === "pending" || record.status === "running") && (
-            <Button
-              type="link"
-              size="small"
-              style={{ fontWeight: 500 }}
-              onClick={() => handleCancel(record)}
-            >
-              取消
-            </Button>
-          )}
           <Button type="link" size="small" style={{ fontWeight: 500 }} onClick={() => handleDelete(record)}>
             删除
           </Button>
+          {record.status === "failed" && (
+            <Button type="link" size="small" style={{ fontWeight: 500 }}
+              onClick={() => { setFailInfo({ taskId: record.id!, taskName: record.name, error: record.error }); }}
+            >错误</Button>
+          )}
+          {(record.status === "pending" || record.status === "running") && (
+            <Button type="link" size="small" style={{ fontWeight: 500 }}
+              onClick={() => handleCancel(record)}
+            >取消</Button>
+          )}
         </div>
       ),
     },
@@ -431,8 +510,9 @@ export default function Tasks() {
 
   return (
     <div className="p-4 flex flex-col flex-1 min-h-0">
+      <div className="bg-white rounded-lg shadow-sm border border-[#f0f0f0] flex flex-col flex-1 min-h-0 overflow-hidden px-4 pt-4">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-base font-semibold m-0">任务列表</h2>
+        <h2 className="page-title text-base font-semibold m-0">任务列表</h2>
         <div className="flex gap-2">
           <Button
             type="primary"
@@ -455,11 +535,11 @@ export default function Tasks() {
           selectedRowKeys,
           onChange: (keys) => updateSelection(keys as React.Key[]),
           getCheckboxProps: (r) => ({
-            disabled: r.status === "failed" || r.status === "cancelled" || r.status === "running",
+            disabled: r.status !== "done",
           }),
         }}
         scroll={{ y: 'calc(100vh - 200px)' }}
-        locale={{ emptyText: "暂无数据" }}
+        locale={{ emptyText: <span className="flex flex-col items-center gap-2 py-8"><span className="text-[#d0d5dd] text-3xl">📋</span><span className="text-[#999] text-xs">暂无数据</span></span> }}
         onChange={(_pagination, filters) => {
           savedTaskFilters = filters; // 持久化到模块级，切换页面后保留
           setTableFilters(filters);
@@ -490,6 +570,22 @@ export default function Tasks() {
           <div className="text-center text-[#999] py-10 text-[13px]">无变更</div>
         )}
       </Modal>
+
+      <Modal
+        title="错误信息"
+        open={!!failInfo}
+        onCancel={() => setFailInfo(null)}
+        footer={null}
+        width={500}
+      >
+        {failInfo && (
+          <div>
+            <div className="text-[13px] font-semibold text-[#333] mb-2">任务 #{failInfo.taskId}「{failInfo.taskName}」</div>
+            <div className="bg-[#fef2f2] border border-[#fecaca] rounded-lg p-3 text-[13px] text-[#991b1b] whitespace-pre-wrap">{failInfo.error || "未知错误"}</div>
+          </div>
+        )}
+      </Modal>
+      </div>
     </div>
   );
 };

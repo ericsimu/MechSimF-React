@@ -33,9 +33,9 @@ export default function ParamEditor({
           <table className="w-full border-collapse">
             <thead>
               <tr>
-                <th className="text-[11px] px-2.5 py-1 text-left text-[#888] border-b border-[#e8e8e8]">参数名</th>
-                <th className="text-[11px] px-2.5 py-1 text-left text-[#888] border-b border-[#e8e8e8]">参数值</th>
-                <th className="text-[11px] px-2.5 py-1 text-left text-[#888] border-b border-[#e8e8e8]">单位</th>
+                <th className="text-[11px] px-2.5 py-1 text-left text-[#888] border-b border-[#f0f0f0]">参数名</th>
+                <th className="text-[11px] px-2.5 py-1 text-left text-[#888] border-b border-[#f0f0f0]">参数值</th>
+                <th className="text-[11px] px-2.5 py-1 text-left text-[#888] border-b border-[#f0f0f0]">单位</th>
               </tr>
             </thead>
             <tbody>

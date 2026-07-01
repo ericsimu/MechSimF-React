@@ -19,7 +19,7 @@ const S: Record<string, React.CSSProperties> = {
   side: {
     width: 240,
     flexShrink: 0,
-    border: "1px solid #e8e8e8",
+    border: "1px solid #f0f0f0",
     borderRadius: 6,
     display: "flex",
     flexDirection: "column",
@@ -30,7 +30,7 @@ const S: Record<string, React.CSSProperties> = {
     alignItems: "center",
     justifyContent: "space-between",
     padding: "8px 10px",
-    borderBottom: "1px solid #e8e8e8",
+    borderBottom: "1px solid #f0f0f0",
     fontWeight: 600,
     fontSize: 13,
   },
@@ -550,14 +550,14 @@ export default function DataViewerWS({ workspace }: Props) {
           axes: [
             {
               label: timeCol ? "Time (s)" : "Index",
-              grid: { stroke: "#e8e8e8" },
+              grid: { stroke: "#f0f0f0" },
               stroke: "#888",
               values: (_self: any, ticks: number[]) =>
                 ticks.map((t) => fmtNum(t) + " s"),
             },
             {
               stroke: "#888",
-              grid: { stroke: "#e8e8e8" },
+              grid: { stroke: "#f0f0f0" },
               values: (_self: any, ticks: number[]) =>
                 ticks.map((t) => fmtNum(t)),
             },
@@ -643,7 +643,7 @@ export default function DataViewerWS({ workspace }: Props) {
         axes: [
           {
             label: "Frequency (Hz)",
-            grid: { stroke: "#e8e8e8" },
+            grid: { stroke: "#f0f0f0" },
             stroke: "#888",
             values: (_self: any, ticks: number[]) =>
               ticks.map((t) => {
@@ -654,7 +654,7 @@ export default function DataViewerWS({ workspace }: Props) {
           },
           {
             stroke: "#888",
-            grid: { stroke: "#e8e8e8" },
+            grid: { stroke: "#f0f0f0" },
             values: (_self: any, ticks: number[]) => ticks.map((t) => fmtNum(t)),
           },
         ],

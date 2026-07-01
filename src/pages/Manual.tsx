@@ -102,7 +102,7 @@ export default function Manual() {
                       fontSize: 17,
                       fontWeight: 600,
                       color: "#1e3a8a",
-                      borderBottom: "1px solid #e8e8e8",
+                      borderBottom: "1px solid #f0f0f0",
                       paddingBottom: 6,
                       margin: "32px 0 12px",
                     }}
@@ -224,7 +224,7 @@ export default function Manual() {
                   {children}
                 </td>
               ),
-              hr: () => <hr style={{ border: "none", borderTop: "1px solid #e8e8e8", margin: "24px 0" }} />,
+              hr: () => <hr style={{ border: "none", borderTop: "1px solid #f0f0f0", margin: "24px 0" }} />,
               strong: ({ children }) => <strong style={{ fontWeight: 600 }}>{children}</strong>,
             }}
           >

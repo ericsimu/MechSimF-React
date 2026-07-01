@@ -84,7 +84,7 @@ export async function queueModelInfo(): Promise<ApiResponse<ModelInfoMap>> {
 }
 
 export async function queueDisturbances(): Promise<ApiResponse<DisturbanceDirNode>> {
-  return await request<DisturbanceDirNode>("/queue_disturbances");
+  return await request<DisturbanceDirNode>("/queue_data_sim");
 }
 
 export async function getDisturbanceInfo(

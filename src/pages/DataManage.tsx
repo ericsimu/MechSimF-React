@@ -290,14 +290,14 @@ export default function DataManage() {
         axes: [
           {
             label: timeCol.name,
-            grid: { stroke: "#e8e8e8" },
+            grid: { stroke: "#f0f0f0" },
             stroke: "#888",
             values: (_self: any, ticks: number[]) =>
               ticks.map((t) => fmtNum(t)),
           },
           {
             stroke: "#888",
-            grid: { stroke: "#e8e8e8" },
+            grid: { stroke: "#f0f0f0" },
             values: (_self: any, ticks: number[]) =>
               ticks.map((t) => fmtNum(t)),
           },
@@ -499,7 +499,7 @@ export default function DataManage() {
                     loadPreview(key);
                   }
                 }}
-                defaultExpandAll={true}
+                defaultExpandAll={false}
                 style={{ fontSize: 13 }}
               />
             )}
@@ -574,7 +574,7 @@ export default function DataManage() {
                     loadPreview(key);
                   }
                 }}
-                defaultExpandAll={true}
+                defaultExpandAll={false}
                 style={{ fontSize: 13 }}
               />
             )}

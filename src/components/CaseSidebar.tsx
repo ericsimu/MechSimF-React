@@ -1,4 +1,5 @@
 import { Button } from "antd";
+import { FileTextOutlined } from "@ant-design/icons";
 import type { CaseModel } from "../types/api";
 
 interface Props {
@@ -36,7 +37,10 @@ export default function CaseSidebar({
               className={`py-2 px-4 cursor-pointer text-[13px] text-[#333] transition-colors duration-100 hover:bg-[#f0f0f0] ${editCase?.id === c.id ? "bg-[#e6f4ff] !text-[#1677ff] font-medium" : ""}`}
               onClick={() => onSelect(c)}
             >
-              <span className="overflow-hidden text-ellipsis whitespace-nowrap block">{c.name || "未命名"}</span>
+              <span className="flex items-center gap-2 overflow-hidden">
+                <FileTextOutlined className="text-[#3b82f6]/40 shrink-0 text-xs" />
+                <span className="overflow-hidden text-ellipsis whitespace-nowrap">{c.name || "未命名"}</span>
+              </span>
             </li>
           ))}
         </ul>

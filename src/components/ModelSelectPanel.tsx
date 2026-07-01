@@ -39,7 +39,7 @@ function ModelImage({ sysName }: { sysName: string }) {
         marginTop: 12,
         borderRadius: 6,
         overflow: "hidden",
-        background: "#fafafa",
+        background: "#fff",
       }}
     >
       <img
