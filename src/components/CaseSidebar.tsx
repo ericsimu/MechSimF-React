@@ -38,7 +38,7 @@ export default function CaseSidebar({
               onClick={() => onSelect(c)}
             >
               <span className="flex items-center gap-2 overflow-hidden">
-                <FileTextOutlined className="text-[#3b82f6]/40 shrink-0 text-xs" />
+                <FileTextOutlined style={{ color: "#3b82f6", fontSize: 12 }} className="shrink-0" />
                 <span className="overflow-hidden text-ellipsis whitespace-nowrap">{c.name || "未命名"}</span>
               </span>
             </li>

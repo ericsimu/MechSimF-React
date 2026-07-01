@@ -9,7 +9,9 @@ import {
   DatabaseOutlined,
   ToolOutlined,
   BookOutlined,
+  HomeOutlined,
 } from "@ant-design/icons";
+import Home from "./pages/Home";
 import CaseList from "./pages/CaseList";
 import Tasks, { savedTaskSelection } from "./pages/Tasks";
 import DataViewer from "./pages/DataViewer";
@@ -27,6 +29,7 @@ interface NavChild { path?: string; label: string; icon?: ReactNode }
 interface NavItem { path?: string; label: string; children?: NavChild[]; icon?: ReactNode; exact?: boolean }
 
 const navItems: NavItem[] = [
+  { path: `${PREFIX}/`, label: "主页", icon: <HomeOutlined />, exact: true },
   { path: `${PREFIX}/cases`, label: "用例编排", icon: <AppstoreOutlined /> },
   { path: `${PREFIX}/tasks`, label: "任务管理", icon: <ScheduleOutlined /> },
   { path: `${PREFIX}/data`, label: "结果查看", icon: <LineChartOutlined />, exact: false },
@@ -83,6 +86,7 @@ function MechSim() {
 
   function logout() {
     clearCurrentUser();
+    savedTaskSelection.length = 0; // 清空跨用户的任务选中记忆
     setUser(""); // 回到登录页
   }
 
@@ -124,7 +128,7 @@ function MechSim() {
         <aside className="sidebar-collapsible shrink-0 flex flex-col bg-gradient-to-b from-[#0f1b3d] via-[#1e3a8a] to-[#2563eb] relative"
       style={{ width: collapsed ? 56 : 200 }}>
           <div className="py-4 flex items-center justify-center select-none">
-            <span className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-white/[0.15] text-sm font-bold text-white">M</span>
+            <img src="/MechSimIcon.png" alt="MechSim" className="w-7 h-7" />
             <span className={`text-white font-bold ml-2 text-base transition-opacity duration-200 ${collapsed ? "opacity-0 w-0 overflow-hidden" : "opacity-100"}`}>MechSim</span>
           </div>
           {/* 折叠按钮 — 圆形，悬浮在侧边栏右边缘 */}
@@ -174,6 +178,7 @@ function MechSim() {
           </header>
           <main key={`${user}-${location.pathname}`} className="flex-1 p-0 min-h-0 flex flex-col overflow-hidden" style={{ animation: "fadeIn 0.2s ease-out" }}>
             <Switch>
+              <Route path={`${PREFIX}/`} exact component={Home} />
               <Route path={`${PREFIX}/cases`} component={CaseList} />
               <Route path={`${PREFIX}/tasks`} component={Tasks} />
               <Route path={`${PREFIX}/data-ws`} component={DataWS} />
@@ -184,7 +189,7 @@ function MechSim() {
               <Route path={`${PREFIX}/indicators`} component={Placeholder} />
               <Route path={`${PREFIX}/reports`} component={Placeholder} />
               <Route path={`${PREFIX}/logs`} component={Placeholder} />
-              <Redirect to={`${PREFIX}/cases`} />
+              <Redirect to={`${PREFIX}/`} />
             </Switch>
           </main>
         </div>

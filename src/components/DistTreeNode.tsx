@@ -36,10 +36,14 @@ export default function DistTreeNode({
         onClick={(e) => e.stopPropagation()}
       >
         <span
-          className="w-3.5 text-center text-[#999] shrink-0 cursor-pointer"
+          className="w-3.5 text-center shrink-0 cursor-pointer inline-flex items-center justify-center"
           onClick={() => hasChildren && onToggle(path)}
         >
-          {hasChildren ? (open ? "▼︎" : "▶︎") : ""}
+          {hasChildren ? (
+            <svg width="8" height="8" viewBox="0 0 8 8" className={`transition-transform duration-200 ${open ? "rotate-90" : ""}`}>
+              <path d="M2.5 1L5.5 4L2.5 7" stroke="#999" strokeWidth="1.2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          ) : null}
         </span>
         <span
           className="cursor-pointer"

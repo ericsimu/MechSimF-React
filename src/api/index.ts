@@ -208,6 +208,15 @@ export async function getTaskDataColumns(
   return await request(`/task_data/${taskId}?names_only=true`);
 }
 
+export async function getTaskIndication(
+  taskId: number,
+): Promise<ApiResponse<{
+  rs: { headers: string[]; rows: string[][] } | null;
+  ws: { headers: string[]; rows: string[][] } | null;
+}>> {
+  return await request(`/task_data/${taskId}/indication`);
+}
+
 export async function getTaskSignals(
   taskId: number,
   signalNames: string[],

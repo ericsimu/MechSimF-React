@@ -49,11 +49,13 @@ export default function TreeNode({
               onToggle(path);
             }}
           >
-            {expanded[path] ? "▼︎" : "▶︎"}
+            <svg width="8" height="8" viewBox="0 0 8 8" className={`transition-transform duration-200 ${expanded[path] ? "rotate-90" : ""}`}>
+              <path d="M2.5 1L5.5 4L2.5 7" stroke="#999" strokeWidth="1.2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
           </span>
         ) : (
           <span className="w-3.5 text-center shrink-0" style={{ visibility: "hidden" }}>
-            {"▶︎"}
+            <svg width="8" height="8" viewBox="0 0 8 8"><path d="M2.5 1L5.5 4L2.5 7" stroke="#999" strokeWidth="1.2" fill="none" strokeLinecap="round" strokeLinejoin="round" /></svg>
           </span>
         )}
         <span>{name}</span>

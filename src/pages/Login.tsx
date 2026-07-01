@@ -23,7 +23,7 @@ export default function Login({ onLogin }: Props) {
         @keyframes pulse-ring { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.15);opacity:.6} }
         @keyframes dot-pulse { 0%,100%{transform:scale(1);opacity:.6} 50%{transform:scale(1.5);opacity:1} }
       `}</style>
-      <div className="h-full flex items-center justify-center bg-gradient-to-b from-[#f5f7fa] to-[#e4ecf7]">
+      <div className="h-screen flex items-center justify-center bg-gradient-to-b from-[#f5f7fa] to-[#e4ecf7]">
       <div className="w-[340px] bg-white rounded-lg shadow-md border border-[#f0f0f0] p-8 flex flex-col gap-4">
         <div className="text-center">
           <div className="text-2xl font-bold text-[#1e3a8a]">MechSim</div>

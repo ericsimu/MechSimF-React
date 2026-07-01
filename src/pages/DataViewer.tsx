@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useLocation } from "react-router-dom";
-import { Button, Input, Spin, Tabs } from "antd";
-import { BarChartOutlined } from "@ant-design/icons";
-import { getTaskStatus, getTaskDataColumns, getTaskSignals } from "../api/index";
+import { Button, Input, Spin, Table, Tabs } from "antd";
+import { BarChartOutlined, FundOutlined } from "@ant-design/icons";
+import { getTaskStatus, getTaskDataColumns, getTaskSignals, getTaskIndication } from "../api/index";
 import uPlot from "uplot";
 import "uplot/dist/uPlot.min.css";
 import { isNil } from "../utils/isNil";
@@ -82,6 +82,10 @@ export default function DataViewer() {
   const [searchText, setSearchText] = useState("");
   const [taskExpanded, setTaskExpanded] = useState<Record<number, boolean>>({});
   const [leftWidth, setLeftWidth] = useState(260);
+  const [exporting, setExporting] = useState(false);
+  const [indicationData, setIndicationData] = useState<Record<number, { rs: { headers: string[]; rows: string[][] } | null; ws: { headers: string[]; rows: string[][] } | null }>>({});
+  const [indicationLoading, setIndicationLoading] = useState(false);
+  const [perfActive, setPerfActive] = useState(false);
 
   // ── refs ──
   const tasksRef = useRef(tasks); tasksRef.current = tasks;
@@ -189,6 +193,75 @@ export default function DataViewer() {
   }
 
   function toggleAllOff() { setChecked({}); }
+
+  // ── 导出CSV ──
+  async function exportCSV() {
+    const checkedTime = Object.entries(checked).filter(
+      ([k, v]) => v && !k.includes("::fft::"),
+    );
+    if (checkedTime.length === 0) return;
+
+    setExporting(true);
+    try {
+      // 按任务分组：{ taskId → [sigName, ...] }
+      const byTask = new Map<number, string[]>();
+      checkedTime.forEach(([k]) => {
+        const [tidStr, sigName] = k.split("::");
+        const tid = Number(tidStr);
+        if (!byTask.has(tid)) byTask.set(tid, []);
+        byTask.get(tid)!.push(sigName);
+      });
+
+      // 为每个任务拉取 time + 信号数据
+      const allColumns: { name: string; data: (number | null)[] }[] = [];
+      let timeData: (number | null)[] | null = null;
+
+      for (const [tid, sigNames] of byTask.entries()) {
+        try {
+          const r = await getTaskSignals(tid, ["time", ...sigNames], "time", undefined, undefined, true);
+          if (r.success && r.data) {
+            if (!timeData) {
+              const tc = r.data.columns.find((c: any) => c.name === "time");
+              if (tc) timeData = tc.data.map((v: any) => (isNil(v) ? null : Number(v)));
+            }
+            for (const sn of sigNames) {
+              const sc = r.data.columns.find((c: any) => c.name === sn);
+              if (sc) {
+                allColumns.push({
+                  name: `任务#${tid}_${sn}`,
+                  data: sc.data.map((v: any) => (isNil(v) ? null : Number(v))),
+                });
+              }
+            }
+          }
+        } catch { /* skip failed task */ }
+      }
+
+      if (allColumns.length === 0) return;
+
+      const headers = timeData ? ["time", ...allColumns.map((c) => c.name)] : allColumns.map((c) => c.name);
+      const nRows = timeData ? timeData.length : allColumns[0].data.length;
+      const rows: string[] = [headers.join(",")];
+      for (let i = 0; i < nRows; i++) {
+        const row: string[] = [];
+        if (timeData) row.push(timeData[i]?.toString() ?? "");
+        for (const col of allColumns) {
+          row.push(col.data[i]?.toString() ?? "");
+        }
+        rows.push(row.join(","));
+      }
+
+      const blob = new Blob(["﻿" + rows.join("\n")], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `data_export_${Date.now()}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setExporting(false);
+    }
+  }
 
   // ── 拖拽缩放 ──
   const makeSelectHandler = useCallback((domain: "time" | "fft") => {
@@ -413,6 +486,10 @@ export default function DataViewer() {
         .ant-tabs.data-tabs { flex:1; display:flex; flex-direction:column; overflow:hidden; min-height:0; }
         .ant-tabs.data-tabs>.ant-tabs-nav { margin-bottom:0; padding:0 16px; background:#fff; border-bottom:1px solid #f0f0f0; }
         .ant-tabs.data-tabs>.ant-tabs-content-holder { flex:1; display:flex; flex-direction:column; overflow:hidden; min-height:0; }
+        .ant-tabs.data-tabs>.ant-tabs-content-holder>.ant-tabs-content { flex:1; display:flex; flex-direction:column; min-height:0; }
+        .ant-tabs.data-tabs .ant-tabs-tabpane-active { flex:1; display:flex; flex-direction:column; min-height:0; }
+        .dense-table .ant-table-cell { padding: 2px 8px !important; line-height: 1.4; }
+        .dense-table .ant-table-thead .ant-table-cell { padding: 4px 8px !important; }
       `}</style>
     <div className="h-[calc(100vh-49px)] flex flex-col p-4">
       <div className="flex items-center gap-4 mb-3">
@@ -421,6 +498,23 @@ export default function DataViewer() {
 
       <Tabs
         className="data-tabs"
+        onChange={(key) => {
+          if (key === "perf") setPerfActive(true);
+          if (key === "perf" && doneTasks.length > 0 && Object.keys(indicationData).length === 0) {
+            setIndicationLoading(true);
+            (async () => {
+              const data: typeof indicationData = {};
+              for (const t of doneTasks) {
+                try {
+                  const r = await getTaskIndication(t.id);
+                  if (r.success && r.data) data[t.id] = r.data;
+                } catch { /* */ }
+              }
+              setIndicationData(data);
+              setIndicationLoading(false);
+            })();
+          }
+        }}
         items={[
           {
             key: "data",
@@ -462,75 +556,131 @@ export default function DataViewer() {
                     </div>
                   )}
                   <div className="flex flex-1 gap-3 overflow-hidden min-h-0">
-
-          {/* ── 信号列表面板 ── */}
-          <div
-            className="sig-sidebar"
-            style={{ width: leftWidth, minWidth: 0, flexShrink: 0, position: "relative", border: "1px solid #f0f0f0", borderRadius: 8, display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}
-            onMouseDown={(e) => { if (e.nativeEvent.offsetX >= (e.currentTarget as HTMLElement).offsetWidth - 8) startResize(e); }}
-          >
-            <div className="flex items-center justify-between px-2.5 py-2 border-b border-[#f0f0f0] font-semibold text-[13px]" style={{ cursor: "default" }}>
-              <span>信号列表 ({sigCount})</span>
-              <Button size="small" onClick={toggleAllOff}>全不选</Button>
-            </div>
-            <div style={{ padding: "4px 8px" }}>
-              <Input placeholder="搜索信号..." value={searchText} onChange={(e) => setSearchText(e.target.value)} allowClear size="small" />
-            </div>
-            <div className="flex-1 overflow-y-auto px-2.5 py-1.5" style={{ scrollbarGutter: "stable" }}>
-              {doneTasks.map((t) => {
-                const names = t.sigNames.filter((n) => n.toLowerCase().includes(searchText.toLowerCase()));
-                const open = searchText ? names.length > 0 : taskExpanded[t.id] === true;
-                return (
-                  <div key={t.id} className="mb-2">
-                    <div className="flex items-center gap-1 text-[13px] font-semibold py-1 cursor-pointer select-none" onClick={() => setTaskExpanded((p) => ({ ...p, [t.id]: !open }))}>
-                      <span className="w-3 text-center text-[#999] shrink-0 text-[10px]">{open ? "▼︎" : "▶︎"}</span>
-                      <span className="inline-block shrink-0" style={{ width: 8, height: 8, borderRadius: 1, background: "#3b82f6", transform: "rotate(45deg)" }} />
-                      <span>{t.name}</span>
-                      <span className="text-[#999] text-xs font-normal">({t.sigNames.length})</span>
+                    <div
+                      className="sig-sidebar"
+                      style={{ width: leftWidth, minWidth: 0, flexShrink: 0, position: "relative", border: "1px solid #f0f0f0", borderRadius: 8, display: "flex", flexDirection: "column", overflow: "hidden", boxShadow: "0 1px 3px rgba(0,0,0,0.04)", height: "100%" }}
+                      onMouseDown={(e) => { if (e.nativeEvent.offsetX >= (e.currentTarget as HTMLElement).offsetWidth - 8) startResize(e); }}
+                    >
+                      <div className="flex items-center justify-between px-2.5 py-2 border-b border-[#f0f0f0] font-semibold text-[13px]" style={{ cursor: "default" }}>
+                        <span>信号列表 ({sigCount})</span>
+                        <div className="flex gap-1">
+                          <Button size="small" onClick={toggleAllOff}>全不选</Button>
+                          <Button size="small" loading={exporting} onClick={() => exportCSV()}>{exporting ? "导出中..." : "导出CSV"}</Button>
+                        </div>
+                      </div>
+                      <div style={{ padding: "4px 8px" }}>
+                        <Input placeholder="搜索信号..." value={searchText} onChange={(e) => setSearchText(e.target.value)} allowClear size="small" />
+                      </div>
+                      <div className="flex-1 min-h-0 overflow-y-auto px-2.5 py-1.5" style={{ scrollbarGutter: "stable" }}>
+                        {doneTasks.map((t) => {
+                          const names = t.sigNames.filter((n) => n.toLowerCase().includes(searchText.toLowerCase()));
+                          const open = searchText ? names.length > 0 : taskExpanded[t.id] === true;
+                          return (
+                            <div key={t.id} className="mb-2">
+                              <div className="flex items-center gap-1 text-[13px] font-semibold py-1 cursor-pointer select-none" onClick={() => setTaskExpanded((p) => ({ ...p, [t.id]: !open }))}>
+                                <span className="w-3 text-center text-[#999] shrink-0 text-[10px]">{open ? "▼︎" : "▶︎"}</span>
+                                <span className="inline-block shrink-0" style={{ width: 8, height: 8, borderRadius: 1, background: "#3b82f6", transform: "rotate(45deg)" }} />
+                                <span>{t.name}</span>
+                                <span className="text-[#999] text-xs font-normal">({t.sigNames.length})</span>
+                              </div>
+                              {open && names.map((n) => {
+                                const key = `${t.id}::${n}`, fftKey = `${t.id}::fft::${n}`;
+                                return (
+                                  <label key={key} className="flex items-center gap-1 cursor-pointer text-[13px] py-0.5 pl-3">
+                                    <input type="checkbox" checked={checked[key] === true && checked[fftKey] === true}
+                                      onChange={() => { toggle(key, t.id, n, "time"); toggle(fftKey, t.id, n, "fft"); }}
+                                    />
+                                    <span>{n}</span>
+                                  </label>
+                                );
+                              })}
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
-                    {open && names.map((n) => {
-                      const key = `${t.id}::${n}`, fftKey = `${t.id}::fft::${n}`;
-                      return (
-                        <label key={key} className="flex items-center gap-1 cursor-pointer text-[13px] py-0.5 pl-3">
-                          <input type="checkbox" checked={checked[key] === true && checked[fftKey] === true}
-                            onChange={() => { toggle(key, t.id, n, "time"); toggle(fftKey, t.id, n, "fft"); }}
-                          />
-                          <span>{n}</span>
-                        </label>
-                      );
-                    })}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
 
-          {/* ── 图表区 ── */}
-          <div className="flex-1 overflow-y-auto flex flex-col">
-            <div className="flex flex-col">
-              <div className="text-[13px] font-semibold text-[#555] mb-0.5 flex justify-between items-center">
-                时域图
-                <Button size="small" onClick={() => exportSVG(timeChartRef.current, `${exportBase}_time.svg`)}>导出SVG</Button>
-              </div>
-              <div ref={timeChartRef} className="dv-chart min-h-[300px] min-w-full relative" />
-            </div>
-            <div className="flex flex-col">
-              <div className="text-[13px] font-semibold text-[#555] mb-0.5 flex justify-between items-center">
-                频域图
-                <Button size="small" onClick={() => exportSVG(freqChartRef.current, `${exportBase}_freq.svg`)}>导出SVG</Button>
-              </div>
-              <div ref={freqChartRef} className="dv-chart min-h-[300px] min-w-full relative" />
-            </div>
-          </div>
+                    <div className="flex-1 overflow-y-auto flex flex-col">
+                      <div className="flex flex-col">
+                        <div className="text-[13px] font-semibold text-[#555] mb-0.5 flex justify-between items-center">
+                          时域图
+                          <Button size="small" onClick={() => exportSVG(timeChartRef.current, `${exportBase}_time.svg`)}>导出SVG</Button>
+                        </div>
+                        <div ref={timeChartRef} className="dv-chart min-h-[300px] min-w-full relative" />
+                      </div>
+                      <div className="flex flex-col">
+                        <div className="text-[13px] font-semibold text-[#555] mb-0.5 flex justify-between items-center">
+                          频域图
+                          <Button size="small" onClick={() => exportSVG(freqChartRef.current, `${exportBase}_freq.svg`)}>导出SVG</Button>
+                        </div>
+                        <div ref={freqChartRef} className="dv-chart min-h-[300px] min-w-full relative" />
+                      </div>
+                    </div>
                   </div>
-        </>
-      )
+                </>
+              )
             ),
           },
           {
             key: "perf",
             label: "性能分析",
-            children: <div className="text-center text-[#999] py-20">性能分析功能开发中...</div>,
+            children: !perfActive ? (
+              <div className="flex-1 overflow-y-auto p-4"><div className="text-center text-[#999] py-20">性能分析功能开发中...</div></div>
+            ) : (
+              <div className="flex-1 overflow-y-auto">
+                {ids.length === 0 ? (
+                  <div className="text-center text-[#999] py-[120px] text-sm flex flex-col items-center gap-3">
+                    <FundOutlined style={{ fontSize: 36, color: "#d0d5dd" }} />
+                    <span>请从任务列表中选择任务进行指标分析</span>
+                  </div>
+                ) : doneTasks.length === 0 ? (
+                  <div className="text-center text-[#999] py-20 text-sm">所选任务暂无可查看的仿真数据</div>
+                ) : indicationLoading ? (
+                  <div className="flex items-center justify-center py-20"><Spin size="large" /></div>
+                ) : (
+                  <div className="px-3 py-3 space-y-5">
+                    {doneTasks.map((t) => {
+                      const ind = indicationData[t.id];
+                      return (
+                        <div key={t.id}>
+                          <h3 className="text-[13px] font-semibold text-[#555] mb-2">{t.name}</h3>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="rounded-lg border border-[#f0f0f0] overflow-hidden">
+                              <div className="bg-[#fafafa] px-3 py-1.5 text-[12px] font-semibold text-[#666] border-b border-[#f0f0f0]">RS 指标表</div>
+                              <Table
+                                size="small"
+                                pagination={false}
+                                className="text-[12px] dense-table"
+                                tableLayout="auto"
+                                dataSource={ind?.rs ? ind.rs.rows.map((row, i) => ({ ...Object.fromEntries(ind.rs!.headers.map((h, j) => [h, row[j] ?? ""])), _key: i })) : []}
+                                columns={ind?.rs ? ind.rs.headers.map((h) => ({ title: h, dataIndex: h, key: h })) : []}
+                                rowKey="_key"
+                                bordered
+                                locale={{ emptyText: <span className="text-[#999] text-xs">暂无 RS 指标数据</span> }}
+                              />
+                            </div>
+                            <div className="rounded-lg border border-[#f0f0f0] overflow-hidden">
+                              <div className="bg-[#fafafa] px-3 py-1.5 text-[12px] font-semibold text-[#666] border-b border-[#f0f0f0]">WS 指标表</div>
+                              <Table
+                                size="small"
+                                pagination={false}
+                                className="text-[12px] dense-table"
+                                tableLayout="auto"
+                                dataSource={ind?.ws ? ind.ws.rows.map((row, i) => ({ ...Object.fromEntries(ind.ws!.headers.map((h, j) => [h, row[j] ?? ""])), _key: i })) : []}
+                                columns={ind?.ws ? ind.ws.headers.map((h) => ({ title: h, dataIndex: h, key: h })) : []}
+                                rowKey="_key"
+                                bordered
+                                locale={{ emptyText: <span className="text-[#999] text-xs">暂无 WS 指标数据</span> }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            ),
           },
         ]}
       />
