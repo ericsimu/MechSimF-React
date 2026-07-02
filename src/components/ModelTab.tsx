@@ -26,7 +26,7 @@ import type {
 import ModelSelectPanel from "./ModelSelectPanel";
 import ParamTab from "./ParamTab";
 import DisturbTab from "./DisturbTab";
-import IndicatorTab from "./IndicatorTab";
+// import IndicatorTab from "./IndicatorTab";
 import uPlot from "uplot";
 import "uplot/dist/uPlot.min.css";
 
@@ -119,7 +119,8 @@ function ModelTab(
   const [modelInfo, setModelInfo] = useState<ModelInfoMap>({});
 
   // ── Split Pane ──
-  const [leftWidth, setLeftWidth] = useState(280);
+  const [paramWidth, setParamWidth] = useState(280);
+  const [disturbWidth, setDisturbWidth] = useState(500);
 
   // ── Param Tree ──
   const [paramVars, setParamVars] = useState<Record<string, any>>({});
@@ -432,22 +433,24 @@ function ModelTab(
   }, [disturbColumns, disturbVisible]);
 
   // ── Resize Handler ──
-  function startResizeLeft(e: React.MouseEvent) {
-    const target = e.target as HTMLElement;
-    const editBody = target.parentElement!;
-    const bodyLeft = editBody.getBoundingClientRect().left;
-    const bodyW = editBody.offsetWidth;
-    document.body.style.userSelect = "none";
-    function onMove(ev: MouseEvent) {
-      setLeftWidth(Math.min(bodyW * 0.6, Math.max(180, ev.clientX - bodyLeft)));
-    }
-    function onUp() {
-      document.body.style.userSelect = "";
-      document.removeEventListener("mousemove", onMove);
-      document.removeEventListener("mouseup", onUp);
-    }
-    document.addEventListener("mousemove", onMove);
-    document.addEventListener("mouseup", onUp);
+  function makeResizeHandler(setWidth: (w: number) => void) {
+    return (e: React.MouseEvent) => {
+      const target = e.target as HTMLElement;
+      const editBody = target.parentElement!;
+      const bodyLeft = editBody.getBoundingClientRect().left;
+      const bodyW = editBody.offsetWidth;
+      document.body.style.userSelect = "none";
+      function onMove(ev: MouseEvent) {
+        setWidth(Math.min(bodyW * 0.6, Math.max(180, ev.clientX - bodyLeft)));
+      }
+      function onUp() {
+        document.body.style.userSelect = "";
+        document.removeEventListener("mousemove", onMove);
+        document.removeEventListener("mouseup", onUp);
+      }
+      document.addEventListener("mousemove", onMove);
+      document.addEventListener("mouseup", onUp);
+    };
   }
 
   // ── Build full case body (flush pending param edits + merge identity) ──
@@ -821,7 +824,7 @@ function ModelTab(
       label: "参数配置",
       children: (
         <ParamTab
-          leftWidth={leftWidth}
+          leftWidth={paramWidth}
           paramEntries={paramEntries}
           selParamPath={selParamPath}
           paramExpanded={paramExpanded}
@@ -833,7 +836,7 @@ function ModelTab(
           dirtyValues={dirtyValues}
           onSave={saveParamGroup}
           onForceUpdate={() => setParamVars((prev) => ({ ...prev }))}
-          startResizeLeft={startResizeLeft}
+          startResizeLeft={makeResizeHandler(setParamWidth)}
         />
       ),
     },
@@ -842,7 +845,7 @@ function ModelTab(
       label: "扰动选择",
       children: (
         <DisturbTab
-          leftWidth={leftWidth}
+          leftWidth={disturbWidth}
           disturbEntries={disturbEntries}
           disturbChecked={disturbChecked}
           disturbExpanded={disturbExpanded}
@@ -859,15 +862,15 @@ function ModelTab(
             setDisturbVisible((prev) => ({ ...prev, [name]: !prev[name] }))
           }
           chartRef={chartRef}
-          startResizeLeft={startResizeLeft}
+          startResizeLeft={makeResizeHandler(setDisturbWidth)}
         />
       ),
     },
-    {
-      key: "indicator",
-      label: "参数扫描",
-      children: <IndicatorTab />,
-    },
+    // {
+    //   key: "indicator",
+    //   label: "参数扫描",
+    //   children: <IndicatorTab />,
+    // },
   ];
 
   return (
