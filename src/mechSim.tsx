@@ -82,6 +82,7 @@ function MechSim() {
   function handleLogin(u: string) {
     setCurrentUser(u); // 写入后续请求使用的 X-User
     setUser(u);
+    history.push("/");
   }
 
   function logout() {

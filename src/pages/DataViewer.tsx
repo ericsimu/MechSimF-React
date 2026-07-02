@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useLocation } from "react-router-dom";
-import { Button, Input, Spin, Table, Tabs } from "antd";
+import { Button, Input, message, Spin, Table, Tabs } from "antd";
 import { BarChartOutlined, FundOutlined } from "@ant-design/icons";
 import { getTaskStatus, getTaskDataColumns, getTaskSignals, getTaskIndication } from "../api/index";
 import uPlot from "uplot";
@@ -199,7 +199,7 @@ export default function DataViewer() {
     const checkedTime = Object.entries(checked).filter(
       ([k, v]) => v && !k.includes("::fft::"),
     );
-    if (checkedTime.length === 0) return;
+    if (checkedTime.length === 0) { message.warning("请先勾选需要导出的信号"); return; }
 
     setExporting(true);
     try {
