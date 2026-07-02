@@ -15,6 +15,7 @@ import {
   DeleteOutlined,
   FolderOpenOutlined,
   ExperimentOutlined,
+  ArrowRightOutlined,
 } from "@ant-design/icons";
 import type { DataNode } from "antd/es/tree";
 import {
@@ -694,7 +695,7 @@ export default function DataManage() {
             onClick={handleProcessToSim}
             style={{ width: "100%" }}
           >
-            {'-->'}
+            <ArrowRightOutlined style={{ fontSize: 14 }} /> 转换
           </Button>
         </div>
 
