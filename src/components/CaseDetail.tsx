@@ -37,8 +37,8 @@ export default function CaseDetail({
           <div className="flex items-center gap-4 rounded-xl border border-[#dce3f0] shadow-sm px-5 py-3 bg-gradient-to-r from-[#f8fafd] via-white to-[#f8fafd]">
             {/* 左侧色块 + 名称 */}
             <div className="flex items-center gap-3 min-w-0 flex-[2]">
-              <span className="w-14 h-14 rounded-xl bg-[#3b82f6] flex items-center justify-center shrink-0">
-                <ToolOutlined style={{ color: "#fff", fontSize: 26 }} />
+              <span className="w-7 h-7 rounded-lg bg-[#3b82f6] flex items-center justify-center shrink-0">
+                <ToolOutlined style={{ color: "#fff", fontSize: 14 }} />
               </span>
               <div className="min-w-0">
                 <div>

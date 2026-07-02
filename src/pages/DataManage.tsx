@@ -13,6 +13,8 @@ import {
   InboxOutlined,
   ImportOutlined,
   DeleteOutlined,
+  FolderOpenOutlined,
+  ExperimentOutlined,
 } from "@ant-design/icons";
 import type { DataNode } from "antd/es/tree";
 import {
@@ -451,11 +453,11 @@ export default function DataManage() {
           flexShrink: 0,
           display: "flex",
           flexDirection: "column",
-          gap: 12,
+          gap: 10,
         }}
       >
       {/* Drag upload zone */}
-      <div style={{ marginBottom: 8 }}>
+      <div style={{ marginBottom: 3 }}>
         <Dragger
           accept=".csv"
           showUploadList={false}
@@ -467,17 +469,17 @@ export default function DataManage() {
           style={{ padding: "4px 16px" }}
         >
           {uploading ? (
-            <p style={{ margin: 0, fontSize: 18, color: "#999", lineHeight: "24px" }}>
-              <Spin size="small" style={{ marginRight: 4 }} />
+            <p style={{ margin: 0, fontSize: 14, color: "#999", lineHeight: "10px" }}>
+              <Spin size="small" style={{ marginRight: 3 }} />
               上传中...
             </p>
           ) : uploadedFileName ? (
-            <p style={{ margin: 0, fontSize: 18, color: "#389e0d", lineHeight: "24px" }}>
+            <p style={{ margin: 0, fontSize: 14, color: "#389e0d", lineHeight: "10px" }}>
               <InboxOutlined style={{ marginRight: 3 }} />
               已上传: {uploadedFileName}
             </p>
           ) : (
-            <p style={{ margin: 0, fontSize: 18, color: "#999", lineHeight: "24px" }}>
+            <p style={{ margin: 0, fontSize: 14, color: "#999", lineHeight: "10px" }}>
               <InboxOutlined style={{ marginRight: 3 }} />
               点击或拖拽CSV文件到此处上传原始数据文件
             </p>
@@ -563,10 +565,10 @@ export default function DataManage() {
       <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
         <Button
           type="primary"
+          size="small"
           icon={<ImportOutlined />}
           onClick={handleImport}
           loading={importing}
-          style={{ width: 224 }}
         >
           导入原始数据文件
         </Button>
@@ -612,7 +614,7 @@ export default function DataManage() {
               justifyContent: "space-between",
             }}
           >
-            <span>原始数据 (data_raw)</span>
+            <span><FolderOpenOutlined style={{ marginRight: 4 }} />原始数据 (data_raw)</span>
             <div style={{ display: "flex", gap: 4 }}>
               <Button size="small" type="link" onClick={() => setRawExpandedKeys(getAllDirKeys(rawTree))}>展开</Button>
               <Button size="small" type="link" onClick={() => setRawExpandedKeys([])}>收起</Button>
@@ -718,7 +720,7 @@ export default function DataManage() {
               justifyContent: "space-between",
             }}
           >
-            <span>仿真数据 (data_sim)</span>
+            <span><ExperimentOutlined style={{ marginRight: 4 }} />仿真数据 (data_sim)</span>
             <div style={{ display: "flex", gap: 4 }}>
               <Button size="small" type="link" onClick={() => setSimExpandedKeys(getAllDirKeys(simTree))}>展开</Button>
               <Button size="small" type="link" onClick={() => setSimExpandedKeys([])}>收起</Button>
