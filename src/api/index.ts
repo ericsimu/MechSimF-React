@@ -10,6 +10,7 @@ import type {
   DisturbanceDirNode,
   DisturbanceColumn,
   SimPayload,
+  SummaryCsvOptions,
 } from "../types/api";
 import { isNil } from "../utils/isNil";
 import { getCurrentUser } from "../utils/user";
@@ -84,7 +85,7 @@ export async function queueModelInfo(): Promise<ApiResponse<ModelInfoMap>> {
 }
 
 export async function queueDisturbances(): Promise<ApiResponse<DisturbanceDirNode>> {
-  return await request<DisturbanceDirNode>("/queue_data_sim");
+  return await request<DisturbanceDirNode>("/queue_disturbances");
 }
 
 export async function getDisturbanceInfo(
@@ -305,6 +306,10 @@ export async function processToSim(body: {
   method?: string;
 }): Promise<ApiResponse<{ path: string; filename: string }>> {
   return await request("/process_to_sim", { method: "POST", body: JSON.stringify(body) });
+}
+
+export async function fetchSummaryCsvOptions(): Promise<ApiResponse<SummaryCsvOptions>> {
+  return await request<SummaryCsvOptions>("/summary_csv_options");
 }
 
 export async function getWorkspaceSignals(

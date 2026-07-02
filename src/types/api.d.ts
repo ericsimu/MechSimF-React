@@ -121,3 +121,10 @@ export interface DisturbanceDirNode {
   dirs?: Record<string, DisturbanceDirNode>;
   files?: DisturbanceFile[];
 }
+
+export interface SummaryCsvOptions {
+  tag: string[];
+  machine: string[];
+  source: string[];
+  domain: string[];
+}

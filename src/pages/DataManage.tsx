@@ -10,7 +10,6 @@ import {
   Modal,
 } from "antd";
 import {
-  UploadOutlined,
   InboxOutlined,
   ImportOutlined,
 } from "@ant-design/icons";
@@ -24,8 +23,9 @@ import {
   queueDataSim,
   processToSim,
   getDisturbanceInfo,
+  fetchSummaryCsvOptions,
 } from "../api/index";
-import type { DisturbanceDirNode, DisturbanceColumn } from "../types/api";
+import type { DisturbanceDirNode, DisturbanceColumn, SummaryCsvOptions } from "../types/api";
 
 const { Dragger } = Upload;
 
@@ -34,9 +34,8 @@ const COLORS = [
   "#ec4899", "#06b6d4", "#f97316", "#84cc16", "#6366f1",
 ];
 
-const DROPDOWN_LABELS = [
-  "产品线", "子系统", "模块", "控制器", "信号类型", "额定电流", "方向",
-];
+const PATH_LABELS = ["项目代号", "子系统", "模块", "数据类别"];
+const TAG_LABELS = ["标签", "机台号", "数据来源", "域类别"];
 
 function fmtNum(v: number): string {
   if (!isFinite(v)) return String(v);
@@ -105,7 +104,7 @@ export default function DataManage() {
   const [simTree, setSimTree] = useState<DisturbanceDirNode | null>(null);
   const [treeLoading, setTreeLoading] = useState(false);
 
-  const [parts, setParts] = useState<string[]>(Array(7).fill(""));
+  const [parts, setParts] = useState<string[]>(Array(8).fill(""));
   const [version, setVersion] = useState("00.00.99");
   const [ts, setTs] = useState(nowTimestamp());
 
@@ -117,19 +116,23 @@ export default function DataManage() {
   const [previewColumns, setPreviewColumns] = useState<DisturbanceColumn[]>([]);
   const [previewLoading, setPreviewLoading] = useState(false);
 
+  const [tagOptions, setTagOptions] = useState<SummaryCsvOptions>({ tag: [], machine: [], source: [], domain: [] });
+
   const chartRef = useRef<HTMLDivElement | null>(null);
   const chartInst = useRef<uPlot | null>(null);
 
-  // Load trees on mount
+  // Load trees and tag options on mount
   const loadTrees = useCallback(async () => {
     setTreeLoading(true);
     try {
-      const [rawRes, simRes] = await Promise.all([
+      const [rawRes, simRes, optsRes] = await Promise.all([
         queueDisturbances(),
         queueDataSim(),
+        fetchSummaryCsvOptions(),
       ]);
       if (rawRes.success) setRawTree(rawRes.data ?? null);
       if (simRes.success) setSimTree(simRes.data ?? null);
+      if (optsRes.success && optsRes.data) setTagOptions(optsRes.data);
     } catch {
       message.error("加载数据树失败");
     } finally {
@@ -144,7 +147,7 @@ export default function DataManage() {
   // Compute dropdown options (cascading)
   const dropdownOptions = useMemo(() => {
     const opts: string[][] = [];
-    for (let i = 0; i < 7; i++) {
+    for (let i = 0; i < 4; i++) {
       opts.push(getOptionsAtLevel(rawTree, parts, i));
     }
     return opts;
@@ -328,23 +331,6 @@ export default function DataManage() {
         direction: "ltr",
       }}
     >
-      {/* Upload section */}
-      <div>
-        <Button
-          type="primary"
-          icon={<UploadOutlined />}
-          style={{ width: 224 }}
-          onClick={() => {
-            const input = document.querySelector<HTMLInputElement>(
-              ".data-manage-upload input[type=file]",
-            );
-            input?.click();
-          }}
-        >
-          上传原始数据文件（*.csv）
-        </Button>
-      </div>
-
       {/* Drag upload zone */}
       <div className="data-manage-upload">
         <Dragger
@@ -361,7 +347,7 @@ export default function DataManage() {
             <InboxOutlined />
           </p>
           <p style={{ fontSize: 11, color: "#999", margin: 0, lineHeight: 1.4 }}>
-            点击或拖拽 CSV 文件到此区域上传
+            点击或拖拽CSV格式的原始数据文件到此区域上传
           </p>
         </Dragger>
         {uploading && (
@@ -395,28 +381,42 @@ export default function DataManage() {
         >
           {parts.map((val, i) => (
             <span key={i} style={{ display: "flex", alignItems: "center", gap: 4 }}>
-              <Select
-                value={val || undefined}
-                placeholder={DROPDOWN_LABELS[i]}
-                style={{ width: 110 }}
-                size="small"
-                options={(dropdownOptions[i] || []).map((o) => ({
-                  value: o,
-                  label: o,
-                }))}
-                onChange={(v) => {
-                  const next = [...parts];
-                  next[i] = v;
-                  for (let j = i + 1; j < 7; j++) next[j] = "";
-                  setParts(next);
-                }}
-              />
-              {i < 6 && (
-                <span style={{ color: "#bbb", fontWeight: 600 }}>_</span>
+              {i < 4 ? (
+                <Select
+                  value={val || undefined}
+                  placeholder={PATH_LABELS[i]}
+                  style={{ width: 110 }}
+                  size="small"
+                  options={(dropdownOptions[i] || []).map((o) => ({
+                    value: o,
+                    label: o,
+                  }))}
+                  onChange={(v) => {
+                    const next = [...parts];
+                    next[i] = v;
+                    for (let j = i + 1; j < 4; j++) next[j] = "";
+                    setParts(next);
+                  }}
+                />
+              ) : (
+                <Select
+                  value={val || undefined}
+                  placeholder={TAG_LABELS[i - 4]}
+                  style={{ width: 110 }}
+                  size="small"
+                  allowClear
+                  showSearch
+                  options={(tagOptions[["tag","machine","source","domain"][i-4] as keyof SummaryCsvOptions] || []).map((o: string) => ({ value: o, label: o }))}
+                  onChange={(v) => {
+                    const next = [...parts];
+                    next[i] = v;
+                    setParts(next);
+                  }}
+                />
               )}
+              <span style={{ color: "#bbb", fontWeight: 600 }}>_</span>
             </span>
           ))}
-          <span style={{ color: "#bbb", fontWeight: 600, marginLeft: 4 }}>_v</span>
           <Input
             size="small"
             value={version}
@@ -633,23 +633,6 @@ export default function DataManage() {
         </div>
       </div>
     </div>
-      {/* 半透明幕布 */}
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          background: "rgba(255,255,255,0.75)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          zIndex: 1000,
-          cursor: "not-allowed",
-        }}
-      >
-        <span style={{ fontSize: 24, color: "#999", fontWeight: 500, letterSpacing: 4 }}>
-          功能开发中
-        </span>
-      </div>
     </div>
   );
 }
