@@ -170,6 +170,18 @@ function toTreeData(
   return result;
 }
 
+/** 递归收集树中所有目录节点的 key，用于"全部展开" */
+function getAllDirKeys(node: DisturbanceDirNode | null, prefix = ""): string[] {
+  if (!node?.dirs) return [];
+  const keys: string[] = [];
+  for (const [name, sub] of Object.entries(node.dirs)) {
+    const key = prefix ? `${prefix}/${name}` : name;
+    keys.push(key);
+    keys.push(...getAllDirKeys(sub, key));
+  }
+  return keys;
+}
+
 export default function DataManage() {
   const [uploading, setUploading] = useState(false);
   const [tempPath, setTempPath] = useState("");
@@ -467,7 +479,7 @@ export default function DataManage() {
           ) : (
             <p style={{ margin: 0, fontSize: 18, color: "#999", lineHeight: "24px" }}>
               <InboxOutlined style={{ marginRight: 3 }} />
-              拖拽CSV文件到此处上传
+              点击或拖拽CSV文件到此处上传原始数据文件
             </p>
           )}
         </Dragger>
@@ -601,16 +613,20 @@ export default function DataManage() {
             }}
           >
             <span>原始数据 (data_raw)</span>
-            <Button
-              size="small"
-              danger
-              icon={<DeleteOutlined />}
-              disabled={filterFileKeys(checkedRawKeys).length === 0}
-              loading={deleting}
-              onClick={() => handleDelete("raw")}
-            >
-              删除选中
-            </Button>
+            <div style={{ display: "flex", gap: 4 }}>
+              <Button size="small" type="link" onClick={() => setRawExpandedKeys(getAllDirKeys(rawTree))}>展开</Button>
+              <Button size="small" type="link" onClick={() => setRawExpandedKeys([])}>收起</Button>
+              <Button
+                size="small"
+                danger
+                icon={<DeleteOutlined />}
+                disabled={filterFileKeys(checkedRawKeys).length === 0}
+                loading={deleting}
+                onClick={() => handleDelete("raw")}
+              >
+                删除选中
+              </Button>
+            </div>
           </div>
           <div style={{ flex: 1, overflow: "auto", padding: "4px 0" }}>
             {treeLoading ? (
@@ -703,16 +719,20 @@ export default function DataManage() {
             }}
           >
             <span>仿真数据 (data_sim)</span>
-            <Button
-              size="small"
-              danger
-              icon={<DeleteOutlined />}
-              disabled={filterFileKeys(checkedSimKeys).length === 0}
-              loading={deleting}
-              onClick={() => handleDelete("sim")}
-            >
-              删除选中
-            </Button>
+            <div style={{ display: "flex", gap: 4 }}>
+              <Button size="small" type="link" onClick={() => setSimExpandedKeys(getAllDirKeys(simTree))}>展开</Button>
+              <Button size="small" type="link" onClick={() => setSimExpandedKeys([])}>收起</Button>
+              <Button
+                size="small"
+                danger
+                icon={<DeleteOutlined />}
+                disabled={filterFileKeys(checkedSimKeys).length === 0}
+                loading={deleting}
+                onClick={() => handleDelete("sim")}
+              >
+                删除选中
+              </Button>
+            </div>
           </div>
           <div style={{ flex: 1, overflow: "auto", padding: "4px 0" }}>
             {treeLoading ? (
