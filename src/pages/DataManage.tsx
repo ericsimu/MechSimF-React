@@ -43,25 +43,46 @@ function findSimFile(
   const idx = norm.indexOf("data_raw/");
   if (idx < 0) return null;
   const rel = norm.slice(idx + "data_raw/".length); // "DY/RS/BM/Controller/file.csv"
+  return _walkTree(rel, simTree);
+}
+
+/**
+ * 从仿真文件绝对路径中提取 data_sim 之后的相对路径段，在 raw 树中查找同名文件。
+ * 返回 { rawPath, expandedKeys } 或 null。
+ */
+function findRawFile(
+  simPath: string,
+  rawTree: DisturbanceDirNode | null,
+): { rawPath: string; expandedKeys: string[] } | null {
+  const norm = simPath.replace(/\\/g, "/");
+  const idx = norm.indexOf("data_sim/");
+  if (idx < 0) return null;
+  const rel = norm.slice(idx + "data_sim/".length);
+  return _walkTree(rel, rawTree);
+}
+
+/** 在树中按相对路径查找文件，rel 格式如 "DY/RS/BM/Controller/file.csv" */
+function _walkTree(
+  rel: string,
+  tree: DisturbanceDirNode | null,
+): { simPath: string; expandedKeys: string[] } | null {
   const segs = rel.split("/");
   const dirs = segs.slice(0, -1);
   const filename = segs[segs.length - 1];
 
-  // Walk sim tree by directory segments
-  let node = simTree;
+  let node = tree;
   for (const d of dirs) {
     node = node?.dirs?.[d] ?? null;
     if (!node) return null;
   }
-  const simFile = node?.files?.find((f) => f.name === filename);
-  if (!simFile) return null;
+  const file = node?.files?.find((f) => f.name === filename);
+  if (!file) return null;
 
-  // Build expanded keys from directory segments
   const expandedKeys: string[] = [];
   for (let i = 0; i < dirs.length; i++) {
     expandedKeys.push(dirs.slice(0, i + 1).join("/"));
   }
-  return { simPath: simFile.path, expandedKeys };
+  return { simPath: file.path, expandedKeys };
 }
 
 function nowTimestamp(): string {
@@ -130,6 +151,8 @@ export default function DataManage() {
   const [processMethod, setProcessMethod] = useState("calDiffNoise");
   const [selectedRawFile, setSelectedRawFile] = useState<string | null>(null);
   const [selectedSimFile, setSelectedSimFile] = useState<string | null>(null);
+  const [rawExpandedKeys, setRawExpandedKeys] = useState<string[]>([]);
+  const [rawSelectedKeys, setRawSelectedKeys] = useState<string[]>([]);
   const [simExpandedKeys, setSimExpandedKeys] = useState<string[]>([]);
   const [simSelectedKeys, setSimSelectedKeys] = useState<string[]>([]);
   const [processing, setProcessing] = useState(false);
@@ -499,10 +522,14 @@ export default function DataManage() {
                 checkable
                 checkedKeys={checkedRawKeys}
                 onCheck={(keys) => setCheckedRawKeys(keys as string[])}
+                expandedKeys={rawExpandedKeys}
+                selectedKeys={rawSelectedKeys}
+                onExpand={(keys) => setRawExpandedKeys(keys as string[])}
                 onClick={(e, node) => {
                   const key = node.key as string;
                   if (/\.(csv|xlsx?|xlsm)$/i.test(key)) {
                     setSelectedRawFile(key);
+                    setRawSelectedKeys([key]);
                     const found = findSimFile(key, simTree);
                     if (found) {
                       setSimExpandedKeys(found.expandedKeys);
@@ -601,7 +628,16 @@ export default function DataManage() {
                   const key = node.key as string;
                   if (/\.(csv|xlsx?|xlsm)$/i.test(key)) {
                     setSelectedSimFile(key);
-                    setSelectedRawFile(null);
+                    setSimSelectedKeys([key]);
+                    const found = findRawFile(key, rawTree);
+                    if (found) {
+                      setRawExpandedKeys(found.expandedKeys);
+                      setRawSelectedKeys([found.simPath]);
+                      setSelectedRawFile(found.simPath);
+                    } else {
+                      setSelectedRawFile(null);
+                      setRawSelectedKeys([]);
+                    }
                   }
                 }}
                 expandedKeys={simExpandedKeys}
