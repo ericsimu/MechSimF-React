@@ -41,7 +41,7 @@ export default function Home() {
   const history = useHistory();
 
   return (
-    <div className="flex-1 flex flex-col justify-center bg-[#0c1529] overflow-hidden">
+    <div className="flex-1 flex flex-col justify-center bg-[#f8fafd] overflow-hidden">
       {/* 品牌区 */}
       <div className="shrink-0 flex flex-col items-center pt-1 pb-8">
         <img
@@ -49,10 +49,10 @@ export default function Home() {
           alt="MechSim"
           className="w-14 h-14 mb-3"
         />
-        <h1 className="text-[26px] font-bold text-white tracking-tight mb-1">
+        <h1 className="text-[26px] font-bold text-[#0f1b3d] tracking-tight mb-1">
           MechSim
         </h1>
-        <p className="text-[13px] text-[#6b7fa8] text-center">
+        <p className="text-[13px] text-[#8893ae] text-center">
           机电仿真平台 — 一站式仿真用例管理、数据分析与结果可视化
         </p>
       </div>
@@ -64,18 +64,18 @@ export default function Home() {
             <div
               key={c.route}
               onClick={() => history.push(c.route)}
-              className="group cursor-pointer rounded-xl border border-white/[0.08] bg-white/[0.06] p-5 transition-all duration-300 hover:bg-white/[0.12] hover:border-white/[0.15] hover:-translate-y-0.5"
+              className="group cursor-pointer rounded-xl border border-[#f0f0f0] bg-white p-5 transition-all duration-300 hover:shadow-md hover:shadow-black/[0.04] hover:border-[#d0d5dd] hover:-translate-y-0.5"
             >
               <div
                 className="w-10 h-10 rounded-lg flex items-center justify-center text-xl mb-3 transition-transform duration-300 group-hover:scale-110"
-                style={{ backgroundColor: c.color + "25", color: c.color }}
+                style={{ backgroundColor: c.color + "10", color: c.color }}
               >
                 {c.icon}
               </div>
-              <h3 className="text-[15px] font-semibold text-white mb-1">
+              <h3 className="text-[15px] font-semibold text-[#1a1a1a] mb-1">
                 {c.title}
               </h3>
-              <p className="text-[12px] text-[#6b7fa8] leading-relaxed">
+              <p className="text-[12px] text-[#999] leading-relaxed">
                 {c.desc}
               </p>
             </div>
