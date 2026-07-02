@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Button,
   Upload,
@@ -14,37 +14,20 @@ import {
   ImportOutlined,
 } from "@ant-design/icons";
 import type { DataNode } from "antd/es/tree";
-import uPlot from "uplot";
-import "uplot/dist/uPlot.min.css";
 import {
   uploadRawData,
   importRawData,
   queueDisturbances,
   queueDataSim,
   processToSim,
-  getDisturbanceInfo,
   fetchSummaryCsvOptions,
 } from "../api/index";
-import type { DisturbanceDirNode, DisturbanceColumn, SummaryCsvOptions } from "../types/api";
+import type { DisturbanceDirNode, SummaryCsvOptions } from "../types/api";
 
 const { Dragger } = Upload;
 
-const COLORS = [
-  "#3b82f6", "#ef4444", "#10b981", "#f59e0b", "#8b5cf6",
-  "#ec4899", "#06b6d4", "#f97316", "#84cc16", "#6366f1",
-];
-
 const PATH_LABELS = ["项目代号", "子系统", "模块", "数据类别"];
 const TAG_LABELS = ["标签", "机台号", "数据来源", "域类别"];
-
-function fmtNum(v: number): string {
-  if (!isFinite(v)) return String(v);
-  const av = Math.abs(v);
-  if (av === 0) return "0";
-  if (av < 0.001 || av >= 10000) return v.toExponential(4);
-  const s = v.toFixed(10);
-  return s.includes(".") ? s.replace(/\.?0+$/, "") : s;
-}
 
 function nowTimestamp(): string {
   const d = new Date();
@@ -113,13 +96,8 @@ export default function DataManage() {
   const [selectedRawFile, setSelectedRawFile] = useState<string | null>(null);
   const [selectedSimFile, setSelectedSimFile] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
-  const [previewColumns, setPreviewColumns] = useState<DisturbanceColumn[]>([]);
-  const [previewLoading, setPreviewLoading] = useState(false);
 
   const [tagOptions, setTagOptions] = useState<SummaryCsvOptions>({ tag: [], machine: [], source: [], domain: [] });
-
-  const chartRef = useRef<HTMLDivElement | null>(null);
-  const chartInst = useRef<uPlot | null>(null);
 
   // Load trees and tag options on mount
   const loadTrees = useCallback(async () => {
@@ -204,23 +182,6 @@ export default function DataManage() {
     }
   }
 
-  // Load preview data when a tree file is selected
-  const previewFile = selectedRawFile || selectedSimFile;
-
-  async function loadPreview(filePath: string) {
-    setPreviewLoading(true);
-    try {
-      const res = await getDisturbanceInfo(filePath);
-      if (res.success && res.data) {
-        setPreviewColumns(res.data.columns);
-      }
-    } catch {
-      // ignore
-    } finally {
-      setPreviewLoading(false);
-    }
-  }
-
   // Process to sim
   async function handleProcessToSim() {
     if (!selectedRawFile) {
@@ -245,72 +206,6 @@ export default function DataManage() {
       },
     });
   }
-
-  // Build uPlot chart when preview columns change
-  useEffect(() => {
-    if (chartInst.current) {
-      chartInst.current.destroy();
-      chartInst.current = null;
-    }
-    const el = chartRef.current;
-    if (!el || previewColumns.length === 0) return;
-
-    const timeCol =
-      previewColumns.find((c) => /time/i.test(c.name)) || previewColumns[0];
-    const sigCols = previewColumns.filter(
-      (c) => c !== timeCol && c.data.length > 0,
-    );
-    const timeArr =
-      timeCol.data.length > 0
-        ? timeCol.data.map((v) => v ?? 0)
-        : sigCols[0]?.data.map((_, i) => i) ?? [];
-
-    const series: Array<object> = [
-      { label: timeCol.name, value: (_u: unknown, v: number) => fmtNum(v) },
-    ];
-    for (const c of sigCols) {
-      const ci = previewColumns.indexOf(c);
-      series.push({
-        label: c.name,
-        stroke: COLORS[ci % COLORS.length],
-        width: 1.5,
-        value: (_u: unknown, v: number) => (v == null ? "" : fmtNum(v)),
-      });
-    }
-    const signalArrs = sigCols.map((c) =>
-      c.data.map((v) => (v == null ? null : Number(v))),
-    );
-
-    const w = el.offsetWidth || 800;
-    const h = el.offsetHeight || 280;
-    chartInst.current = new (uPlot as any)(
-      {
-        width: w,
-        height: h - 16,
-        cursor: { show: true, drag: { setScale: true, x: true, y: false } },
-        legend: { show: true },
-        scales: { x: { time: false } },
-        axes: [
-          {
-            label: timeCol.name,
-            grid: { stroke: "#f0f0f0" },
-            stroke: "#888",
-            values: (_self: any, ticks: number[]) =>
-              ticks.map((t) => fmtNum(t)),
-          },
-          {
-            stroke: "#888",
-            grid: { stroke: "#f0f0f0" },
-            values: (_self: any, ticks: number[]) =>
-              ticks.map((t) => fmtNum(t)),
-          },
-        ],
-        series,
-      },
-      [timeArr, ...signalArrs],
-      el,
-    );
-  }, [previewColumns]);
 
   return (
     <div
@@ -496,7 +391,6 @@ export default function DataManage() {
                   if (key && /\.(csv|xlsx?|xlsm)$/i.test(key)) {
                     setSelectedRawFile(key);
                     setSelectedSimFile(null);
-                    loadPreview(key);
                   }
                 }}
                 defaultExpandAll={false}
@@ -571,7 +465,6 @@ export default function DataManage() {
                   if (key && /\.(csv|xlsx?|xlsm)$/i.test(key)) {
                     setSelectedSimFile(key);
                     setSelectedRawFile(null);
-                    loadPreview(key);
                   }
                 }}
                 defaultExpandAll={false}
@@ -582,56 +475,6 @@ export default function DataManage() {
         </div>
       </div>
 
-      {/* Waveform preview */}
-      <div
-        style={{
-          flex: 3,
-          display: "flex",
-          flexDirection: "column",
-          border: "1px solid #f0f0f0",
-          borderRadius: 6,
-          overflow: "hidden",
-          minHeight: 0,
-        }}
-      >
-        <div
-          style={{
-            padding: "8px 12px",
-            fontWeight: 600,
-            fontSize: 14,
-            background: "#fafafa",
-            borderBottom: "1px solid #f0f0f0",
-            flexShrink: 0,
-          }}
-        >
-          波形预览
-          {previewFile && (
-            <span style={{ fontWeight: 400, fontSize: 12, color: "#888", marginLeft: 12 }}>
-              {previewFile.split(/[\\/]/).pop()}
-            </span>
-          )}
-        </div>
-        <div style={{ flex: 1, padding: "12px 16px", minHeight: 0, display: "flex" }}>
-          {previewLoading ? (
-            <Spin style={{ display: "block", padding: 24 }} />
-          ) : previewColumns.length > 0 ? (
-            <div ref={chartRef} style={{ flex: 1 }} />
-          ) : (
-            <div
-              style={{
-                flex: 1,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: "#999",
-                fontSize: 14,
-              }}
-            >
-              点击左侧树中的文件查看波形
-            </div>
-          )}
-        </div>
-      </div>
     </div>
     </div>
   );
