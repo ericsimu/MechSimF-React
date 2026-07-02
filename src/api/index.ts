@@ -297,8 +297,8 @@ export async function importRawData(body: {
   return await request("/import_raw_data", { method: "POST", body: JSON.stringify(body) });
 }
 
-export async function queueDataSim(): Promise<ApiResponse<DisturbanceDirNode>> {
-  return await request<DisturbanceDirNode>("/queue_data_sim");
+export async function queueDataRaw(): Promise<ApiResponse<DisturbanceDirNode>> {
+  return await request<DisturbanceDirNode>("/queue_data_raw");
 }
 
 export async function processToSim(body: {
