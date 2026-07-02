@@ -312,6 +312,15 @@ export async function fetchSummaryCsvOptions(): Promise<ApiResponse<SummaryCsvOp
   return await request<SummaryCsvOptions>("/summary_csv_options");
 }
 
+export async function deleteDataFiles(
+  filePaths: string[],
+): Promise<ApiResponse<{ deleted: string[]; errors: string[] }>> {
+  return await request("/delete_data_files", {
+    method: "POST",
+    body: JSON.stringify({ file_paths: filePaths }),
+  });
+}
+
 export async function getWorkspaceSignals(
   workspace: string,
   signalNames: string[],

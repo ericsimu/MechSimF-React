@@ -12,6 +12,7 @@ import {
 import {
   InboxOutlined,
   ImportOutlined,
+  DeleteOutlined,
 } from "@ant-design/icons";
 import type { DataNode } from "antd/es/tree";
 import {
@@ -21,6 +22,7 @@ import {
   queueDataSim,
   processToSim,
   fetchSummaryCsvOptions,
+  deleteDataFiles,
 } from "../api/index";
 import type { DisturbanceDirNode, SummaryCsvOptions } from "../types/api";
 
@@ -28,6 +30,39 @@ const { Dragger } = Upload;
 
 const PATH_LABELS = ["项目代号", "子系统", "模块", "数据类别"];
 const TAG_LABELS = ["标签", "机台号", "数据来源", "域类别"];
+
+/**
+ * 从原始文件绝对路径中提取 data_raw 之后的相对路径段，在 sim 树中查找同名文件。
+ * 返回 { simPath, expandedKeys } 或 null。
+ */
+function findSimFile(
+  rawPath: string,
+  simTree: DisturbanceDirNode | null,
+): { simPath: string; expandedKeys: string[] } | null {
+  const norm = rawPath.replace(/\\/g, "/");
+  const idx = norm.indexOf("data_raw/");
+  if (idx < 0) return null;
+  const rel = norm.slice(idx + "data_raw/".length); // "DY/RS/BM/Controller/file.csv"
+  const segs = rel.split("/");
+  const dirs = segs.slice(0, -1);
+  const filename = segs[segs.length - 1];
+
+  // Walk sim tree by directory segments
+  let node = simTree;
+  for (const d of dirs) {
+    node = node?.dirs?.[d] ?? null;
+    if (!node) return null;
+  }
+  const simFile = node?.files?.find((f) => f.name === filename);
+  if (!simFile) return null;
+
+  // Build expanded keys from directory segments
+  const expandedKeys: string[] = [];
+  for (let i = 0; i < dirs.length; i++) {
+    expandedKeys.push(dirs.slice(0, i + 1).join("/"));
+  }
+  return { simPath: simFile.path, expandedKeys };
+}
 
 function nowTimestamp(): string {
   const d = new Date();
@@ -95,7 +130,14 @@ export default function DataManage() {
   const [processMethod, setProcessMethod] = useState("calDiffNoise");
   const [selectedRawFile, setSelectedRawFile] = useState<string | null>(null);
   const [selectedSimFile, setSelectedSimFile] = useState<string | null>(null);
+  const [simExpandedKeys, setSimExpandedKeys] = useState<string[]>([]);
+  const [simSelectedKeys, setSimSelectedKeys] = useState<string[]>([]);
   const [processing, setProcessing] = useState(false);
+
+  // Checkbox state for batch delete
+  const [checkedRawKeys, setCheckedRawKeys] = useState<string[]>([]);
+  const [checkedSimKeys, setCheckedSimKeys] = useState<string[]>([]);
+  const [deleting, setDeleting] = useState(false);
 
   const [tagOptions, setTagOptions] = useState<SummaryCsvOptions>({ tag: [], machine: [], source: [], domain: [] });
 
@@ -182,6 +224,48 @@ export default function DataManage() {
     }
   }
 
+  // Filter checked keys to file paths only (exclude directory keys)
+  function filterFileKeys(keys: string[]): string[] {
+    return keys.filter((k) => /\.(csv|xlsx?|xlsm)$/i.test(k));
+  }
+
+  // Batch delete checked files
+  function handleDelete(treeType: "raw" | "sim") {
+    const checkedKeys = treeType === "raw" ? checkedRawKeys : checkedSimKeys;
+    const fileKeys = filterFileKeys(checkedKeys);
+    if (fileKeys.length === 0) {
+      message.warning("请先勾选要删除的文件");
+      return;
+    }
+    const title = treeType === "raw" ? "原始数据" : "仿真数据";
+    Modal.confirm({
+      title: `确认删除 ${title} 文件`,
+      content: `将删除 ${fileKeys.length} 个文件，此操作不可恢复。\n\n${fileKeys.map((f) => `• ${f.split(/[\\/]/).pop()}`).join("\n")}`,
+      okText: "确认删除",
+      okType: "danger",
+      cancelText: "取消",
+      onOk: async () => {
+        setDeleting(true);
+        try {
+          const res = await deleteDataFiles(fileKeys);
+          if (res.success) {
+            message.success(res.message || `成功删除 ${fileKeys.length} 个文件`);
+          } else {
+            message.warning(res.message || "部分文件删除失败");
+          }
+          // Clear checked keys & reload trees
+          if (treeType === "raw") setCheckedRawKeys([]);
+          else setCheckedSimKeys([]);
+          loadTrees();
+        } catch (e: any) {
+          message.error(e?.message || "删除失败");
+        } finally {
+          setDeleting(false);
+        }
+      },
+    });
+  }
+
   // Process to sim
   async function handleProcessToSim() {
     if (!selectedRawFile) {
@@ -197,7 +281,16 @@ export default function DataManage() {
           await processToSim({ file_path: selectedRawFile, method: processMethod });
           message.success("处理成功");
           const simRes = await queueDataSim();
-          if (simRes.success) setSimTree(simRes.data ?? null);
+          if (simRes.success) {
+            const freshTree = simRes.data ?? null;
+            setSimTree(freshTree);
+            const found = findSimFile(selectedRawFile, freshTree);
+            if (found) {
+              setSimExpandedKeys(found.expandedKeys);
+              setSimSelectedKeys([found.simPath]);
+              setSelectedSimFile(found.simPath);
+            }
+          }
         } catch (e: any) {
           message.error(e?.message || "处理失败");
         } finally {
@@ -212,20 +305,21 @@ export default function DataManage() {
       style={{
         flex: 1,
         minHeight: 0,
-        overflowY: "auto",
-        direction: "rtl",
-        padding: "16px 20px",
-        position: "relative",
-      }}
-    >
-    <div
-      style={{
         display: "flex",
         flexDirection: "column",
-        gap: 12,
-        direction: "ltr",
+        overflow: "hidden",
+        padding: "16px 20px",
       }}
     >
+      {/* Top fixed section */}
+      <div
+        style={{
+          flexShrink: 0,
+          display: "flex",
+          flexDirection: "column",
+          gap: 12,
+        }}
+      >
       {/* Drag upload zone */}
       <div className="data-manage-upload">
         <Dragger
@@ -349,13 +443,16 @@ export default function DataManage() {
         )}
       </div>
 
-      {/* Tree panels */}
+      </div>{/* end top fixed section */}
+
+      {/* Tree panels — fills remaining height */}
       <div
         style={{
-          flex: 2,
+          flex: 1,
           display: "flex",
           gap: 12,
           minHeight: 0,
+          paddingTop: 12,
         }}
       >
         {/* Raw data tree */}
@@ -376,9 +473,22 @@ export default function DataManage() {
               fontSize: 14,
               background: "#fafafa",
               borderBottom: "1px solid #f0f0f0",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
             }}
           >
-            原始数据 (data_raw)
+            <span>原始数据 (data_raw)</span>
+            <Button
+              size="small"
+              danger
+              icon={<DeleteOutlined />}
+              disabled={filterFileKeys(checkedRawKeys).length === 0}
+              loading={deleting}
+              onClick={() => handleDelete("raw")}
+            >
+              删除选中
+            </Button>
           </div>
           <div style={{ flex: 1, overflow: "auto", padding: "4px 0" }}>
             {treeLoading ? (
@@ -386,11 +496,22 @@ export default function DataManage() {
             ) : (
               <Tree.DirectoryTree
                 treeData={toTreeData(rawTree)}
-                onSelect={(keys) => {
-                  const key = keys[0] as string | undefined;
-                  if (key && /\.(csv|xlsx?|xlsm)$/i.test(key)) {
+                checkable
+                checkedKeys={checkedRawKeys}
+                onCheck={(keys) => setCheckedRawKeys(keys as string[])}
+                onClick={(e, node) => {
+                  const key = node.key as string;
+                  if (/\.(csv|xlsx?|xlsm)$/i.test(key)) {
                     setSelectedRawFile(key);
-                    setSelectedSimFile(null);
+                    const found = findSimFile(key, simTree);
+                    if (found) {
+                      setSimExpandedKeys(found.expandedKeys);
+                      setSimSelectedKeys([found.simPath]);
+                      setSelectedSimFile(found.simPath);
+                    } else {
+                      setSelectedSimFile(null);
+                      setSimSelectedKeys([]);
+                    }
                   }
                 }}
                 defaultExpandAll={false}
@@ -450,9 +571,22 @@ export default function DataManage() {
               fontSize: 14,
               background: "#fafafa",
               borderBottom: "1px solid #f0f0f0",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
             }}
           >
-            仿真数据 (data_sim)
+            <span>仿真数据 (data_sim)</span>
+            <Button
+              size="small"
+              danger
+              icon={<DeleteOutlined />}
+              disabled={filterFileKeys(checkedSimKeys).length === 0}
+              loading={deleting}
+              onClick={() => handleDelete("sim")}
+            >
+              删除选中
+            </Button>
           </div>
           <div style={{ flex: 1, overflow: "auto", padding: "4px 0" }}>
             {treeLoading ? (
@@ -460,14 +594,19 @@ export default function DataManage() {
             ) : (
               <Tree.DirectoryTree
                 treeData={toTreeData(simTree)}
-                onSelect={(keys) => {
-                  const key = keys[0] as string | undefined;
-                  if (key && /\.(csv|xlsx?|xlsm)$/i.test(key)) {
+                checkable
+                checkedKeys={checkedSimKeys}
+                onCheck={(keys) => setCheckedSimKeys(keys as string[])}
+                onClick={(e, node) => {
+                  const key = node.key as string;
+                  if (/\.(csv|xlsx?|xlsm)$/i.test(key)) {
                     setSelectedSimFile(key);
                     setSelectedRawFile(null);
                   }
                 }}
-                defaultExpandAll={false}
+                expandedKeys={simExpandedKeys}
+                selectedKeys={simSelectedKeys}
+                onExpand={(keys) => setSimExpandedKeys(keys as string[])}
                 style={{ fontSize: 13 }}
               />
             )}
@@ -475,7 +614,6 @@ export default function DataManage() {
         </div>
       </div>
 
-    </div>
     </div>
   );
 }
