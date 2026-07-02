@@ -168,8 +168,8 @@ function MechSim() {
           </div>
         </aside>
         <div className="flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden">
-          <header className="py-3.5 px-6 flex items-center z-10" style={{ background: "linear-gradient(135deg, #eef4fb 0%, #f6f9fe 50%, #edf3fa 100%)", borderBottom: "1px solid #dce6f2", boxShadow: "0 1px 3px rgba(59,130,246,0.05)" }}>
-            <span className="text-sm text-[#1e3a5f] font-medium">MechSim (机电仿真平台)</span>
+          <header className="py-5 px-6 flex items-center z-10" style={{ background: "linear-gradient(135deg, #eef4fb 0%, #f6f9fe 50%, #edf3fa 100%)", borderBottom: "1px solid #dce6f2", boxShadow: "0 1px 3px rgba(59,130,246,0.05)" }}>
+            <span className="text-base text-[#1e3a5f] font-medium">MechSim (机电仿真平台)</span>
             <div className="ml-auto flex items-center gap-3">
               <span className="text-[13px] text-[#888]">{user}</span>
               <Button size="small" onClick={logout}>

@@ -692,6 +692,7 @@ export default function DataManage() {
             size="small"
             loading={processing}
             onClick={handleProcessToSim}
+            style={{ width: "100%" }}
           >
             {'-->'}
           </Button>
