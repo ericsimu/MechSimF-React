@@ -19,7 +19,7 @@ import {
   uploadRawData,
   importRawData,
   queueDisturbances,
-  queueDataSim,
+  queueDataRaw,
   processToSim,
   fetchSummaryCsvOptions,
   deleteDataFiles,
@@ -169,8 +169,8 @@ export default function DataManage() {
     setTreeLoading(true);
     try {
       const [rawRes, simRes, optsRes] = await Promise.all([
+        queueDataRaw(),
         queueDisturbances(),
-        queueDataSim(),
         fetchSummaryCsvOptions(),
       ]);
       if (rawRes.success) setRawTree(rawRes.data ?? null);
@@ -303,7 +303,7 @@ export default function DataManage() {
         try {
           await processToSim({ file_path: selectedRawFile, method: processMethod });
           message.success("处理成功");
-          const simRes = await queueDataSim();
+          const simRes = await queueDisturbances();
           if (simRes.success) {
             const freshTree = simRes.data ?? null;
             setSimTree(freshTree);
