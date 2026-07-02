@@ -318,7 +318,7 @@ export default function DataManage() {
       setUploadedFileName("");
 
       // 仅刷新原始数据树，导入完成后自动选中新文件
-      const rawRes = await queueDisturbances();
+      const rawRes = await queueDataRaw();
       const newRawTree = rawRes.success ? (rawRes.data ?? null) : null;
       setRawTree(newRawTree);
 
