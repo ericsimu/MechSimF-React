@@ -91,6 +91,42 @@ function nowTimestamp(): string {
   return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
 }
 
+/**
+ * 从上传文件名中柔性解析分类字段。
+ * 期待格式: {p0}_{p1}_{p2}_{p3}_{p4}_{p5}_{p6}_{p7}_v{version}_{timestamp}.csv
+ * 从尾部识别版本号（v 开头）和时间戳（14 位数字），其余段按顺序填入 8 个分类位。
+ * 能解析多少填多少，不匹配的段留空。
+ */
+function parseFilename(
+  filename: string,
+): { parts: string[]; version: string; timestamp: string } {
+  const name = filename.replace(/\.csv$/i, "");
+  const segs = name.split("_");
+  const parts = Array(8).fill("");
+  let version = "";
+  let timestamp = "";
+
+  // 从尾部反向扫描：先识别时间戳，再识别版本号，其余为分类字段
+  const remaining: string[] = [];
+  for (let i = segs.length - 1; i >= 0; i--) {
+    const s = segs[i];
+    if (!timestamp && /^\d{14}$/.test(s)) {
+      timestamp = s;
+    } else if (!version && /^v([\d.]+)$/.test(s)) {
+      version = s.slice(1);
+    } else {
+      remaining.unshift(s);
+    }
+  }
+
+  // 按顺序填入 parts，最多 8 个
+  for (let i = 0; i < Math.min(remaining.length, 8); i++) {
+    parts[i] = remaining[i];
+  }
+
+  return { parts, version, timestamp };
+}
+
 function getOptionsAtLevel(
   tree: DisturbanceDirNode | null,
   path: string[],
@@ -210,6 +246,47 @@ export default function DataManage() {
         setTempPath(res.data.temp_path);
         setUploadedFileName(res.data.filename);
         message.success(`上传成功: ${res.data.filename}`);
+
+        // 先清空，再根据文件名解析并校验目录层级后填充
+        const nextParts = Array(8).fill("");
+        const parsed = parseFilename(res.data.filename);
+
+        if (rawTree) {
+          // 前 4 个字段（项目代号/子系统/模块/数据类别）需匹配 rawTree 目录层级
+          let node: DisturbanceDirNode | undefined = rawTree;
+          for (let i = 0; i < 4; i++) {
+            const seg = parsed.parts[i];
+            if (seg && node?.dirs?.[seg]) {
+              nextParts[i] = seg;
+              node = node.dirs[seg];
+            } else {
+              break; // 不匹配则停止，后续目录层级也留空
+            }
+          }
+        } else {
+          // 树未加载时退化为直接填充
+          for (let i = 0; i < 4; i++) {
+            if (parsed.parts[i]) nextParts[i] = parsed.parts[i];
+          }
+        }
+        // 后 4 个字段（标签/机台号/数据来源/域类别）直接填入
+        for (let i = 4; i < 8; i++) {
+          if (parsed.parts[i]) nextParts[i] = parsed.parts[i];
+        }
+
+        setParts(nextParts);
+        setVersion(parsed.version || "00.00.99");
+        setTs(parsed.timestamp || nowTimestamp());
+        const filledCount = nextParts.filter((p) => p !== "").length;
+        if (filledCount > 0 || parsed.version || parsed.timestamp) {
+          const anyPathSeg = parsed.parts.slice(0, 4).some((p) => p !== "");
+          const noPathMatched = anyPathSeg && nextParts.slice(0, 4).every((p) => !p);
+          message.info(
+            noPathMatched
+              ? "文件名与已有目录不匹配，仅填充标签字段"
+              : `已从文件名解析填充 ${filledCount} 个字段`,
+          );
+        }
       }
     } catch (e: any) {
       message.error(e?.message || "上传失败");
@@ -235,11 +312,33 @@ export default function DataManage() {
     }
     setImporting(true);
     try {
-      await importRawData({ temp_path: tempPath, parts, version: version.trim(), timestamp: ts.trim() });
+      const res = await importRawData({ temp_path: tempPath, parts, version: version.trim(), timestamp: ts.trim() });
       message.success("导入成功");
       setTempPath("");
       setUploadedFileName("");
-      loadTrees();
+
+      // 仅刷新原始数据树，导入完成后自动选中新文件
+      const rawRes = await queueDisturbances();
+      const newRawTree = rawRes.success ? (rawRes.data ?? null) : null;
+      setRawTree(newRawTree);
+
+      const filePath = res.data?.path;
+      if (filePath && newRawTree) {
+        setSelectedRawFile(filePath);
+        setRawSelectedKeys([filePath]);
+        // 计算展开路径：从绝对路径中提取 data_raw 之后的目录层级
+        const norm = filePath.replace(/\\/g, "/");
+        const idx = norm.indexOf("data_raw/");
+        if (idx >= 0) {
+          const rel = norm.slice(idx + "data_raw/".length);
+          const segs = rel.split("/").slice(0, -1); // 去掉文件名
+          const expandKeys: string[] = [];
+          for (let i = 0; i < segs.length; i++) {
+            expandKeys.push(segs.slice(0, i + 1).join("/"));
+          }
+          setRawExpandedKeys(expandKeys);
+        }
+      }
     } catch (e: any) {
       message.error(e?.message || "导入失败");
     } finally {
@@ -344,7 +443,7 @@ export default function DataManage() {
         }}
       >
       {/* Drag upload zone */}
-      <div className="data-manage-upload">
+      <div style={{ marginBottom: 8 }}>
         <Dragger
           accept=".csv"
           showUploadList={false}
@@ -353,25 +452,25 @@ export default function DataManage() {
             return false;
           }}
           disabled={uploading}
-          style={{ padding: "3px 16px" }}
+          style={{ padding: "4px 16px" }}
         >
-          <p className="ant-upload-drag-icon" style={{ marginBottom: 0, fontSize: 18, lineHeight: 1 }}>
-            <InboxOutlined />
-          </p>
-          <p style={{ fontSize: 11, color: "#999", margin: 0, lineHeight: 1.4 }}>
-            点击或拖拽CSV格式的原始数据文件到此区域上传
-          </p>
+          {uploading ? (
+            <p style={{ margin: 0, fontSize: 18, color: "#999", lineHeight: "24px" }}>
+              <Spin size="small" style={{ marginRight: 4 }} />
+              上传中...
+            </p>
+          ) : uploadedFileName ? (
+            <p style={{ margin: 0, fontSize: 18, color: "#389e0d", lineHeight: "24px" }}>
+              <InboxOutlined style={{ marginRight: 3 }} />
+              已上传: {uploadedFileName}
+            </p>
+          ) : (
+            <p style={{ margin: 0, fontSize: 18, color: "#999", lineHeight: "24px" }}>
+              <InboxOutlined style={{ marginRight: 3 }} />
+              拖拽CSV文件到此处上传
+            </p>
+          )}
         </Dragger>
-        {uploading && (
-          <div style={{ textAlign: "center", marginTop: 8 }}>
-            <Spin size="small" />
-          </div>
-        )}
-        {uploadedFileName && !uploading && (
-          <div style={{ textAlign: "center", marginTop: 6, fontSize: 13, color: "#389e0d" }}>
-            已上传: {uploadedFileName}
-          </div>
-        )}
       </div>
 
       {/* Filename builder — 7 dropdowns + version + timestamp */}
