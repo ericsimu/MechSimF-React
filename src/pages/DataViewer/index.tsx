@@ -37,14 +37,14 @@ function makeCursorLabels(container: HTMLElement, xUnit: string): Cursors {
         const xVal = u.data[0][idx];
         const xLeft = u.valToPos(xVal, "x");
         const xl = document.createElement("div");
-        xl.style.cssText = `position:absolute;left:${xLeft+4}px;bottom:22px;font-size:10px;color:#fff;background:rgba(0,0,0,0.72);padding:1px 4px;border-radius:2px;pointer-events:none;white-space:nowrap;z-index:100;`;
+        xl.style.cssText = `position:absolute;left:${xLeft+4}px;bottom:22px;font-size:10px;color:#333;background:rgba(255,255,255,0.9);padding:1px 4px;border-radius:2px;pointer-events:none;white-space:nowrap;z-index:100;`;
         xl.textContent = `${fmtNum(xVal)} ${xUnit}`;
         container.appendChild(xl); labels.push(xl);
         for (let i = 1; i < u.series.length; i++) {
           const y = u.data[i]?.[idx];
           if (isNil(y)) continue;
           const d = document.createElement("div");
-          d.style.cssText = `position:absolute;left:${xLeft+6}px;top:${u.valToPos(y,"y")-14}px;font-size:10px;color:#fff;background:rgba(0,0,0,0.78);padding:1px 5px;border-radius:2px;border-left:2px solid ${u.series[i].stroke||"#888"};pointer-events:none;white-space:nowrap;z-index:100;line-height:1.5;`;
+          d.style.cssText = `position:absolute;left:${xLeft+6}px;top:${u.valToPos(y,"y")-14}px;font-size:10px;color:#333;background:rgba(255,255,255,0.92);padding:1px 5px;border-radius:2px;border-left:2px solid ${u.series[i].stroke||"#888"};pointer-events:none;white-space:nowrap;z-index:100;line-height:1.5;`;
           d.textContent = `${u.series[i].label||""}:${fmtNum(y)}`;
           container.appendChild(d); labels.push(d);
         }
@@ -354,7 +354,7 @@ export default function DataViewer() {
     const series: Array<object> = [{ label: xTask ? "Time (s)" : "Index" }];
     const arrays: Array<Array<number | null>> = [];
     plots.forEach((p) => {
-      series.push({ label: p.label, stroke: p.color, width: 2, value: (_u: unknown, v: number) => v == null ? "" : fmtNum(v) });
+      series.push({ label: p.label, stroke: p.color, width: 1.2,value: (_u: unknown, v: number) => v == null ? "" : fmtNum(v) });
       arrays.push((p.data || []).slice(0, maxLen).map((v) => (v == null ? null : v)));
     });
 
@@ -398,15 +398,15 @@ export default function DataViewer() {
     const lbls = makeCursorLabels(el, ""); freqLbls.current = lbls;
     const series: Array<object> = [{ label: "Frequency (Hz)" }];
     plots.forEach((p) => {
-      series.push({ label: p.label, stroke: p.color, width: 2, value: (_u: unknown, v: number) => v == null ? "" : fmtNum(v) });
+      series.push({ label: p.label, stroke: p.color, width: 1.2, value: (_u: unknown, v: number) => v == null ? "" : fmtNum(v) });
     });
 
     try {
       freqInst.current = new (uPlot as any)(
-        { width: el.offsetWidth || 800, height: 300, cursor: { show: true, drag: { setScale: true, x: true, y: false } }, legend: { show: true }, scales: { x: { time: false, distr: 3, log: 10, range: [1, 20000] } },
+        { width: el.offsetWidth || 800, height: 300, cursor: { show: true, drag: { setScale: true, x: true, y: false } }, legend: { show: true }, scales: { x: { time: false, distr: 3, log: 10, min: 1, max: 20000 } },
           axes: [
-            { label: "Frequency (Hz)", grid: { stroke: "#f0f0f0" }, stroke: "#888", values: (_s: any, ticks: number[]) => ticks.map((t: number) => { const lg = Math.log10(t); return Math.abs(lg - Math.round(lg)) < 1e-10 ? fmtNum(t) : ""; }) },
-            { stroke: "#888", grid: { stroke: "#f0f0f0" }, size: 85, values: (_s: any, ticks: number[]) => ticks.map((t: number) => fmtNum(t)) },
+            { label: "Frequency (Hz)", grid: { stroke: "#f0f0f0" }, stroke: "#888",values: (_s: any, ticks: number[]) => ticks.map((t: number) => { const lg = Math.log10(t); return Math.abs(lg - Math.round(lg)) < 1e-10 ? fmtNum(t) : ""; }) },
+            { stroke: "#888",grid: { stroke: "#f0f0f0" }, size: 85, values: (_s: any, ticks: number[]) => ticks.map((t: number) => fmtNum(t)) },
           ],
           series, hooks: { setCursor: [lbls.hook], setSelect: [makeSelectHandler("fft")] },
         },
