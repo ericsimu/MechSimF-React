@@ -148,6 +148,25 @@ export default function ParamTab({
     }
   }, [modelInfo, editDraft]);
 
+  // ── Auto-expand first 3 levels ──
+  const paramInitExpandedRef = useRef(false);
+  useEffect(() => {
+    if (paramInitExpandedRef.current || Object.keys(paramVars).length === 0) return;
+    paramInitExpandedRef.current = true;
+    function expandLevels(node: unknown, path: string, depth: number): Record<string, boolean> {
+      const keys: Record<string, boolean> = {};
+      if (depth >= 3 || !isObject(node)) return keys;
+      const entries = Object.entries(node as Record<string, unknown>).filter(([k]) => k !== "_labels" && k !== "_units" && k !== "ID");
+      for (const [k, v] of entries) {
+        const p = path ? `${path}.${k}` : k;
+        keys[p] = true;
+        if (isObject(v)) Object.assign(keys, expandLevels(v, p, depth + 1));
+      }
+      return keys;
+    }
+    setParamExpanded(expandLevels(paramVars, "", 0));
+  }, [paramVars]);
+
   // ── Auto-select system ──
   useEffect(() => {
     if (!editDraft.sys_name && systems.length > 0) {

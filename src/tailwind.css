@@ -8,6 +8,19 @@
 .ant-tabs.edit-tabs .ant-tabs-tabpane { flex:1; overflow:hidden; min-height:0; }
 .ant-tabs.edit-tabs .ant-tabs-tabpane-active { display:flex; flex-direction:column; }
 
+/* 扰动图图例右上角 */
+.disturb-chart .u-legend {
+  position: absolute;
+  top: 4px;
+  right: 8px;
+  z-index: 10;
+  font-size: 11px;
+  background: rgba(255,255,255,0.85);
+  padding: 4px 8px;
+  border-radius: 4px;
+  text-align: right;
+}
+
 /* 密集表格 */
 .dense-table .ant-table-cell { padding: 2px 8px !important; line-height: 1.4; }
 .dense-table .ant-table-thead .ant-table-cell { padding: 4px 8px !important; }

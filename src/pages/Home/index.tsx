@@ -45,7 +45,7 @@ export default function Home() {
       {/* 品牌区 */}
       <div className="shrink-0 flex flex-col items-center pt-1 pb-8">
         <img
-          src="/MechSimIcon.png"
+          src="/MechSimHomeIcon.png"
           alt="MechSim"
           className="w-14 h-14 mb-3"
         />

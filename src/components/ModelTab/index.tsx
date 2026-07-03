@@ -51,7 +51,7 @@ function ModelTab({ caseId, caseName, caseDescription, onSaved }: Props, ref: Re
     },
     {
       key: "disturb", label: "扰动选择",
-      children: <DisturbTab disturbance={editDraft.disturbance} setEditDraft={setEditDraft} setActiveTab={setActiveTab} />,
+      children: <DisturbTab setEditDraft={setEditDraft} setActiveTab={setActiveTab} modelInfo={modelInfo} sysName={editDraft.sys_name} modelVersion={editDraft.model_verison} modelParam={editDraft.model_param} />,
     },
   ], [systems, editDraft, modelInfo, setEditDraft, setActiveTab, onSysChange, handleDraftChange]);
 
