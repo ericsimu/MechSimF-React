@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Button, Input, Spin } from "antd";
-import { getWorkspaceDataColumns, getWorkspaceSignals } from "../api/index";
+import { getWorkspaceDataColumns, getWorkspaceSignals } from '@/api/index';
 import uPlot from "uplot";
 import "uplot/dist/uPlot.min.css";
 

@@ -1,12 +1,4 @@
-interface TreeNodeProps {
-  name: string;
-  value: unknown;
-  path: string;
-  selPath: string;
-  expanded: Record<string, boolean>;
-  onToggle: (path: string) => void;
-  onSelect: (path: string) => void;
-}
+import { SettingOutlined } from "@ant-design/icons";
 
 function isObject(v: unknown): v is Record<string, unknown> {
   return v !== null && typeof v === "object" && !Array.isArray(v);
@@ -17,6 +9,16 @@ function isLastLayer(v: unknown): boolean {
   return Object.entries(v)
     .filter(([k]) => k !== "_labels" && k !== "_units")
     .every(([, cv]) => !isObject(cv));
+}
+
+interface TreeNodeProps {
+  name: string;
+  value: unknown;
+  path: string;
+  selPath: string;
+  expanded: Record<string, boolean>;
+  onToggle: (path: string) => void;
+  onSelect: (path: string) => void;
 }
 
 export default function TreeNode({
@@ -52,6 +54,10 @@ export default function TreeNode({
             <svg width="8" height="8" viewBox="0 0 8 8" className={`transition-transform duration-200 ${expanded[path] ? "rotate-90" : ""}`}>
               <path d="M2.5 1L5.5 4L2.5 7" stroke="#999" strokeWidth="1.2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
+          </span>
+        ) : childLast ? (
+          <span className="w-3.5 text-center shrink-0 inline-flex items-center justify-center">
+            <SettingOutlined style={{ color: "#3b82f6", fontSize: 11 }} />
           </span>
         ) : (
           <span className="w-3.5 text-center shrink-0" style={{ visibility: "hidden" }}>

@@ -1,6 +1,6 @@
 import { Button, Input } from "antd";
 import { ToolOutlined, UserOutlined, ClockCircleOutlined } from "@ant-design/icons";
-import type { CaseModel } from "../types/api";
+import type { CaseModel } from '@/types/api';
 
 interface CellEdit {
   id: number | null;

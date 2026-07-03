@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useLocation } from "react-router-dom";
 import { Button, Input, message, Spin, Table, Tabs } from "antd";
-import { BarChartOutlined, FundOutlined } from "@ant-design/icons";
-import { getTaskStatus, getTaskDataColumns, getTaskSignals, getTaskIndication } from "../api/index";
+import { BarChartOutlined, FundOutlined, StockOutlined } from "@ant-design/icons";
+import { getTaskStatus, getTaskDataColumns, getTaskSignals, getTaskIndication } from '@/api/index';
 import uPlot from "uplot";
 import "uplot/dist/uPlot.min.css";
-import { isNil } from "../utils/isNil";
+import { isNil } from '@/utils/isNil';
 
 // ── 常量 / 工具函数 ──
 
@@ -85,7 +85,6 @@ export default function DataViewer() {
   const [exporting, setExporting] = useState(false);
   const [indicationData, setIndicationData] = useState<Record<number, { rs: { headers: string[]; rows: string[][] } | null; ws: { headers: string[]; rows: string[][] } | null }>>({});
   const [indicationLoading, setIndicationLoading] = useState(false);
-  const [perfActive, setPerfActive] = useState(false);
 
   // ── refs ──
   const tasksRef = useRef(tasks); tasksRef.current = tasks;
@@ -255,7 +254,9 @@ export default function DataViewer() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `data_export_${Date.now()}.csv`;
+      const now = new Date();
+      const bj = new Date(now.getTime() + 8 * 3600000).toISOString().replace(/[-:T.]/g, "").slice(0, 14);
+      a.download = `data_export_${bj}.csv`;
       a.click();
       URL.revokeObjectURL(url);
     } finally {
@@ -499,7 +500,6 @@ export default function DataViewer() {
       <Tabs
         className="data-tabs"
         onChange={(key) => {
-          if (key === "perf") setPerfActive(true);
           if (key === "perf" && doneTasks.length > 0 && Object.keys(indicationData).length === 0) {
             setIndicationLoading(true);
             (async () => {
@@ -590,6 +590,7 @@ export default function DataViewer() {
                                     <input type="checkbox" checked={checked[key] === true && checked[fftKey] === true}
                                       onChange={() => { toggle(key, t.id, n, "time"); toggle(fftKey, t.id, n, "fft"); }}
                                     />
+                                    <StockOutlined style={{ color: "#3b82f6", fontSize: 11 }} className="shrink-0" />
                                     <span>{n}</span>
                                   </label>
                                 );
@@ -624,9 +625,7 @@ export default function DataViewer() {
           {
             key: "perf",
             label: "性能分析",
-            children: !perfActive ? (
-              <div className="flex-1 overflow-y-auto p-4"><div className="text-center text-[#999] py-20">性能分析功能开发中...</div></div>
-            ) : (
+            children: (
               <div className="flex-1 overflow-y-auto">
                 {ids.length === 0 ? (
                   <div className="text-center text-[#999] py-[120px] text-sm flex flex-col items-center gap-3">

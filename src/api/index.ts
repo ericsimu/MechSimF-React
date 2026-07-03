@@ -11,10 +11,10 @@ import type {
   DisturbanceColumn,
   SimPayload,
   SummaryCsvOptions,
-} from "../types/api";
-import { isNil } from "../utils/isNil";
-import { getCurrentUser } from "../utils/user";
-import { API_BASE } from "./config";
+} from '@/types/api';
+import { isNil } from '@/utils/isNil';
+import { getCurrentUser } from '@/utils/user';
+import { API_BASE } from '@/api/config';
 
 async function request<T = unknown>(
   url: string,

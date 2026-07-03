@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Input, Button, message } from "antd";
-import { ALLOWED_USERS } from "../api/config";
+import { ALLOWED_USERS } from '@/api/config';
 
 interface Props {
   onLogin: (user: string) => void;

@@ -11,17 +11,17 @@ import {
   BookOutlined,
   HomeOutlined,
 } from "@ant-design/icons";
-import Home from "./pages/Home";
-import CaseList from "./pages/CaseList";
-import Tasks, { savedTaskSelection } from "./pages/Tasks";
-import DataViewer from "./pages/DataViewer";
-import DataWS from "./pages/DataWS";
-import Placeholder from "./pages/Placeholder";
-import Manual from "./pages/Manual";
-import Login from "./pages/Login";
-import { getCurrentUser, setCurrentUser, clearCurrentUser } from "./utils/user";
-import DataManage from "./pages/DataManage";
-import { ALLOWED_USERS } from "./api/config";
+import Home from '@/pages/Home';
+import CaseList from '@/pages/CaseList';
+import Tasks, { savedTaskSelection } from '@/pages/Tasks';
+import DataViewer from '@/pages/DataViewer';
+import DataWS from '@/pages/DataWS';
+import Placeholder from '@/pages/Placeholder';
+import Manual from '@/pages/Manual';
+import Login from '@/pages/Login';
+import { getCurrentUser, setCurrentUser, clearCurrentUser } from '@/utils/user';
+import DataManage from '@/pages/DataManage';
+import { ALLOWED_USERS } from '@/api/config';
 
 const PREFIX = "";
 

@@ -26,8 +26,8 @@ import {
   processToSim,
   fetchSummaryCsvOptions,
   deleteDataFiles,
-} from "../api/index";
-import type { DisturbanceDirNode, SummaryCsvOptions } from "../types/api";
+} from '@/api/index';
+import type { DisturbanceDirNode, SummaryCsvOptions } from '@/types/api';
 
 const { Dragger } = Upload;
 

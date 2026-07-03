@@ -1,6 +1,6 @@
 import { Button } from "antd";
 import { FileTextOutlined } from "@ant-design/icons";
-import type { CaseModel } from "../types/api";
+import type { CaseModel } from '@/types/api';
 
 interface Props {
   cases: CaseModel[];

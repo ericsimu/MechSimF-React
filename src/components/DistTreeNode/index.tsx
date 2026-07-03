@@ -1,5 +1,5 @@
 import { StockOutlined } from "@ant-design/icons";
-import type { DisturbanceDirNode } from "../types/api";
+import type { DisturbanceDirNode } from '@/types/api';
 
 interface DistTreeNodeProps {
   name: string;

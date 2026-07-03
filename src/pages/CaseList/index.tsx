@@ -10,13 +10,13 @@ import {
   diffCase,
   addTasks,
   runTasks,
-} from "../api/index";
-import { getCurrentUser } from "../utils/user";
-import type { CaseModel, AddCaseRequest } from "../types/api";
-import CaseSidebar from "../components/CaseSidebar";
-import CaseDetail from "../components/CaseDetail";
-import ModelTab, { type ModelTabHandle } from "../components/ModelTab";
-import { isNil } from "../utils/isNil";
+} from '@/api/index';
+import { getCurrentUser } from '@/utils/user';
+import type { CaseModel, AddCaseRequest } from '@/types/api';
+import CaseSidebar from '@/components/CaseSidebar';
+import CaseDetail from '@/components/CaseDetail';
+import ModelTab, { type ModelTabHandle } from '@/components/ModelTab';
+import { isNil } from '@/utils/isNil';
 
 // ── Main Component ──
 export default function CaseList() {

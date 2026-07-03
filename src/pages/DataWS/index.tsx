@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
-import DataViewerWS from "./DataViewerWS";
+import DataViewerWS from '@/pages/DataViewerWS';
 
 /** 工作路径数据查看页：从 ?workspace= 取工作路径，渲染独立的 DataViewerWS 模块。 */
 export default function DataWS() {

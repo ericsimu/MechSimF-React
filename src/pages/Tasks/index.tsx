@@ -1,11 +1,12 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useHistory } from "react-router-dom";
 import { Table, Modal, Button, message } from "antd";
 import type { TableColumnsType } from "antd";
 import type { FilterValue } from "antd/es/table/interface";
-import { queueTasks, deleteTask, cancelTask } from "../api/index";
-import type { SimTask } from "../types/api";
-import { isNil } from "../utils/isNil";
+import { queueTasks, deleteTask, cancelTask } from '@/api/index';
+import type { SimTask } from '@/types/api';
+import { isNil } from '@/utils/isNil';
+import { useColumnResize } from '@/hooks/useColumnResize';
 
 interface DiffRow {
   path: string;
@@ -187,64 +188,8 @@ export default function Tasks() {
     useState<Record<string, FilterValue | null>>(savedTaskFilters);
   const [selectedRowKeys, setSelectedRowKeys] =
     useState<React.Key[]>(savedTaskSelection);
-  const [colWidths, setColWidths] = useState<Record<string, number>>({});
   const history = useHistory();
-
-  // ── Column Resize ──
-  const resizeRef = useRef<{
-    key: string;
-    startX: number;
-    startWidth: number;
-  } | null>(null);
-
-  const handleResizeStart = useCallback(
-    (key: string, currentWidth: number) =>
-      (e: React.MouseEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-        resizeRef.current = { key, startX: e.clientX, startWidth: currentWidth };
-        document.body.classList.add("col-resizing");
-        const onMove = (ev: MouseEvent) => {
-          if (!resizeRef.current) return;
-          const dx = ev.clientX - resizeRef.current.startX;
-          const w = Math.max(50, resizeRef.current.startWidth + dx);
-          setColWidths((prev) => ({ ...prev, [resizeRef.current!.key]: w }));
-        };
-        const onUp = () => {
-          resizeRef.current = null;
-          document.body.classList.remove("col-resizing");
-          document.removeEventListener("mousemove", onMove);
-          document.removeEventListener("mouseup", onUp);
-        };
-        document.addEventListener("mousemove", onMove);
-        document.addEventListener("mouseup", onUp);
-      },
-    [],
-  );
-
-  const defaultWidths: Record<string, number> = {
-    id: 70,
-    name: 160,
-    sys_name: 100,
-    model_name: 100,
-    model_version: 70,
-    model_productivity: 80,
-    status: 90,
-    param_diff: 90,
-    create_time: 160,
-    actions: 120,
-  };
-  function colW(key: string) {
-    return colWidths[key] ?? defaultWidths[key] ?? 100;
-  }
-  function resizeHeaderCell(key: string) {
-    const w = colW(key);
-    return {
-      width: w,
-      onMouseDown: handleResizeStart(key, w),
-      className: "col-resizable-header",
-    };
-  }
+  const { colW, resizeHeaderCell } = useColumnResize();
 
   function updateSelection(keys: React.Key[]) {
     savedTaskSelection = keys;
