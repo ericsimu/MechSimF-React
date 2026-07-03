@@ -15,7 +15,6 @@ import {
   DeleteOutlined,
   FolderOpenOutlined,
   ExperimentOutlined,
-  ArrowRightOutlined,
 } from "@ant-design/icons";
 import type { DataNode } from "antd/es/tree";
 import {
@@ -686,6 +685,14 @@ export default function DataManage() {
             options={[
               { value: "calDiffNoise", label: "calDiffNoise" },
               { value: "calMFC", label: "calMFC" },
+              { value: "calAIV", label: "calAIV" },
+              { value: "calCableForce", label: "calCableForce" },
+              { value: "calEMDCLUT", label: "calEMDCLUT" },
+              { value: "calForceRippleLUT", label: "calForceRippleLUT" },
+              { value: "calPANoise", label: "calPANoise" },
+              { value: "calPRFCLUT", label: "calPRFCLUT" },
+              { value: "calRHCDataDOB200wph", label: "calRHCDataDOB200wph" },
+              { value: "calRSECNoise", label: "calRSECNoise" },
             ]}
           />
           <Button
@@ -695,7 +702,7 @@ export default function DataManage() {
             onClick={handleProcessToSim}
             style={{ width: "100%" }}
           >
-            <ArrowRightOutlined style={{ fontSize: 14 }} /> 转换
+            &gt;&gt;&gt;
           </Button>
         </div>
 
