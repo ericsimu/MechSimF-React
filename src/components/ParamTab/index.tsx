@@ -251,10 +251,10 @@ export default function ParamTab({
     for (const g of paramEditGroups) saveParamGroup(g);
     const fullMP = buildFullModelParam(editDraft, modelInfo, paramVarsRef);
     setEditDraft((prev) => ({ ...prev, sys_name: sys, model_name: sys, init_script: sys, model_param: fullMP }));
+    const version = editDraft.model_verison || "3X";
     let nsTree: Record<string, any> | null = null;
     try {
       const full = JSON.parse(fullMP);
-      const version = editDraft.model_verison || "3X";
       const vd = full[version] || {};
       if (vd[sys] && typeof vd[sys] === "object" && !Array.isArray(vd[sys]) && Object.keys(vd[sys] as object).length > 0)
         nsTree = normalizeTypes(vd[sys]) as Record<string, any>;
