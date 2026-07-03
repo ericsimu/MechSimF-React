@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import manualMd from '@/pages/manual.md?raw';
+import manualMd from '@/pages/Manual/manual.md?raw';
 
 const wrapperStyle: React.CSSProperties = {
   flex: 1,
