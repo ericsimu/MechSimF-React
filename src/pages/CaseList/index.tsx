@@ -83,7 +83,6 @@ export default function CaseList() {
       model_verison: src.model_verison || "",
       model_productivity: src.model_productivity || "",
       model_param: src.model_param || "",
-      disturbance: "",
       sim_time: src.sim_time ?? null,
       sim_step: src.sim_step ?? null,
       flow_instance_id: src.flow_instance_id || "",
@@ -150,7 +149,6 @@ export default function CaseList() {
         model_verison: "3X",
         model_productivity: "100WPH",
         model_param: "",
-        disturbance: "",
         flow_instance_id: addName.trim(),
       });
       if (r.success) {

@@ -25,7 +25,6 @@ export interface CaseModel extends BaseModel {
   model_verison: string;
   model_productivity: string;
   model_param: string;
-  disturbance: string;
   flow_instance_id: string;
 }
 
@@ -39,7 +38,6 @@ export interface AddCaseRequest {
   model_verison: string;
   model_productivity: string;
   model_param: string;
-  disturbance: string;
   sim_time?: number;
   sim_step?: number;
   flow_instance_id: string;
@@ -61,7 +59,6 @@ export interface SimTask extends BaseModel {
   model_name: string;
   init_script: string;
   param_diff: string;
-  disturbance: string;
   sim_time: number | null;
   sim_step: number | null;
 }
@@ -77,7 +74,6 @@ export interface SimPayload {
   model_version: string;
   model_productivity: string;
   param_diff: string;
-  disturbance: string;
   sim_time: number | null;
   sim_step: number | null;
 }

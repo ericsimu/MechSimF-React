@@ -72,7 +72,6 @@ export function useCaseDetail(caseId: number, caseName: string, caseDescription:
       model_verison: src.model_verison || "",
       model_productivity: src.model_productivity || "",
       model_param: src.model_param || "",
-      disturbance: "",
       sim_time: src.sim_time ?? null,
       sim_step: src.sim_step ?? null,
       flow_instance_id: src.flow_instance_id || "",
