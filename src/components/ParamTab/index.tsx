@@ -90,13 +90,8 @@ export function buildFullModelParam(
     if (info.variables) versionFull[sys] = JSON.parse(JSON.stringify(info.variables));
   }
   const accVersion = allVersions[version];
-  if (accVersion && typeof accVersion === "object" && !Array.isArray(accVersion)) {
-    // 逐系统合并，保留 modelInfo 变量
-    for (const [sys, entry] of Object.entries(accVersion)) {
-      if (versionFull[sys]) Object.assign(versionFull[sys], entry);
-      else versionFull[sys] = entry;
-    }
-  }
+  if (accVersion && typeof accVersion === "object" && !Array.isArray(accVersion))
+    Object.assign(versionFull, accVersion);
   const sysData = currentVars ?? paramVarsRef.current;
   if (Object.keys(sysData).length > 0) {
     // 逐系统合并，只覆盖变量键，不动 DisturbanceFiles
