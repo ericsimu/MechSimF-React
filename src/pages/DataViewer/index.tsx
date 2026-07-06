@@ -306,7 +306,7 @@ export default function DataViewer() {
                 const next = [...prev];
                 const newCache = { ...next[idx].cache };
                 r.data!.columns.forEach((c: any) => {
-                  const cacheKey = domain === "fft" ? `fft::${c.name}` : c.name;
+                  const cacheKey = c.name;
                   newCache[cacheKey] = c.data.map((v: any) => (isNil(v) ? null : Number(v)));
                 });
                 next[idx] = { ...next[idx], cache: newCache };
