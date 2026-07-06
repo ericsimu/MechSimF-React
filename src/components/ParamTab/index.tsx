@@ -126,14 +126,20 @@ export default function ParamTab({
 
   const paramEntries = useMemo(() => Object.entries(paramVars), [paramVars]);
 
+  // 用例数据是否已加载完成（getCase 返回后 editDraft 才有 id）。
+  // 用作门控，避免 modelInfo 先于 getCase 就绪时 ParamTab 抢先 auto-select，
+  // 随后被 setEditDraft({...cr.data}) 覆盖掉 model_param。
+  const loaded = !!editDraft.id;
+
   // ── Init param tree on first load ──
   const initializedRef = useRef(false);
   useEffect(() => {
+    if (!loaded) return;
     if (Object.keys(modelInfo).length > 0 && editDraft.sys_name && !initializedRef.current) {
       initializedRef.current = true;
       onSystemChange(editDraft.sys_name);
     }
-  }, [modelInfo, editDraft]);
+  }, [modelInfo, editDraft, loaded]);
 
   // ── Auto-expand first 3 levels ──
   useEffect(() => {
@@ -155,6 +161,7 @@ export default function ParamTab({
   // ── Auto-select / switch system ──
   const prevRef = useRef("");
   useEffect(() => {
+    if (!loaded) return;
     if (!editDraft.sys_name && systems.length > 0) {
       onSystemChange(systems[0]);
     } else if (editDraft.sys_name && editDraft.sys_name !== prevRef.current && systems.includes(editDraft.sys_name)) {
@@ -162,7 +169,21 @@ export default function ParamTab({
     }
     prevRef.current = editDraft.sys_name || "";
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [systems, editDraft.sys_name]);
+  }, [systems, editDraft.sys_name, loaded]);
+
+  // ── Safety net: 参数树有数据时，保证 model_param 一定同步 ──
+  // onSystemChange 会写 model_param，但 paramVars 与 model_param 是两份独立状态，
+  // 一旦某次写入丢失（渲染竞态/闭包过期），会出现"树有值但 model_param 为空"。
+  // 这里以 paramVars 为准兜底，保存时绝不空。
+  useEffect(() => {
+    if (Object.keys(paramVars).length === 0) return;
+    setEditDraft((prev) => {
+      const fullMP = buildFullModelParam(prev, modelInfo, paramVarsRef, paramVars);
+      if (prev.model_param === fullMP) return prev;
+      return { ...prev, model_param: fullMP };
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [paramVars]);
 
   // ── Helpers ──
   function coerceByType(val: string, orig: unknown) {
