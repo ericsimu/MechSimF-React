@@ -154,10 +154,13 @@ export default function ParamTab({
   }, [modelInfo, editDraft]);
 
   // ── Auto-expand first 3 levels ──
-  const paramInitExpandedRef = useRef(false);
+  const paramInitExpandedRef = useRef("");
   useEffect(() => {
-    if (paramInitExpandedRef.current || Object.keys(paramVars).length === 0) return;
-    paramInitExpandedRef.current = true;
+    // 系统/版本切换时复位
+    if (Object.keys(paramVars).length === 0) return;
+    const key = `${editDraft.sys_name}_${editDraft.model_verison}`;
+    if (paramInitExpandedRef.current === key) return;
+    paramInitExpandedRef.current = key;
     function expandLevels(node: unknown, path: string, depth: number): Record<string, boolean> {
       const keys: Record<string, boolean> = {};
       if (depth >= 3 || !isObject(node)) return keys;
@@ -172,13 +175,20 @@ export default function ParamTab({
     setParamExpanded(expandLevels(paramVars, "", 0));
   }, [paramVars]);
 
-  // ── Auto-select system ──
+  // ── Auto-select / switch system ──
+  const prevRef = useRef({ sys: editDraft.sys_name, ver: editDraft.model_verison });
   useEffect(() => {
+    const prev = prevRef.current;
+    const sysChanged = editDraft.sys_name && editDraft.sys_name !== prev.sys;
+    const verChanged = editDraft.model_verison && editDraft.model_verison !== prev.ver;
     if (!editDraft.sys_name && systems.length > 0) {
       onSystemChange(systems[0]);
+    } else if ((sysChanged || verChanged) && editDraft.sys_name && systems.includes(editDraft.sys_name)) {
+      onSystemChange(editDraft.sys_name);
     }
+    prevRef.current = { sys: editDraft.sys_name, ver: editDraft.model_verison };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [systems, editDraft.sys_name]);
+  }, [systems, editDraft.sys_name, editDraft.model_verison]);
 
   // ── Helpers ──
   function coerceByType(val: string, orig: unknown) {
