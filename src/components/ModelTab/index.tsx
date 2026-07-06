@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback, useMemo, useRef, forwardRef, useImperativeHandle } from "react";
-import { Tabs } from "antd";
+import { Tabs, message } from "antd";
 import type { AddCaseRequest } from "@/types/api";
+import { updateCase } from "@/api/index";
 import { useCaseDetail } from "@/hooks/useCaseDetail";
 import ModelSelectPanel from "@/components/ModelSelectPanel";
-import ParamTab from "@/components/ParamTab";
+import ParamTab, { type ParamTabHandle } from "@/components/ParamTab";
 import DisturbTab, { type DisturbTabHandle } from "@/components/DisturbTab";
 
 export interface ModelTabHandle {
@@ -20,12 +21,16 @@ interface Props {
 
 function ModelTab({ caseId, caseName, caseDescription, onSaved }: Props, ref: React.Ref<ModelTabHandle>) {
   const [activeTab, setActiveTab] = useState("model");
-  const { editDraft, setEditDraft, modelInfo, systems, buildBody, save, handleDraftChange, ensureModelDefaults } =
+  const { editDraft, setEditDraft, modelInfo, systems, buildBody, handleDraftChange, ensureModelDefaults } =
     useCaseDetail(caseId, caseName, caseDescription, onSaved);
   const disturbRef = useRef<DisturbTabHandle>(null);
+  const paramRef = useRef<ParamTabHandle>(null);
 
   const getCaseBody = useCallback((): AddCaseRequest => {
     const body = buildBody();
+    // 以参数树为准重建 model_param —— 兜底，杜绝 editDraft.model_param 未同步导致保存为空
+    const rebuilt = paramRef.current?.getModelParam();
+    if (rebuilt) body.model_param = rebuilt;
     // 合并扰动：从 DisturbTab 读取当前勾选，写入 model_param
     const names = disturbRef.current?.getCheckedFileNames() || [];
     if (names.length > 0) {
@@ -41,6 +46,17 @@ function ModelTab({ caseId, caseName, caseDescription, onSaved }: Props, ref: Re
     }
     return body;
   }, [buildBody, editDraft.model_verison, editDraft.sys_name]);
+
+  // save 用 getCaseBody 重建后的 body 写库，保证 DB 与差异弹窗一致
+  const save = useCallback(async (silent = false): Promise<boolean> => {
+    const body = getCaseBody();
+    try {
+      const r = await updateCase(caseId, body);
+      if (r.success) { onSaved(body); if (!silent) message.success("保存成功"); return true; }
+      message.error(r.message || "保存失败");
+      return false;
+    } catch { message.error("保存失败"); return false; }
+  }, [caseId, getCaseBody, onSaved]);
 
   useImperativeHandle(ref, () => ({ getCaseBody, save }),
     [getCaseBody, save]);
@@ -69,7 +85,8 @@ function ModelTab({ caseId, caseName, caseDescription, onSaved }: Props, ref: Re
     },
     {
       key: "param", label: "参数配置",
-      children: <ParamTab systems={systems} editDraft={editDraft} setEditDraft={setEditDraft} modelInfo={modelInfo} setActiveTab={setActiveTab} />,
+      children: <ParamTab ref={paramRef} systems={systems} editDraft={editDraft} setEditDraft={setEditDraft} modelInfo={modelInfo} setActiveTab={setActiveTab} />,
+      forceRender: true,
     },
     {
       key: "disturb", label: "扰动选择",

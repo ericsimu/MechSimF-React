@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback, forwardRef, useImperativeHandle } from "react";
 import TreeNode from '@/components/TreeNode';
 import ParamEditor from '@/components/ParamEditor';
 import type { ModelInfoMap } from '@/types/api';
@@ -69,6 +69,11 @@ interface Props {
   setActiveTab: (key: string) => void;
 }
 
+export interface ParamTabHandle {
+  /** 提交时以当前参数树为准重建 model_param，杜绝保存时为空 */
+  getModelParam: () => string;
+}
+
 export function buildFullModelParam(
   editDraft: Record<string, any>,
   modelInfo: ModelInfoMap,
@@ -108,16 +113,23 @@ export function buildFullModelParam(
   return JSON.stringify(allVersions);
 }
 
-export default function ParamTab({
+function ParamTab({
   systems,
   editDraft,
   setEditDraft,
   modelInfo,
   setActiveTab,
-}: Props) {
+}: Props, ref: React.Ref<ParamTabHandle>) {
   const [paramVars, setParamVars] = useState<Record<string, any>>({});
   const paramVarsRef = useRef(paramVars);
   paramVarsRef.current = paramVars;
+  // editDraft 经 ref 暴露给 getModelParam，避免闭包过期
+  const editDraftRef = useRef(editDraft);
+  editDraftRef.current = editDraft;
+  useImperativeHandle(ref, () => ({
+    getModelParam: () =>
+      buildFullModelParam(editDraftRef.current, modelInfo, paramVarsRef, paramVarsRef.current),
+  }), [modelInfo]);
   const dirtyValues = useRef<Map<string, string>>(new Map());
   const [selParamPath, setSelParamPath] = useState("");
   const [paramExpanded, setParamExpanded] = useState<Record<string, boolean>>({});
@@ -323,3 +335,5 @@ export default function ParamTab({
     </div>
   );
 }
+
+export default forwardRef(ParamTab);
