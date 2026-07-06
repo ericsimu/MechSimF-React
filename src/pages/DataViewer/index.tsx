@@ -88,8 +88,7 @@ export default function DataViewer() {
 
   // ── refs ──
   const tasksRef = useRef(tasks); tasksRef.current = tasks;
-  const izTimeRef = useRef(false);  // 时域是否已缩放
-  const izFreqRef = useRef(false);  // 频域是否已缩放
+  const izTimeRef = useRef(false);
   const fullCacheRef = useRef<Record<string, Record<string, number[] | null>>>({});
 
   const timeChartRef = useRef<HTMLDivElement>(null);
@@ -129,7 +128,6 @@ export default function DataViewer() {
     });
     fullCacheRef.current = {};
     izTimeRef.current = false;
-    izFreqRef.current = false;
   }
 
   // ── 加载任务 ──
@@ -187,7 +185,7 @@ export default function DataViewer() {
     setChecked((prev) => ({ ...prev, [key]: newVal }));
     if (!newVal) return;
     // 缩放状态下勾选新信号 → 先还原全量
-    if (izTimeRef.current || izFreqRef.current) restoreFullCache();
+    if (izTimeRef.current) restoreFullCache();
     fetchOne(taskId, sigName, domain);
   }
 
@@ -278,15 +276,17 @@ export default function DataViewer() {
       timer = setTimeout(async () => {
         if (!pending) return;
         const rng = pending; pending = null;
-        const zoomed = domain === "time" ? izTimeRef.current : izFreqRef.current;
 
+        // 频域：只调轴，不重建
+        if (domain === "fft") { u.setScale("x", rng); return; }
+
+        const zoomed = izTimeRef.current;
         if (!zoomed) {
           const full: Record<string, Record<string, number[] | null>> = {};
           tasksRef.current.forEach((t) => { full[String(t.id)] = { ...t.cache }; });
           fullCacheRef.current = full;
         }
 
-        // 解析图例标签 → 按任务分组
         const sigLabels: string[] = u.series.slice(1).map((s: any) => s.label).filter(Boolean);
         const byTask = new Map<number, string[]>();
         sigLabels.forEach((label: string) => {
@@ -294,10 +294,10 @@ export default function DataViewer() {
           if (m) { const a = byTask.get(Number(m[1])) || []; a.push(m[2]); byTask.set(Number(m[1]), a); }
         });
 
-        const raw = domain === "fft" || (rng.end - rng.start < 1.0);
+        const raw = rng.end - rng.start < 1.0;
         await Promise.all(
           Array.from(byTask.entries()).map(async ([tid, names]) => {
-            const reqNames = domain === "time" && !names.includes("time") ? ["time", ...names] : names;
+            const reqNames = !names.includes("time") ? ["time", ...names] : names;
             const r = await getTaskSignals(tid, reqNames, domain, rng.start, rng.end, raw);
             if (r.success && r.data) {
               setTasks((prev) => {
@@ -315,8 +315,7 @@ export default function DataViewer() {
             }
           }),
         );
-        if (domain === "time") izTimeRef.current = true;
-        else izFreqRef.current = true;
+        izTimeRef.current = true;
       }, 200);
     };
   }, []);
@@ -324,7 +323,7 @@ export default function DataViewer() {
   // ── 双击还原 ──
   const makeDblHandler = useCallback((domain: "time" | "fft") => {
     return () => {
-      if (!(domain === "time" ? izTimeRef.current : izFreqRef.current)) return;
+      if (domain === "time" && !izTimeRef.current) return;
       restoreFullCache();
     };
   }, []);
@@ -403,7 +402,7 @@ export default function DataViewer() {
 
     try {
       freqInst.current = new (uPlot as any)(
-        { width: el.offsetWidth || 800, height: 300, cursor: { show: true, drag: { setScale: true, x: true, y: false } }, legend: { show: true }, scales: { x: { time: false, distr: 3, log: 10, min: 1, max: 20000 } },
+        { width: el.offsetWidth || 800, height: 300, cursor: { show: true, drag: { setScale: true, x: true, y: false } }, legend: { show: true }, scales: { x: { time: false, distr: 3, log: 10 } },
           axes: [
             { label: "Frequency (Hz)", grid: { stroke: "#f0f0f0" }, stroke: "#888",values: (_s: any, ticks: number[]) => ticks.map((t: number) => { const lg = Math.log10(t); return Math.abs(lg - Math.round(lg)) < 1e-10 ? fmtNum(t) : ""; }) },
             { stroke: "#888",grid: { stroke: "#f0f0f0" }, size: 85, values: (_s: any, ticks: number[]) => ticks.map((t: number) => fmtNum(t)) },

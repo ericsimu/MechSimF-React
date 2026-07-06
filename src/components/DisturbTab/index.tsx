@@ -69,6 +69,8 @@ export default function DisturbTab({ setEditDraft, setActiveTab, modelInfo, sysN
   const chartRef = useRef<HTMLDivElement>(null);
   const chartInst = useRef<any>(null);
   const cursorLbls = useRef<Cursors | null>(null);
+  const selFileRef = useRef(selDisturbFile);
+  selFileRef.current = selDisturbFile;
 
   // ── 根据 modelInfo 的 Product/DisturbanceFolders 过滤树 ──
   const disturbEntries = (() => {
@@ -197,7 +199,7 @@ export default function DisturbTab({ setEditDraft, setActiveTab, modelInfo, sysN
       isFreq = true;
     } else {
       // fallback: 索引轴
-      makeTimeChart(nonEmpty[0].data.map((_: any, i: number) => i), nonEmpty, undefined, "");
+      makeChart(nonEmpty[0].data.map((_: any, i: number) => i), nonEmpty, undefined, "");
       return;
     }
 
@@ -208,19 +210,19 @@ export default function DisturbTab({ setEditDraft, setActiveTab, modelInfo, sysN
     const seriesData = yCols.map((c) => c.data.map((v) => (isNil(v) ? null : Number(v))) as (number | null)[]);
 
     if (isFreq) {
-      makeFreqChart(xData, yCols, seriesData);
+      makeChart(xData, yCols, seriesData, undefined, true);
     } else if (chartType === "s") {
-      makeTimeChart(xData, yCols, seriesData, xCol.name);
+      makeChart(xData, yCols, seriesData, xCol.name);
     } else {
-      makeTimeChart(xData, yCols, seriesData, "Time (s)");
+      makeChart(xData, yCols, seriesData, "Time (s)");
     }
   }, [disturbColumns, disturbVisible, chartType, disturbWidth]);
 
   // ── Chart builders ──
-  function makeTimeChart(xData: (number | null)[], yCols: typeof disturbColumns, seriesData?: (number | null)[][], xLabel?: string) {
+  function makeChart(xData: (number | null)[], yCols: typeof disturbColumns, seriesData?: (number | null)[][], xLabel?: string, isFreq?: boolean) {
     const el = chartRef.current!;
     const lbls = makeCursorLabels(el); cursorLbls.current = lbls;
-    const label = xLabel ?? "Time (s)";
+    const label = xLabel ?? (isFreq ? "Frequency (Hz)" : "Time (s)");
     const series: Array<object> = [{ label }];
     const colors = yCols.map((_, i) => `hsl(${(i * 60) % 360},70%,50%)`);
     (seriesData || yCols.map((c) => c.data.map((v) => (isNil(v) ? null : Number(v))))).forEach((_, i) => {
@@ -233,44 +235,18 @@ export default function DisturbTab({ setEditDraft, setActiveTab, modelInfo, sysN
           width: el.offsetWidth || 800, height: 400,
           cursor: { show: true, drag: { setScale: true, x: true, y: false } },
           legend: { show: true },
-          scales: { x: { time: false } },
+          scales: { x: isFreq ? { time: false, distr: 3, log: 10 } : { time: false } },
           axes: [
-            { label, grid: { stroke: "#f0f0f0" }, stroke: "#888", values: (_s: any, ticks: number[]) => ticks.map((t: number) => fmtNum(t)) },
-            { stroke: "#000", grid: { stroke: "#f0f0f0" }, size: 80, values: (_s: any, ticks: number[]) => ticks.map((t: number) => fmtNum(t)) },
+            { label, grid: { stroke: "#f0f0f0" }, stroke: "#888", values: (_s: any, ticks: number[]) => ticks.map((t: number) => isFreq ? (Math.abs(Math.log10(t) - Math.round(Math.log10(t))) < 1e-10 ? fmtNum(t) : "") : fmtNum(t)) },
+            { stroke: "#888", grid: { stroke: "#f0f0f0" }, size: 80, values: (_s: any, ticks: number[]) => ticks.map((t: number) => fmtNum(t)) },
           ],
           series,
-          hooks: { setCursor: [lbls.hook] },
+          hooks: { setCursor: [lbls.hook], setSelect: [(u: any) => { if (u.select && u.select.width > 5) { const xMin = u.posToVal(u.select.left, "x"); const xMax = u.posToVal(u.select.left + u.select.width, "x"); u.setScale("x", { min: Math.min(xMin, xMax), max: Math.max(xMin, xMax) }); } }] },
         },
         data, el,
       );
-    } catch { /* */ }
-  }
-
-  function makeFreqChart(xData: (number | null)[], yCols: typeof disturbColumns, seriesData: (number | null)[][]) {
-    const el = chartRef.current!;
-    const lbls = makeCursorLabels(el); cursorLbls.current = lbls;
-    const series: Array<object> = [{ label: "Frequency (Hz)" }];
-    const colors = yCols.map((_, i) => `hsl(${(i * 60) % 360},70%,50%)`);
-    seriesData.forEach((_, i) => {
-      series.push({ label: yCols[i]?.name || `col${i}`, stroke: colors[i], width: 1.2, value: (_u: unknown, v: number) => v == null ? "" : fmtNum(v) });
-    });
-    const data = [xData, ...seriesData];
-    try {
-      chartInst.current = new (uPlot as any)(
-        {
-          width: el.offsetWidth || 800, height: 400,
-          cursor: { show: true, drag: { setScale: true, x: true, y: false } },
-          legend: { show: true },
-          scales: { x: { time: false, distr: 3, log: 10, min: 1, max: 20000 } },
-          axes: [
-            { label: "Frequency (Hz)", grid: { stroke: "#f0f0f0" }, stroke: "#888", values: (_s: any, ticks: number[]) => ticks.map((t: number) => { const lg = Math.log10(t); return Math.abs(lg - Math.round(lg)) < 1e-10 ? fmtNum(t) : ""; }) },
-            { stroke: "#000", grid: { stroke: "#f0f0f0" }, size: 80, values: (_s: any, ticks: number[]) => ticks.map((t: number) => fmtNum(t)) },
-          ],
-          series,
-          hooks: { setCursor: [lbls.hook] },
-        },
-        data, el,
-      );
+      const overEl = el.querySelector(".u-over") as HTMLElement | null;
+      (overEl || el).addEventListener("dblclick", () => { if (selFileRef.current) onDisturbLeafClick(selFileRef.current); });
     } catch { /* */ }
   }
 
