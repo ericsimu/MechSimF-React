@@ -126,36 +126,12 @@ export default function ParamTab({
 
   const paramEntries = useMemo(() => Object.entries(paramVars), [paramVars]);
 
-  // ── Init param tree from saved model_param + modelInfo ──
+  // ── Init param tree on first load ──
   const initializedRef = useRef(false);
   useEffect(() => {
     if (Object.keys(modelInfo).length > 0 && editDraft.sys_name && !initializedRef.current) {
       initializedRef.current = true;
-      const draft = editDraft;
-      const mi = modelInfo;
-      const sysName = draft.sys_name;
-      const version = (draft.model_verison || "3X") as string;
-      let nsTree: Record<string, any> = {};
-      const parsed = (() => {
-        if (!draft.model_param) return null;
-        try {
-          const p = JSON.parse(draft.model_param);
-          const c = p[version]?.[sysName];
-          if (c && typeof c === "object" && !Array.isArray(c) && Object.keys(c as object).length > 0)
-            return normalizeTypes(c) as Record<string, any>;
-        } catch { /* */ }
-        return null;
-      })();
-      if (parsed) nsTree = parsed;
-      else {
-        const vs = mi[version] || {};
-        if (sysName && vs[sysName]?.variables) nsTree = vs[sysName].variables! as Record<string, any>;
-      }
-      const newParamVars = sysName && Object.keys(nsTree).length > 0 ? { [sysName]: nsTree } : {};
-      paramVarsRef.current = newParamVars;
-      setParamVars(newParamVars);
-      // 同步写入 model_param
-      setEditDraft((prev) => ({ ...prev, model_param: buildFullModelParam(editDraft, modelInfo, paramVarsRef) }));
+      onSystemChange(editDraft.sys_name);
     }
   }, [modelInfo, editDraft]);
 
