@@ -402,7 +402,7 @@ export default function DataViewer() {
 
     try {
       freqInst.current = new (uPlot as any)(
-        { width: el.offsetWidth || 800, height: 300, cursor: { show: true, drag: { setScale: true, x: true, y: false } }, legend: { show: true }, scales: { x: { time: false, distr: 3, log: 10 } },
+        { width: el.offsetWidth || 800, height: 300, cursor: { show: true, drag: { setScale: true, x: true, y: false } }, legend: { show: true }, scales: { x: { time: false, distr: 3, log: 10, min: 0.1, max: 2e4 } },
           axes: [
             { label: "Frequency (Hz)", grid: { stroke: "#f0f0f0" }, stroke: "#888",values: (_s: any, ticks: number[]) => ticks.map((t: number) => { const lg = Math.log10(t); return Math.abs(lg - Math.round(lg)) < 1e-10 ? fmtNum(t) : ""; }) },
             { stroke: "#888",grid: { stroke: "#f0f0f0" }, size: 85, values: (_s: any, ticks: number[]) => ticks.map((t: number) => fmtNum(t)) },

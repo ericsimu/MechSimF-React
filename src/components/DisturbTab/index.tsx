@@ -235,7 +235,7 @@ export default function DisturbTab({ setEditDraft, setActiveTab, modelInfo, sysN
           width: el.offsetWidth || 800, height: 400,
           cursor: { show: true, drag: { setScale: true, x: true, y: false } },
           legend: { show: true },
-          scales: { x: isFreq ? { time: false, distr: 3, log: 10 } : { time: false } },
+          scales: { x: isFreq ? { time: false, distr: 3, log: 10, min: 0.1, max: 2e4 } : { time: false } },
           axes: [
             { label, grid: { stroke: "#f0f0f0" }, stroke: "#888", values: (_s: any, ticks: number[]) => ticks.map((t: number) => isFreq ? (Math.abs(Math.log10(t) - Math.round(Math.log10(t))) < 1e-10 ? fmtNum(t) : "") : fmtNum(t)) },
             { stroke: "#888", grid: { stroke: "#f0f0f0" }, size: 80, values: (_s: any, ticks: number[]) => ticks.map((t: number) => fmtNum(t)) },
