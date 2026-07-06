@@ -175,19 +175,16 @@ export default function ParamTab({
   }, [paramVars]);
 
   // ── Auto-select / switch system ──
-  const prevRef = useRef({ sys: editDraft.sys_name, ver: editDraft.model_verison });
+  const prevRef = useRef("");
   useEffect(() => {
-    const prev = prevRef.current;
-    const sysChanged = editDraft.sys_name && editDraft.sys_name !== prev.sys;
-    const verChanged = editDraft.model_verison && editDraft.model_verison !== prev.ver;
     if (!editDraft.sys_name && systems.length > 0) {
       onSystemChange(systems[0]);
-    } else if ((sysChanged || verChanged) && editDraft.sys_name && systems.includes(editDraft.sys_name)) {
+    } else if (editDraft.sys_name && editDraft.sys_name !== prevRef.current && systems.includes(editDraft.sys_name)) {
       onSystemChange(editDraft.sys_name);
     }
-    prevRef.current = { sys: editDraft.sys_name, ver: editDraft.model_verison };
+    prevRef.current = editDraft.sys_name || "";
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [systems, editDraft.sys_name, editDraft.model_verison]);
+  }, [systems, editDraft.sys_name]);
 
   // ── Helpers ──
   function coerceByType(val: string, orig: unknown) {

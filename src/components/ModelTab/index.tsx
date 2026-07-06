@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useRef, forwardRef, useImperativeHandle } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef, forwardRef, useImperativeHandle } from "react";
 import { Tabs } from "antd";
 import type { AddCaseRequest } from "@/types/api";
 import { useCaseDetail } from "@/hooks/useCaseDetail";
@@ -44,6 +44,14 @@ function ModelTab({ caseId, caseName, caseDescription, onSaved }: Props, ref: Re
 
   useImperativeHandle(ref, () => ({ getCaseBody, save }),
     [getCaseBody, save]);
+
+  // 初始加载：补默认版本 + 自动选第一个系统
+  useEffect(() => { ensureModelDefaults(); }, [ensureModelDefaults]);
+  useEffect(() => {
+    if (!editDraft.sys_name && systems.length > 0) {
+      setEditDraft((prev) => ({ ...prev, sys_name: systems[0], model_name: systems[0], init_script: systems[0] }));
+    }
+  }, [systems, editDraft.sys_name, setEditDraft]);
 
   const handleTabChange = useCallback((key: string) => {
     setActiveTab(key);
