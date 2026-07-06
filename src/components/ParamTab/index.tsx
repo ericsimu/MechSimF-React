@@ -154,6 +154,8 @@ export default function ParamTab({
       const newParamVars = sysName && Object.keys(nsTree).length > 0 ? { [sysName]: nsTree } : {};
       paramVarsRef.current = newParamVars;
       setParamVars(newParamVars);
+      // 同步写入 model_param
+      setEditDraft((prev) => ({ ...prev, model_param: buildFullModelParam(editDraft, modelInfo, paramVarsRef) }));
     }
   }, [modelInfo, editDraft]);
 
