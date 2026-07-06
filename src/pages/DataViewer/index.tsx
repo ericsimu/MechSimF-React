@@ -413,7 +413,7 @@ export default function DataViewer() {
       );
       const overEl = el.querySelector(".u-over") as HTMLElement | null;
       freqInst.current.setScale("x", { min: 1, max: 20000 });
-      (overEl || el).addEventListener("dblclick", makeDblHandler("fft"));
+      (overEl || el).addEventListener("dblclick", () => { freqInst.current?.setScale("x", { min: 1, max: 20000 }); });
     } catch { /* */ }
   }, [tasks, checked, makeSelectHandler, makeDblHandler]);
 
