@@ -90,8 +90,12 @@ export function buildFullModelParam(
     if (info.variables) versionFull[sys] = JSON.parse(JSON.stringify(info.variables));
   }
   const accVersion = allVersions[version];
-  if (accVersion && typeof accVersion === "object" && !Array.isArray(accVersion))
-    Object.assign(versionFull, accVersion);
+  if (accVersion && typeof accVersion === "object" && !Array.isArray(accVersion)) {
+    for (const [sys, entry] of Object.entries(accVersion)) {
+      if (versionFull[sys]) Object.assign(versionFull[sys], entry as any);
+      else versionFull[sys] = entry as any;
+    }
+  }
   const sysData = currentVars ?? paramVarsRef.current;
   if (Object.keys(sysData).length > 0) {
     // 逐系统合并，只覆盖变量键，不动 DisturbanceFiles
