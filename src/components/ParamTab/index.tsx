@@ -154,13 +154,8 @@ export default function ParamTab({
   }, [modelInfo, editDraft]);
 
   // ── Auto-expand first 3 levels ──
-  const paramInitExpandedRef = useRef("");
   useEffect(() => {
-    // 系统/版本切换时复位
     if (Object.keys(paramVars).length === 0) return;
-    const key = `${editDraft.sys_name}_${editDraft.model_verison}`;
-    if (paramInitExpandedRef.current === key) return;
-    paramInitExpandedRef.current = key;
     function expandLevels(node: unknown, path: string, depth: number): Record<string, boolean> {
       const keys: Record<string, boolean> = {};
       if (depth >= 3 || !isObject(node)) return keys;
@@ -172,7 +167,7 @@ export default function ParamTab({
       }
       return keys;
     }
-    setParamExpanded(expandLevels(paramVars, "", 0));
+    setParamExpanded((prev) => ({ ...expandLevels(paramVars, "", 0), ...prev }));
   }, [paramVars]);
 
   // ── Auto-select / switch system ──
