@@ -1,10 +1,10 @@
-import { useState, useCallback, useMemo, forwardRef, useImperativeHandle } from "react";
+import { useState, useCallback, useMemo, useRef, forwardRef, useImperativeHandle } from "react";
 import { Tabs } from "antd";
 import type { AddCaseRequest } from "@/types/api";
 import { useCaseDetail } from "@/hooks/useCaseDetail";
 import ModelSelectPanel from "@/components/ModelSelectPanel";
 import ParamTab from "@/components/ParamTab";
-import DisturbTab from "@/components/DisturbTab";
+import DisturbTab, { type DisturbTabHandle } from "@/components/DisturbTab";
 
 export interface ModelTabHandle {
   getCaseBody: () => AddCaseRequest;
@@ -22,9 +22,28 @@ function ModelTab({ caseId, caseName, caseDescription, onSaved }: Props, ref: Re
   const [activeTab, setActiveTab] = useState("model");
   const { editDraft, setEditDraft, modelInfo, systems, buildBody, save, handleDraftChange, ensureModelDefaults } =
     useCaseDetail(caseId, caseName, caseDescription, onSaved);
+  const disturbRef = useRef<DisturbTabHandle>(null);
 
-  useImperativeHandle(ref, () => ({ getCaseBody: buildBody, save }),
-    [buildBody, save]);
+  const getCaseBody = useCallback((): AddCaseRequest => {
+    const body = buildBody();
+    // 合并扰动：从 DisturbTab 读取当前勾选，写入 model_param
+    const names = disturbRef.current?.getCheckedFileNames() || [];
+    if (names.length > 0) {
+      const ver = editDraft.model_verison || "3X";
+      const sys = editDraft.sys_name;
+      try {
+        const mp = JSON.parse(body.model_param || "{}");
+        if (!mp[ver]) mp[ver] = {};
+        if (!mp[ver][sys]) mp[ver][sys] = {};
+        mp[ver][sys].DisturbanceFiles = names;
+        body.model_param = JSON.stringify(mp);
+      } catch { /* */ }
+    }
+    return body;
+  }, [buildBody, editDraft.model_verison, editDraft.sys_name]);
+
+  useImperativeHandle(ref, () => ({ getCaseBody, save }),
+    [getCaseBody, save]);
 
   const handleTabChange = useCallback((key: string) => {
     setActiveTab(key);
@@ -51,7 +70,7 @@ function ModelTab({ caseId, caseName, caseDescription, onSaved }: Props, ref: Re
     },
     {
       key: "disturb", label: "扰动选择",
-      children: <DisturbTab setEditDraft={setEditDraft} setActiveTab={setActiveTab} modelInfo={modelInfo} sysName={editDraft.sys_name} modelVersion={editDraft.model_verison} modelParam={editDraft.model_param} />,
+      children: <DisturbTab ref={disturbRef} setEditDraft={setEditDraft} setActiveTab={setActiveTab} modelInfo={modelInfo} sysName={editDraft.sys_name} modelVersion={editDraft.model_verison} modelParam={editDraft.model_param} />,
     },
   ], [systems, editDraft, modelInfo, setEditDraft, setActiveTab, onSysChange, handleDraftChange]);
 

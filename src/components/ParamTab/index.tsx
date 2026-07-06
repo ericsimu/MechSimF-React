@@ -93,8 +93,13 @@ export function buildFullModelParam(
   if (accVersion && typeof accVersion === "object" && !Array.isArray(accVersion))
     Object.assign(versionFull, accVersion);
   const sysData = currentVars ?? paramVarsRef.current;
-  if (Object.keys(sysData).length > 0)
-    Object.assign(versionFull, JSON.parse(JSON.stringify(sysData)));
+  if (Object.keys(sysData).length > 0) {
+    // 逐系统合并，只覆盖变量键，不动 DisturbanceFiles
+    for (const [sys, vars] of Object.entries(JSON.parse(JSON.stringify(sysData)))) {
+      if (versionFull[sys]) Object.assign(versionFull[sys], vars as any);
+      else versionFull[sys] = vars as any;
+    }
+  }
   allVersions[version] = versionFull;
   return JSON.stringify(allVersions);
 }

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, forwardRef, useImperativeHandle } from "react";
 import { queueDisturbances, getDisturbanceInfo } from "@/api/index";
 import { isNil } from "@/utils/isNil";
 import { fmtNum } from "@/utils/fmtNum";
@@ -42,6 +42,10 @@ function makeCursorLabels(container: HTMLElement): Cursors {
   };
 }
 
+export interface DisturbTabHandle {
+  getCheckedFileNames: () => string[];
+}
+
 interface Props {
   setEditDraft: React.Dispatch<React.SetStateAction<Record<string, any>>>;
   setActiveTab: (key: string) => void;
@@ -51,9 +55,18 @@ interface Props {
   modelParam?: string;
 }
 
-export default function DisturbTab({ setEditDraft, setActiveTab, modelInfo, sysName, modelVersion, modelParam }: Props) {
+function DisturbTab({ setEditDraft, setActiveTab, modelInfo, sysName, modelVersion, modelParam }: Props, ref: React.Ref<DisturbTabHandle>) {
   const [disturbTree, setDisturbTree] = useState<DisturbanceDirNode>({});
   const [disturbChecked, setDisturbChecked] = useState<Record<string, boolean>>({});
+  const checkedRef = useRef(disturbChecked);
+  checkedRef.current = disturbChecked;
+  useImperativeHandle(ref, () => ({
+    getCheckedFileNames: () =>
+      Object.entries(checkedRef.current)
+        .filter(([, v]) => v)
+        .map(([k]) => k.split(/[/\\]/).pop()!)
+        .filter(Boolean),
+  }), []);
   const [disturbExpanded, setDisturbExpanded] = useState<Record<string, boolean>>({});
   const [selDisturbFile, setSelDisturbFile] = useState("");
   const [disturbColumns, setDisturbColumns] = useState<DisturbanceColumn[]>([]);
@@ -165,6 +178,17 @@ export default function DisturbTab({ setEditDraft, setActiveTab, modelInfo, sysN
       if (match) ck[match.path] = true;
     });
     setDisturbChecked(ck);
+    // 同步写入 model_param，与参数编辑模式一致
+    const ver2 = modelVersion || "3X";
+    setEditDraft((prev) => {
+      let mp: Record<string, any> = {};
+      try { mp = JSON.parse(prev.model_param || "{}"); } catch { /* */ }
+      if (!mp[ver2]) mp[ver2] = {};
+      if (!mp[ver2][sysName]) mp[ver2][sysName] = {};
+      else if (typeof mp[ver2][sysName] !== "object" || Array.isArray(mp[ver2][sysName])) mp[ver2][sysName] = {};
+      mp[ver2][sysName].DisturbanceFiles = fileNames;
+      return { ...prev, model_param: JSON.stringify(mp) };
+    });
     restoreAppliedRef.current = sysName;
   }, [sysName, modelInfo, disturbTree]);
 
@@ -358,3 +382,5 @@ function onDisturbCheck(fullPath: string) {
     </div>
   );
 }
+
+export default forwardRef(DisturbTab);
