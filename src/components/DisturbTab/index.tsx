@@ -1,18 +1,13 @@
 import { useState, useEffect, useRef } from "react";
 import { queueDisturbances, getDisturbanceInfo } from "@/api/index";
 import { isNil } from "@/utils/isNil";
+import { fmtNum } from "@/utils/fmtNum";
 import DistTreeNode from "@/components/DistTreeNode";
 import type { DisturbanceDirNode, DisturbanceColumn, ModelInfoMap } from "@/types/api";
 import uPlot from "uplot";
 import "uplot/dist/uPlot.min.css";
 import { Spin } from "antd";
 import { StockOutlined, ControlOutlined, FundOutlined } from "@ant-design/icons";
-
-// ── 数值格式化（保留全精度） ──
-function fmtNum(v: number): string {
-  if (!isFinite(v)) return String(v);
-  return String(v);
-}
 
 // ── 光标标签 ──
 type Cursors = { hook: (u: any) => void; destroy: () => void };

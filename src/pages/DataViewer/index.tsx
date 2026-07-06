@@ -6,19 +6,11 @@ import { getTaskStatus, getTaskDataColumns, getTaskSignals, getTaskIndication } 
 import uPlot from "uplot";
 import "uplot/dist/uPlot.min.css";
 import { isNil } from '@/utils/isNil';
+import { fmtNum } from '@/utils/fmtNum';
 
 // ── 常量 / 工具函数 ──
 
 const COLORS = ["#3b82f6","#ef4444","#10b981","#f59e0b","#8b5cf6","#ec4899","#06b6d4","#f97316"];
-
-function fmtNum(v: number): string {
-  if (!isFinite(v)) return String(v);
-  const av = Math.abs(v);
-  if (av === 0) return "0";
-  if (av < 0.001 || av >= 10000) return v.toExponential(4);
-  const s = v.toFixed(10);
-  return s.includes(".") ? s.replace(/\.?0+$/, "") : s;
-}
 
 // ── 光标标签 ──
 
