@@ -15,7 +15,6 @@ import Home from '@/pages/Home';
 import CaseList from '@/pages/CaseList';
 import Tasks, { savedTaskSelection } from '@/pages/Tasks';
 import DataViewer from '@/pages/DataViewer';
-import DataWS from '@/pages/DataWS';
 import Placeholder from '@/pages/Placeholder';
 import Manual from '@/pages/Manual';
 import Login from '@/pages/Login';
@@ -33,15 +32,6 @@ const navItems: NavItem[] = [
   { path: `${PREFIX}/cases`, label: "用例编排", icon: <AppstoreOutlined /> },
   { path: `${PREFIX}/tasks`, label: "任务管理", icon: <ScheduleOutlined /> },
   { path: `${PREFIX}/data`, label: "结果查看", icon: <LineChartOutlined />, exact: false },
-  // {
-  //   label: "结果分析", icon: <FundOutlined />, children: [
-  //     { path: `${PREFIX}/data`, label: "数据可视化", icon: <LineChartOutlined /> },
-  //     { path: `${PREFIX}/data-ws`, label: "工作路径数据", icon: <FolderOpenOutlined /> },
-  //     { path: `${PREFIX}/indicators`, label: "指标查看", icon: <DashboardOutlined /> },
-  //     { path: `${PREFIX}/reports`, label: "报告查看", icon: <FileTextOutlined /> },
-  //     { path: `${PREFIX}/logs`, label: "日志查看", icon: <FileSearchOutlined /> },
-  //   ],
-  // },
   { path: `${PREFIX}/data-manage`, label: "数据管理", icon: <DatabaseOutlined /> },
   { path: `${PREFIX}/tools`, label: "工具箱", icon: <ToolOutlined /> },
   { path: `${PREFIX}/manual`, label: "用户手册", icon: <BookOutlined /> },
@@ -182,7 +172,6 @@ function MechSim() {
               <Route path={`${PREFIX}/`} exact component={Home} />
               <Route path={`${PREFIX}/cases`} component={CaseList} />
               <Route path={`${PREFIX}/tasks`} component={Tasks} />
-              <Route path={`${PREFIX}/data-ws`} component={DataWS} />
               <Route path={`${PREFIX}/data`} component={DataViewer} />
               <Route path={`${PREFIX}/data-manage`} component={DataManage} />
               <Route path={`${PREFIX}/tools`} component={Placeholder} />

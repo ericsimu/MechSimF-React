@@ -75,7 +75,8 @@ export default function DataViewer() {
   const [taskExpanded, setTaskExpanded] = useState<Record<number, boolean>>({});
   const [leftWidth, setLeftWidth] = useState(260);
   const [exporting, setExporting] = useState(false);
-  const [indicationData, setIndicationData] = useState<Record<number, { rs: { headers: string[]; rows: string[][] } | null; ws: { headers: string[]; rows: string[][] } | null }>>({});
+  type IndicationTable = { headers: string[]; rows: string[][] } | null;
+  const [indicationData, setIndicationData] = useState<Record<number, Record<string, IndicationTable>>>({});
   const [indicationLoading, setIndicationLoading] = useState(false);
 
   // ── refs ──
@@ -632,39 +633,43 @@ export default function DataViewer() {
                   <div className="px-3 py-3 space-y-5">
                     {doneTasks.map((t) => {
                       const ind = indicationData[t.id];
+                      const tables = ([
+                        ["rs_servo", "RS 伺服性能指标"],
+                        ["rs_mech", "RS 机械性能指标"],
+                        ["ws_servo", "WS 伺服性能指标"],
+                        ["ws_mech", "WS 机械性能指标"],
+                        ["im_servo", "IM 伺服性能指标"],
+                        ["im_mech", "IM 机械性能指标"],
+                        ["po_servo", "PO 伺服性能指标"],
+                        ["po_mech", "PO 机械性能指标"],
+                      ] as const).filter(([key]) => !!ind?.[key]);
                       return (
                         <div key={t.id}>
                           <h3 className="text-[13px] font-semibold text-[#555] mb-2">{t.name}</h3>
+                          {tables.length === 0 ? (
+                            <div className="text-[#999] text-xs py-4 text-center">暂无指标数据</div>
+                          ) : (
                           <div className="grid grid-cols-2 gap-3">
-                            <div className="rounded-lg border border-[#f0f0f0] overflow-hidden">
-                              <div className="bg-[#fafafa] px-3 py-1.5 text-[12px] font-semibold text-[#666] border-b border-[#f0f0f0]">RS 指标表</div>
-                              <Table
-                                size="small"
-                                pagination={false}
-                                className="text-[12px] dense-table"
-                                tableLayout="auto"
-                                dataSource={ind?.rs ? ind.rs.rows.map((row, i) => ({ ...Object.fromEntries(ind.rs!.headers.map((h, j) => [h, row[j] ?? ""])), _key: i })) : []}
-                                columns={ind?.rs ? ind.rs.headers.map((h) => ({ title: h, dataIndex: h, key: h })) : []}
-                                rowKey="_key"
-                                bordered
-                                locale={{ emptyText: <span className="text-[#999] text-xs">暂无 RS 指标数据</span> }}
-                              />
-                            </div>
-                            <div className="rounded-lg border border-[#f0f0f0] overflow-hidden">
-                              <div className="bg-[#fafafa] px-3 py-1.5 text-[12px] font-semibold text-[#666] border-b border-[#f0f0f0]">WS 指标表</div>
-                              <Table
-                                size="small"
-                                pagination={false}
-                                className="text-[12px] dense-table"
-                                tableLayout="auto"
-                                dataSource={ind?.ws ? ind.ws.rows.map((row, i) => ({ ...Object.fromEntries(ind.ws!.headers.map((h, j) => [h, row[j] ?? ""])), _key: i })) : []}
-                                columns={ind?.ws ? ind.ws.headers.map((h) => ({ title: h, dataIndex: h, key: h })) : []}
-                                rowKey="_key"
-                                bordered
-                                locale={{ emptyText: <span className="text-[#999] text-xs">暂无 WS 指标数据</span> }}
-                              />
-                            </div>
+                            {tables.map(([key, label]) => {
+                              const tbl = ind![key]!;
+                              return (
+                                <div className="rounded-lg border border-[#f0f0f0] overflow-hidden" key={key}>
+                                  <div className="bg-[#fafafa] px-3 py-1.5 text-[12px] font-semibold text-[#666] border-b border-[#f0f0f0]">{label}</div>
+                                  <Table
+                                    size="small"
+                                    pagination={false}
+                                    className="text-[12px] dense-table"
+                                    tableLayout="auto"
+                                    dataSource={tbl.rows.map((row, i) => ({ ...Object.fromEntries(tbl.headers.map((h, j) => [h, row[j] ?? ""])), _key: i }))}
+                                    columns={tbl.headers.map((h) => ({ title: h, dataIndex: h, key: h }))}
+                                    rowKey="_key"
+                                    bordered
+                                  />
+                                </div>
+                              );
+                            })}
                           </div>
+                          )}
                         </div>
                       );
                     })}
