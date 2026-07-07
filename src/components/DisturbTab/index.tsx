@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, forwardRef, useImperativeHandle } from "react";
+import { useState, useEffect, useRef, useMemo, forwardRef, useImperativeHandle } from "react";
 import { queueDisturbances, getDisturbanceInfo } from "@/api/index";
 import { isNil } from "@/utils/isNil";
 import { fmtNum } from "@/utils/fmtNum";
@@ -81,7 +81,7 @@ function DisturbTab({ setEditDraft, setActiveTab, modelInfo, sysName, modelVersi
   selFileRef.current = selDisturbFile;
 
   // ── 根据 modelInfo 的 Product/DisturbanceFolders 过滤树 ──
-  const disturbEntries = (() => {
+  const disturbEntries = useMemo(() => {
     const dirs = disturbTree?.dirs;
     if (!dirs) return [];
     const entries = Object.entries(dirs);
@@ -100,8 +100,8 @@ function DisturbTab({ setEditDraft, setActiveTab, modelInfo, sysName, modelVersi
       filtered = filtered.filter(([k]) => products.includes(k));
     }
     return filtered;
-  })();
-  const disturbFolders = (() => {
+  }, [disturbTree, sysName, modelInfo, modelVersion]);
+  const disturbFolders = useMemo(() => {
     if (!sysName || !modelInfo) return null;
     const ver = modelVersion || "3X";
     const sysEntry = (modelInfo as any)[ver]?.[sysName];
@@ -109,7 +109,7 @@ function DisturbTab({ setEditDraft, setActiveTab, modelInfo, sysName, modelVersi
     const folders = sysEntry.DisturbanceFolders;
     if (!folders) return [];
     return typeof folders === "string" ? folders.split(",").map((s: string) => s.trim()) : [String(folders)];
-  })();
+  }, [sysName, modelInfo, modelVersion]);
 
   useEffect(() => {
     (async () => {
@@ -194,8 +194,11 @@ function DisturbTab({ setEditDraft, setActiveTab, modelInfo, sysName, modelVersi
 
   // ── Chart ──
   useEffect(() => {
-    cursorLbls.current?.destroy(); cursorLbls.current = null;
-    if (chartInst.current) { chartInst.current.destroy(); chartInst.current = null; }
+    const cleanup = () => {
+      cursorLbls.current?.destroy(); cursorLbls.current = null;
+      if (chartInst.current) { chartInst.current.destroy(); chartInst.current = null; }
+    };
+    cleanup(); // 重建前先清掉上一帧
     if (!chartRef.current || disturbColumns.length === 0) return;
 
     const active = disturbColumns.filter((c) => disturbVisible[c.name] !== false);
@@ -219,7 +222,7 @@ function DisturbTab({ setEditDraft, setActiveTab, modelInfo, sysName, modelVersi
     } else {
       // fallback: 索引轴
       makeChart(nonEmpty[0].data.map((_: any, i: number) => i), nonEmpty, undefined, "");
-      return;
+      return cleanup;
     }
 
     if (!xCol) xCol = nonEmpty[0];
@@ -235,7 +238,15 @@ function DisturbTab({ setEditDraft, setActiveTab, modelInfo, sysName, modelVersi
     } else {
       makeChart(xData, yCols, seriesData, "Time (s)");
     }
-  }, [disturbColumns, disturbVisible, chartType, disturbWidth]);
+    return cleanup;
+  }, [disturbColumns, disturbVisible, chartType]);
+
+  // ── 宽度变化只调 setSize，不重建图表（避免拖动分隔条时反复 destroy/create）──
+  useEffect(() => {
+    if (chartInst.current && chartRef.current) {
+      chartInst.current.setSize({ width: chartRef.current.offsetWidth, height: 400 });
+    }
+  }, [disturbWidth]);
 
   // ── Chart builders ──
   function makeChart(xData: (number | null)[], yCols: typeof disturbColumns, seriesData?: (number | null)[][], xLabel?: string, isFreq?: boolean) {
@@ -282,22 +293,22 @@ function DisturbTab({ setEditDraft, setActiveTab, modelInfo, sysName, modelVersi
 }
 
 function onDisturbCheck(fullPath: string) {
-    setDisturbChecked((prev) => {
-      const next = { ...prev };
-      if (next[fullPath]) delete next[fullPath];
-      else next[fullPath] = true;
-      const names = Object.entries(next).filter(([, v]) => v).map(([k]) => k.split(/[/\\]/).pop()!).filter(Boolean);
-      // 写入 model_param[version][sysName].DisturbanceFiles
-      const ver = modelVersion || "3X";
-      setEditDraft((prev) => {
-        let mp: Record<string, any> = {};
-        try { mp = JSON.parse(prev.model_param || "{}"); } catch { /* */ }
-        if (!mp[ver]) mp[ver] = {};
-        if (!mp[ver][sysName || ""]) mp[ver][sysName || ""] = {};
-        mp[ver][sysName || ""].DisturbanceFiles = names;
-        return { ...prev, model_param: JSON.stringify(mp) };
-      });
-      return next;
+    // 用 ref 读取最新勾选状态，纯计算 next，再分别 setState（不在 updater 内做副作用）
+    const prev = checkedRef.current;
+    const next = { ...prev };
+    if (next[fullPath]) delete next[fullPath];
+    else next[fullPath] = true;
+    setDisturbChecked(next);
+    const names = Object.entries(next).filter(([, v]) => v).map(([k]) => k.split(/[/\\]/).pop()!).filter(Boolean);
+    // 写入 model_param[version][sysName].DisturbanceFiles
+    const ver = modelVersion || "3X";
+    setEditDraft((p) => {
+      let mp: Record<string, any> = {};
+      try { mp = JSON.parse(p.model_param || "{}"); } catch { /* */ }
+      if (!mp[ver]) mp[ver] = {};
+      if (!mp[ver][sysName || ""]) mp[ver][sysName || ""] = {};
+      mp[ver][sysName || ""].DisturbanceFiles = names;
+      return { ...p, model_param: JSON.stringify(mp) };
     });
   }
 

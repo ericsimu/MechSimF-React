@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo, useCallback, forwardRef, useImperativeHandle } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback, useReducer, forwardRef, useImperativeHandle } from "react";
 import TreeNode from '@/components/TreeNode';
 import ParamEditor from '@/components/ParamEditor';
 import type { ModelInfoMap } from '@/types/api';
@@ -92,7 +92,8 @@ export function buildFullModelParam(
   const versionSystems = modelInfo[version] || {};
   const versionFull: Record<string, any> = {};
   for (const [sys, info] of Object.entries(versionSystems)) {
-    if (info.variables) versionFull[sys] = JSON.parse(JSON.stringify(info.variables));
+    // 浅拷贝即可：结果只用于 JSON.stringify，不会就地修改 modelInfo
+    if (info.variables) versionFull[sys] = { ...info.variables };
   }
   const accVersion = allVersions[version];
   if (accVersion && typeof accVersion === "object" && !Array.isArray(accVersion)) {
@@ -102,12 +103,10 @@ export function buildFullModelParam(
     }
   }
   const sysData = currentVars ?? paramVarsRef.current;
-  if (Object.keys(sysData).length > 0) {
-    // 逐系统合并，只覆盖变量键，不动 DisturbanceFiles
-    for (const [sys, vars] of Object.entries(JSON.parse(JSON.stringify(sysData)))) {
-      if (versionFull[sys]) Object.assign(versionFull[sys], vars as any);
-      else versionFull[sys] = vars as any;
-    }
+  // Object.assign 不会修改 source，无需深拷贝 sysData
+  for (const [sys, vars] of Object.entries(sysData)) {
+    if (versionFull[sys]) Object.assign(versionFull[sys], vars as any);
+    else versionFull[sys] = vars as any;
   }
   allVersions[version] = versionFull;
   return JSON.stringify(allVersions);
@@ -143,16 +142,6 @@ function ParamTab({
   // 随后被 setEditDraft({...cr.data}) 覆盖掉 model_param。
   const loaded = !!editDraft.id;
 
-  // ── Init param tree on first load ──
-  const initializedRef = useRef(false);
-  useEffect(() => {
-    if (!loaded) return;
-    if (Object.keys(modelInfo).length > 0 && editDraft.sys_name && !initializedRef.current) {
-      initializedRef.current = true;
-      onSystemChange(editDraft.sys_name);
-    }
-  }, [modelInfo, editDraft, loaded]);
-
   // ── Auto-expand first 3 levels ──
   useEffect(() => {
     if (Object.keys(paramVars).length === 0) return;
@@ -183,20 +172,6 @@ function ParamTab({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [systems, editDraft.sys_name, loaded]);
 
-  // ── Safety net: 参数树有数据时，保证 model_param 一定同步 ──
-  // onSystemChange 会写 model_param，但 paramVars 与 model_param 是两份独立状态，
-  // 一旦某次写入丢失（渲染竞态/闭包过期），会出现"树有值但 model_param 为空"。
-  // 这里以 paramVars 为准兜底，保存时绝不空。
-  useEffect(() => {
-    if (Object.keys(paramVars).length === 0) return;
-    setEditDraft((prev) => {
-      const fullMP = buildFullModelParam(prev, modelInfo, paramVarsRef, paramVars);
-      if (prev.model_param === fullMP) return prev;
-      return { ...prev, model_param: fullMP };
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [paramVars]);
-
   // ── Helpers ──
   function coerceByType(val: string, orig: unknown) {
     if (val === "" && (orig === null || orig === undefined)) return null;
@@ -218,11 +193,11 @@ function ParamTab({
     });
     paramVarsRef.current = nv;
     setParamVars(nv);
-    setEditDraft((prev) => ({ ...prev, model_param: buildFullModelParam(editDraft, modelInfo, paramVarsRef, nv) }));
+    setEditDraft((prev) => ({ ...prev, model_param: buildFullModelParam(prev, modelInfo, paramVarsRef, nv) }));
   }
 
   // ── selectParamNode ──
-  function selectParamNode(path: string, activate: boolean) {
+  const selectParamNode = useCallback((path: string, activate: boolean) => {
     setSelParamPath(path);
     if (activate) setActiveTab("param");
     const parts = path.split(".");
@@ -261,12 +236,12 @@ function ParamTab({
       ? [{ name: parts[parts.length - 1], path, rows: leafEntries.map(([k, v]) => mkRow(k, v, labelMap, unitMap)) }]
       : [],
     );
-  }
+  }, [setActiveTab]);
 
-  function onParamSelect(path: string) {
+  const onParamSelect = useCallback((path: string) => {
     setParamExpanded((prev) => ({ ...prev, [path]: !prev[path] }));
     selectParamNode(path, true);
-  }
+  }, [selectParamNode]);
 
   // ── onSystemChange ──
   function onSystemChange(sys: string) {
@@ -298,7 +273,10 @@ function ParamTab({
   }
 
   const handleToggle = useCallback((p: string) => setParamExpanded(prev => ({ ...prev, [p]: !prev[p] })), []);
-  const forceUpdate = useCallback(() => setParamVars(prev => ({ ...prev })), []);
+  // 输入框 onChange 时 dirtyValues（ref）已更新，只需触发一次重渲读取新值；
+  // 不再用 setParamVars({...prev}) —— 那会产生新 paramVars 引用，触发无谓的级联。
+  const [, bumpRender] = useReducer((x: number) => x + 1, 0);
+  const forceUpdate = bumpRender;
 
   // ── Resize ──
   function startResize(e: React.MouseEvent) {

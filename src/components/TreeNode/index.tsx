@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { SettingOutlined } from "@ant-design/icons";
 
 function isObject(v: unknown): v is Record<string, unknown> {
@@ -21,7 +22,7 @@ interface TreeNodeProps {
   onSelect: (path: string) => void;
 }
 
-export default function TreeNode({
+function TreeNode({
   name,
   value,
   path,
@@ -87,3 +88,6 @@ export default function TreeNode({
     </div>
   );
 }
+
+export default memo(TreeNode);
+

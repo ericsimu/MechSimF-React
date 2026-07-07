@@ -22,7 +22,7 @@ interface Props {
 function ModelTab({ caseId, caseName, caseDescription, onSaved }: Props, ref: React.Ref<ModelTabHandle>) {
   const [activeTab, setActiveTab] = useState("model");
   const { editDraft, setEditDraft, modelInfo, systems, buildBody, handleDraftChange, ensureModelDefaults } =
-    useCaseDetail(caseId, caseName, caseDescription, onSaved);
+    useCaseDetail(caseId, caseName, caseDescription);
   const disturbRef = useRef<DisturbTabHandle>(null);
   const paramRef = useRef<ParamTabHandle>(null);
 

@@ -108,7 +108,7 @@ export default function ModelSelectPanel({
             }
             onBlur={(e) => {
               const v = parseFloat(e.target.value);
-              if (!isNaN(v) && v > 0 && v > 19.2) {
+              if (!isNaN(v) && v > 19.2) {
                 onDraftChange({ sim_time: 19.2 });
                 message.error("仿真时间不能超过 19.2s，已自动修正");
               }

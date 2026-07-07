@@ -97,10 +97,9 @@ export default function CaseList() {
   // ── Save (logic lives in ModelTab; here we only drive the button state) ──
   function handleSaved(body: AddCaseRequest) {
     if (!editCase) return;
-    Object.assign(editCase, body);
-    setCases((prev) =>
-      prev.map((c) => (c.id === editCase.id ? { ...editCase } : c)),
-    );
+    const updated = { ...editCase, ...body };
+    setEditCase(updated);
+    setCases((prev) => prev.map((c) => (c.id === editCase.id ? updated : c)));
   }
 
   async function handleSave() {

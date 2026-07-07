@@ -1,13 +1,12 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { message } from "antd";
-import { getCase, updateCase, queueModelInfo } from "@/api/index";
+import { getCase, queueModelInfo } from "@/api/index";
 import { getCurrentUser } from "@/utils/user";
 import type { ModelInfoMap, AddCaseRequest } from "@/types/api";
 
 const PRODUCTIVITY_OPTIONS = ["100WPH", "150WPH", "200WPH", "295WPH", "340WPH"];
 const VERSION_OPTIONS = ["3X", "5X"];
 
-export function useCaseDetail(caseId: number, caseName: string, caseDescription: string, onSaved: (body: AddCaseRequest) => void) {
+export function useCaseDetail(caseId: number, caseName: string, caseDescription: string) {
   const [editDraft, setEditDraft] = useState<Record<string, any>>({});
   const [modelInfo, setModelInfo] = useState<ModelInfoMap>({});
 
@@ -78,22 +77,11 @@ export function useCaseDetail(caseId: number, caseName: string, caseDescription:
     };
   }, [editDraft, caseName, caseDescription]);
 
-  // ── save ──
-  const save = useCallback(async (silent = false): Promise<boolean> => {
-    const body = buildBody();
-    try {
-      const r = await updateCase(caseId, body);
-      if (r.success) { onSaved(body); if (!silent) message.success("保存成功"); return true; }
-      message.error(r.message || "保存失败");
-      return false;
-    } catch { message.error("保存失败"); return false; }
-  }, [caseId, buildBody, onSaved]);
-
   return {
     editDraft, setEditDraft,
     modelInfo, setModelInfo,
     systems,
-    buildBody, save,
+    buildBody,
     handleDraftChange,
     ensureModelDefaults,
   };
