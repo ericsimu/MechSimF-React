@@ -165,10 +165,12 @@ function ParamTab({
     if (!loaded) return;
     if (!editDraft.sys_name && systems.length > 0) {
       onSystemChange(systems[0]);
+      prevRef.current = editDraft.sys_name || "";
     } else if (editDraft.sys_name && editDraft.sys_name !== prevRef.current && systems.includes(editDraft.sys_name)) {
       onSystemChange(editDraft.sys_name);
+      prevRef.current = editDraft.sys_name || "";
     }
-    prevRef.current = editDraft.sys_name || "";
+    // 不在分支里设 prevRef：systems 为空时跳过，等下一轮 systems 就绪后 sys_name 仍不等 → 触发
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [systems, editDraft.sys_name, loaded]);
 
