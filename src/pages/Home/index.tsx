@@ -1,4 +1,4 @@
-import { useHistory } from "react-router-dom";
+import { useNavigate } from "@umijs/max";
 import {
   AppstoreOutlined,
   DatabaseOutlined,
@@ -38,7 +38,7 @@ const cards = [
 ];
 
 export default function Home() {
-  const history = useHistory();
+  const navigate = useNavigate();
 
   return (
     <div className="flex-1 flex flex-col justify-center bg-[#f8fafd] overflow-hidden">
@@ -63,7 +63,7 @@ export default function Home() {
           {cards.map((c) => (
             <div
               key={c.route}
-              onClick={() => history.push(c.route)}
+              onClick={() => navigate(c.route)}
               className="group cursor-pointer rounded-xl border border-[#f0f0f0] bg-white p-5 transition-all duration-300 hover:shadow-md hover:shadow-black/[0.04] hover:border-[#d0d5dd] hover:-translate-y-0.5"
             >
               <div

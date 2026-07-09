@@ -177,17 +177,26 @@ function DisturbTab({ setEditDraft, setActiveTab, modelInfo, sysName, modelVersi
       const match = allFiles.find((af) => af.name === fn);
       if (match) ck[match.path] = true;
     });
-    setDisturbChecked(ck);
-    // 同步写入 model_param，与参数编辑模式一致
+    // 仅在勾选有变化时才更新，避免无谓重渲
+    const prevChecked = checkedRef.current;
+    if (Object.keys(ck).length !== Object.keys(prevChecked).length || Object.keys(ck).some((k) => ck[k] !== prevChecked[k])) {
+      setDisturbChecked(ck);
+    }
+    // 同步写入 model_param，仅在 DisturbanceFiles 变化时
     const ver2 = modelVersion || "3X";
+    const newFiles = JSON.stringify(fileNames);
     setEditDraft((prev) => {
       let mp: Record<string, any> = {};
       try { mp = JSON.parse(prev.model_param || "{}"); } catch { /* */ }
       if (!mp[ver2]) mp[ver2] = {};
       if (!mp[ver2][sysName]) mp[ver2][sysName] = {};
       else if (typeof mp[ver2][sysName] !== "object" || Array.isArray(mp[ver2][sysName])) mp[ver2][sysName] = {};
+      const oldFiles = JSON.stringify(mp[ver2][sysName]?.DisturbanceFiles ?? []);
+      if (oldFiles === newFiles) return prev; // 值未变，不触发重渲
       mp[ver2][sysName].DisturbanceFiles = fileNames;
-      return { ...prev, model_param: JSON.stringify(mp) };
+      const newParam = JSON.stringify(mp);
+      if (prev.model_param === newParam) return prev;
+      return { ...prev, model_param: newParam };
     });
     restoreAppliedRef.current = sysName;
   }, [sysName, modelInfo, disturbTree]);

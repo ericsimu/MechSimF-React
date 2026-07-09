@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { useHistory } from "react-router-dom";
+import { useNavigate } from "@umijs/max";
 import { Table, Modal, Button, message } from "antd";
 import type { TableColumnsType } from "antd";
 import type { FilterValue } from "antd/es/table/interface";
@@ -188,7 +188,7 @@ export default function Tasks() {
     useState<Record<string, FilterValue | null>>(savedTaskFilters);
   const [selectedRowKeys, setSelectedRowKeys] =
     useState<React.Key[]>(savedTaskSelection);
-  const history = useHistory();
+  const navigate = useNavigate();
   const { colW, resizeHeaderCell } = useColumnResize();
 
   function updateSelection(keys: React.Key[]) {
@@ -199,7 +199,7 @@ export default function Tasks() {
   function gotoDataView() {
     if (selectedRowKeys.length === 0) return;
     const ids = selectedRowKeys.map(String).join(",");
-    history.push(`/data?ids=${ids}`);
+    navigate(`/data?ids=${ids}`);
   }
 
   const loadTasks = useCallback(async () => {

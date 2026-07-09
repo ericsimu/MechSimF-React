@@ -40,3 +40,5 @@ coverage
 
 public/*.png
 src/**/*.md
+src/.umi
+src/.umi-production

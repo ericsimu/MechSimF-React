@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation } from "@umijs/max";
 import { Button, Input, message, Spin, Table, Tabs } from "antd";
 import { BarChartOutlined, FundOutlined, StockOutlined } from "@ant-design/icons";
 import { getTaskStatus, getTaskDataColumns, getTaskSignals, getTaskIndication } from '@/api/index';
@@ -639,7 +639,7 @@ export default function DataViewer() {
                           {tables.length === 0 ? (
                             <div className="text-[#999] text-xs py-4 text-center">暂无指标数据</div>
                           ) : (
-                          <div className="grid grid-cols-2 gap-3">
+                          <div className="flex flex-col gap-3">
                             {tables.map((tbl) => (
                               <div className="rounded-lg border border-[#f0f0f0] overflow-hidden" key={tbl.key}>
                                 <div className="bg-[#fafafa] px-3 py-1.5 text-[12px] font-semibold text-[#666] border-b border-[#f0f0f0]">{tbl.label}</div>
