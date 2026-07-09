@@ -211,10 +211,7 @@ export async function getTaskDataColumns(
 
 export async function getTaskIndication(
   taskId: number,
-): Promise<ApiResponse<{
-  rs: { headers: string[]; rows: string[][] } | null;
-  ws: { headers: string[]; rows: string[][] } | null;
-}>> {
+): Promise<ApiResponse<{ tables: { key: string; label: string; headers: string[]; rows: string[][] }[] }>> {
   return await request(`/task_data/${taskId}/indication`);
 }
 
