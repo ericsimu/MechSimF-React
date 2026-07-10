@@ -56,6 +56,7 @@ function NavGroup({ item }: { item: NavItem }) {
 
 export default function Layout() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [user, setUser] = useState(() => {
     const u = getCurrentUser();
     return ALLOWED_USERS.includes(u) ? u : "";
@@ -162,7 +163,7 @@ export default function Layout() {
               </Button>
             </div>
           </header>
-          <main key={`${user}-${useLocation().pathname}`} className="flex-1 p-0 min-h-0 flex flex-col overflow-hidden" style={{ animation: "fadeIn 0.2s ease-out" }}>
+          <main key={`${user}-${location.pathname}`} className="flex-1 p-0 min-h-0 flex flex-col overflow-hidden" style={{ animation: "fadeIn 0.2s ease-out" }}>
             <Outlet />
           </main>
         </div>

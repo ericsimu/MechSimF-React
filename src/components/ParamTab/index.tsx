@@ -161,8 +161,19 @@ function ParamTab({
 
   // ── Auto-select / switch system ──
   const prevRef = useRef("");
+  const versionRef = useRef(editDraft.model_verison);
   useEffect(() => {
     if (!loaded) return;
+    // 版本切换时清空旧版参数树，避免旧版本 paramVars 合并到新版 model_param
+    const ver = editDraft.model_verison || "";
+    if (ver !== versionRef.current) {
+      versionRef.current = ver;
+      paramVarsRef.current = {};
+      setParamVars({});
+      setParamEditGroups([]);
+      dirtyValues.current.clear();
+      prevRef.current = "";
+    }
     if (!editDraft.sys_name && systems.length > 0) {
       onSystemChange(systems[0]);
       prevRef.current = editDraft.sys_name || "";
@@ -187,7 +198,11 @@ function ParamTab({
     const parts = group.path.split(".");
     const nv = JSON.parse(JSON.stringify(paramVarsRef.current));
     let node = nv;
-    for (const p of parts) node = node[p];
+    for (const p of parts) {
+      if (!isObject(node)) return; // 树已被清空 / 路径已不存在，跳过
+      node = node[p];
+    }
+    if (!isObject(node)) return;
     group.rows.forEach((r) => {
       const dk = `${group.path}|${r.key}`;
       const val = dirtyValues.current.has(dk) ? dirtyValues.current.get(dk)! : r.value;
@@ -256,7 +271,7 @@ function ParamTab({
       const full = JSON.parse(fullMP);
       const vd = full[version] || {};
       if (vd[sys] && typeof vd[sys] === "object" && !Array.isArray(vd[sys]) && Object.keys(vd[sys] as object).length > 0)
-        nsTree = normalizeTypes(vd[sys]) as Record<string, any>;
+        nsTree = JSON.parse(JSON.stringify(vd[sys])) as Record<string, any>;
     } catch { /* */ }
     if (!nsTree) {
       const vs = modelInfo[version] || {};
