@@ -70,8 +70,33 @@ function ModelTab({ caseId, caseName, caseDescription, onSaved }: Props, ref: Re
   }, [ensureModelDefaults]);
 
   const onSysChange = useCallback((sys: string) => {
-    setEditDraft(prev => ({ ...prev, sys_name: sys, model_name: sys, init_script: sys }));
-  }, [setEditDraft]);
+    setEditDraft(prev => {
+      const ver = prev.model_verison || "3X";
+      // 解析已有 model_param
+      let mp: Record<string, any> = {};
+      try { mp = JSON.parse(prev.model_param || "{}"); } catch { /* */ }
+      if (!mp[ver]) mp[ver] = {};
+      // 为当前系统/版本注入默认 DisturbanceFiles（来自 modelInfo）
+      if (!mp[ver][sys] || typeof mp[ver][sys] !== "object" || Array.isArray(mp[ver][sys])) {
+        mp[ver][sys] = {};
+      }
+      const sysEntry = (modelInfo as any)?.[ver]?.[sys];
+      const dfRaw = sysEntry?.DisturbanceFiles;
+      let defaultFiles: string[] = [];
+      if (dfRaw) {
+        defaultFiles = Array.isArray(dfRaw)
+          ? dfRaw.map((f: any) => String(f).trim()).filter(Boolean)
+          : typeof dfRaw === "string"
+            ? dfRaw.split(",").map((f: string) => f.trim()).filter(Boolean)
+            : [];
+      }
+      // 仅在当前系统还没有 DisturbanceFiles 时写入默认值，保留已保存的用户自定义
+      if (!mp[ver][sys].DisturbanceFiles || (Array.isArray(mp[ver][sys].DisturbanceFiles) && mp[ver][sys].DisturbanceFiles.length === 0)) {
+        mp[ver][sys].DisturbanceFiles = defaultFiles;
+      }
+      return { ...prev, sys_name: sys, model_name: sys, init_script: sys, model_param: JSON.stringify(mp) };
+    });
+  }, [setEditDraft, modelInfo]);
 
   const tabItems = useMemo(() => [
     {

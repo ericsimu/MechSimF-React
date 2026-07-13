@@ -165,18 +165,17 @@ function DisturbTab({ setEditDraft, setActiveTab, modelInfo, sysName, modelVersi
         }
       }
     }
-    if (fileNames.length === 0) return;
-
-    // 匹配 disturbTree 中的文件路径
+    // 匹配 disturbTree 中的文件路径，过滤掉不存在的旧文件
     const allFiles: { path: string; name: string }[] = [];
     (function walk(n: any) {
       (n.files || []).forEach((f: any) => allFiles.push({ path: f.path, name: f.name }));
       Object.values(n.dirs || {}).forEach((v: any) => walk(v));
     })(disturbTree);
     const ck: Record<string, boolean> = {};
+    const matchedNames: string[] = [];
     fileNames.forEach((fn) => {
       const match = allFiles.find((af) => af.name === fn);
-      if (match) ck[match.path] = true;
+      if (match) { ck[match.path] = true; matchedNames.push(fn); }
     });
 
     // 仅在勾选状态实际变化时才 setState
@@ -185,7 +184,8 @@ function DisturbTab({ setEditDraft, setActiveTab, modelInfo, sysName, modelVersi
     const allSame = sameSize && Object.keys(ck).every((k) => ck[k] === prevChecked[k]);
     if (!allSame) setDisturbChecked(ck);
 
-    // 同步写入 model_param，仅在 DisturbanceFiles 实际变化时
+    // 同步写入 model_param：始终写入当前系统/版本的 DisturbanceFiles（含空数组），
+    // 从而清理 model_param 中已失效的旧扰动数据，避免跨系统污染
     const ver2 = modelVersion || "3X";
     setEditDraft((prev) => {
       let mp: Record<string, any> = {};
@@ -194,8 +194,9 @@ function DisturbTab({ setEditDraft, setActiveTab, modelInfo, sysName, modelVersi
       if (!mp[ver2][sysName]) mp[ver2][sysName] = {};
       else if (typeof mp[ver2][sysName] !== "object" || Array.isArray(mp[ver2][sysName])) mp[ver2][sysName] = {};
       const oldFiles = JSON.stringify(mp[ver2][sysName]?.DisturbanceFiles ?? []);
-      if (oldFiles === JSON.stringify(fileNames)) return prev; // 未变
-      mp[ver2][sysName].DisturbanceFiles = fileNames;
+      const newFiles = JSON.stringify(matchedNames);
+      if (oldFiles === newFiles) return prev; // 未变
+      mp[ver2][sysName].DisturbanceFiles = matchedNames;
       const newParam = JSON.stringify(mp);
       if (prev.model_param === newParam) return prev;
       return { ...prev, model_param: newParam };
