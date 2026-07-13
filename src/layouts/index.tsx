@@ -123,7 +123,7 @@ export default function Layout() {
           >
             <svg width="10" height="10" viewBox="0 0 10 10" className="transition-transform duration-300" style={{ transform: collapsed ? "none" : "scaleX(-1)" }}><path d="M2 1L8 5L2 9" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>
           </button>
-          <nav className="flex flex-col py-2">
+          <nav className="flex flex-col py-2 flex-1">
             {navItems.map((item, i) =>
               item.path ? (
                 <NavLink
