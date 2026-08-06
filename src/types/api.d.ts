@@ -124,3 +124,16 @@ export interface SummaryCsvOptions {
   source: string[];
   domain: string[];
 }
+
+// ── Sweep ──
+
+export interface SweepModel extends BaseModel {
+  name: string;
+  created_by: string;
+  body: string; // JSON of groups: SweepRow[][]
+}
+
+export interface SweepRequest {
+  name: string;
+  body: string;
+}

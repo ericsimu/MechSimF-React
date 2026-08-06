@@ -6,6 +6,7 @@ import { useCaseDetail } from "@/hooks/useCaseDetail";
 import ModelSelectPanel from "@/components/ModelSelectPanel";
 import ParamTab, { type ParamTabHandle } from "@/components/ParamTab";
 import DisturbTab, { type DisturbTabHandle } from "@/components/DisturbTab";
+import SweepTab from "@/components/SweepTab";
 
 export interface ModelTabHandle {
   getCaseBody: () => AddCaseRequest;
@@ -116,6 +117,11 @@ function ModelTab({ caseId, caseName, caseDescription, onSaved }: Props, ref: Re
     {
       key: "disturb", label: "扰动选择",
       children: <DisturbTab ref={disturbRef} setEditDraft={setEditDraft} setActiveTab={setActiveTab} modelInfo={modelInfo} sysName={editDraft.sys_name} modelVersion={editDraft.model_verison} modelParam={editDraft.model_param} />,
+    },
+    {
+      key: "sweep", label: "参数扫描",
+      children: <SweepTab caseId={caseId} modelInfo={modelInfo}
+        modelVersion={editDraft.model_verison} sysName={editDraft.sys_name} />,
     },
   ], [systems, editDraft, modelInfo, setEditDraft, setActiveTab, onSysChange, handleDraftChange]);
 

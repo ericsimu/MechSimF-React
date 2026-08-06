@@ -317,7 +317,7 @@ export default function Tasks() {
       id: uniq("id"),
       name: uniq("name"),
       sys_name: uniq("sys_name"),
-      model_name: uniq("model_name"),
+
       model_version: uniq("model_version"),
       model_productivity: uniq("model_productivity"),
       status: uniq("status", STATUS_LABELS),
@@ -357,15 +357,23 @@ export default function Tasks() {
       render: (v: string) => v || "-",
     },
     {
-      title: "模型",
-      dataIndex: "model_name",
-      key: "model_name",
-      width: colW("model_name"),
-      onHeaderCell: () => resizeHeaderCell("model_name"),
-      filterDropdown: makeFilterDropdown(filterOpts.model_name, true),
-      filteredValue: tableFilters.model_name ?? null,
-      onFilter: (value, r) => r.model_name === value,
-      render: (v: string) => v || "-",
+      title: "仿真时间",
+      dataIndex: "sim_duration",
+      key: "sim_duration",
+      width: colW("sim_duration"),
+      onHeaderCell: () => resizeHeaderCell("sim_duration"),
+      render: (_: unknown, r: SimTask) => {
+        if (!r.create_time || !r.update_time) return "-";
+        const ms = new Date(r.update_time).getTime() - new Date(r.create_time).getTime();
+        if (ms <= 0) return "";
+        const totalSec = Math.floor(ms / 1000);
+        const h = Math.floor(totalSec / 3600);
+        const m = Math.floor((totalSec % 3600) / 60);
+        const s = totalSec % 60;
+        if (h > 0) return `${h}h ${m}m`;
+        if (m > 0) return `${m}m ${s}s`;
+        return `${s}s`;
+      },
     },
     {
       title: "版本",

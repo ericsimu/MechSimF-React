@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef } from "react";
 
 const defaultWidths: Record<string, number> = {
-  id: 70, name: 160, sys_name: 100, model_name: 100,
+  id: 70, name: 160, sys_name: 100, model_name: 100, sim_duration: 110,
   model_version: 70, model_productivity: 80, status: 90,
   param_diff: 90, create_time: 160, actions: 120,
 };

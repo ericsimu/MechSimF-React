@@ -310,7 +310,7 @@ function ParamTab({
 
   return (
     <div className="flex-1 flex overflow-hidden min-h-0">
-      <div className="shrink-0 overflow-y-auto overflow-x-hidden box-border border-r border-[#f0f0f0] bg-[#fafafa] pb-3 min-h-0" style={{ width: paramWidth }}>
+      <div className="shrink-0 overflow-y-auto overflow-x-hidden box-border border-r border-[#f0f0f0] pb-3 min-h-0" style={{ width: paramWidth }}>
         {paramEntries.map(([k, v]) => (
           <TreeNode key={k} name={k} value={v} path={k} selPath={selParamPath} expanded={paramExpanded}
             onToggle={handleToggle}

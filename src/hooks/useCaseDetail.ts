@@ -35,16 +35,13 @@ export function useCaseDetail(caseId: number, caseName: string, caseDescription:
 
   // ── auto-set defaults on model tab ──
   const ensureModelDefaults = useCallback(() => {
-    if (Object.keys(modelInfo).length === 0) {
-      queueModelInfo().then(r => { if (r.success && r.data) setModelInfo(r.data); });
-    }
     setEditDraft(prev => {
       const patch: Record<string, any> = {};
       if (!prev.model_productivity) patch.model_productivity = PRODUCTIVITY_OPTIONS[0];
       if (!prev.model_verison) patch.model_verison = VERSION_OPTIONS[0];
       return Object.keys(patch).length > 0 ? { ...prev, ...patch } : prev;
     });
-  }, [modelInfo]);
+  }, []);
 
   // ── handleDraftChange ──
   const handleDraftChange = useCallback(

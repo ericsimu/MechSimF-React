@@ -23,24 +23,6 @@
 .dense-table .ant-table-cell { padding: 2px 8px !important; line-height: 1.4; }
 .dense-table .ant-table-thead .ant-table-cell { padding: 4px 8px !important; }
 
-/* 表格列宽调整手柄 */
-.col-resizable-header {
-  position: relative;
-  user-select: none;
-}
-.col-resizable-header::after {
-  content: "";
-  position: absolute;
-  right: -4px;
-  top: 0;
-  bottom: 0;
-  width: 10px;
-  cursor: col-resize;
-  z-index: 1;
-}
-.col-resizable-header:hover::after {
-  background: rgba(0, 0, 0, 0.04);
-}
 
 /* 拖拽时阻止文本选中 */
 body.col-resizing {
@@ -50,3 +32,5 @@ body.col-resizing {
 body.col-resizing * {
   cursor: col-resize !important;
 }
+
+

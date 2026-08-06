@@ -11,6 +11,8 @@ import type {
   DisturbanceColumn,
   SimPayload,
   SummaryCsvOptions,
+  SweepModel,
+  SweepRequest,
 } from '@/types/api';
 import { isNil } from '@/utils/isNil';
 import { getCurrentUser } from '@/utils/user';
@@ -316,6 +318,73 @@ export async function deleteDataFiles(
     method: "POST",
     body: JSON.stringify({ file_paths: filePaths }),
   });
+}
+
+// ── Sweep ──
+
+export async function addSweep(
+  body: SweepRequest,
+): Promise<ApiResponse<{ id: number }>> {
+  return await request<{ id: number }>("/add_sweep", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export async function updateSweep(
+  id: number,
+  body: SweepRequest,
+): Promise<ApiResponse> {
+  return await request(`/update_sweep/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(body),
+  });
+}
+
+export async function deleteSweep(id: number): Promise<ApiResponse> {
+  return await request(`/delete_sweep/${id}`, { method: "DELETE" });
+}
+
+export async function batchSweeps(
+  ids: number[],
+): Promise<ApiResponse<SweepModel[]>> {
+  return await request<SweepModel[]>(
+    `/batch_sweeps?ids=${ids.join(",")}`,
+  );
+}
+
+export async function sweepsByCase(
+  caseId: number,
+): Promise<ApiResponse<SweepModel[]>> {
+  return await request<SweepModel[]>(`/sweeps_by_case/${caseId}`);
+}
+
+export async function sweepsByUser(
+  user: string,
+): Promise<ApiResponse<SweepModel[]>> {
+  return await request<SweepModel[]>(
+    `/sweeps_by_user?user=${encodeURIComponent(user)}`,
+  );
+}
+
+export async function linkSweepToCase(
+  caseId: number,
+  sweepId: number,
+): Promise<ApiResponse> {
+  return await request(
+    `/link_sweep?case_id=${caseId}&sweep_id=${sweepId}`,
+    { method: "PUT" },
+  );
+}
+
+export async function unlinkSweepFromCase(
+  caseId: number,
+  sweepId: number,
+): Promise<ApiResponse> {
+  return await request(
+    `/unlink_sweep?case_id=${caseId}&sweep_id=${sweepId}`,
+    { method: "DELETE" },
+  );
 }
 
 export async function getWorkspaceSignals(
