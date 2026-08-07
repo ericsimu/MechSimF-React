@@ -213,8 +213,10 @@ export async function getTaskDataColumns(
 
 export async function getTaskIndication(
   taskId: number,
+  iterName = "",
 ): Promise<ApiResponse<{ tables: { key: string; label: string; headers: string[]; rows: string[][] }[] }>> {
-  return await request(`/task_data/${taskId}/indication`);
+  const qs = iterName ? `?iter_name=${encodeURIComponent(iterName)}` : "";
+  return await request(`/task_data/${taskId}/indication${qs}`);
 }
 
 export async function getTaskSignals(
@@ -224,6 +226,7 @@ export async function getTaskSignals(
   start?: number,
   end?: number,
   raw?: boolean,
+  iterName = "",
 ): Promise<ApiResponse<{ columns: DisturbanceColumn[] }>> {
   const body: Record<string, unknown> = { signal_names: signalNames, domain };
   if (!isNil(start) && !isNil(end)) {
@@ -232,6 +235,9 @@ export async function getTaskSignals(
   }
   if (raw) {
     body.raw = true;
+  }
+  if (iterName) {
+    body.iter_name = iterName;
   }
   return await request(`/task_data/${taskId}/signals`, {
     method: "POST",
@@ -377,6 +383,16 @@ export async function linkSweepToCase(
   );
 }
 
+export async function updateSharding(
+  caseId: number,
+  enableSharding: boolean,
+): Promise<ApiResponse> {
+  return await request(
+    `/update_sharding?case_id=${caseId}&enable_sharding=${enableSharding}`,
+    { method: "PUT" },
+  );
+}
+
 export async function unlinkSweepFromCase(
   caseId: number,
   sweepId: number,
@@ -384,6 +400,22 @@ export async function unlinkSweepFromCase(
   return await request(
     `/unlink_sweep?case_id=${caseId}&sweep_id=${sweepId}`,
     { method: "DELETE" },
+  );
+}
+
+// ── Sweep Templates ──
+
+export async function fetchSweepTemplates(): Promise<
+  ApiResponse<{ name: string; path: string }[]>
+> {
+  return await request("/sweep_templates");
+}
+
+export async function fetchSweepTemplate(
+  path: string,
+): Promise<ApiResponse<{ name: string; groups: unknown }>> {
+  return await request(
+    `/sweep_template?path=${encodeURIComponent(path)}`,
   );
 }
 

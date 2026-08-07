@@ -357,6 +357,23 @@ export default function Tasks() {
       render: (v: string) => v || "-",
     },
     {
+      title: "扫描",
+      key: "sweep",
+      width: 50,
+      render: (_: unknown, r: SimTask) => {
+        const sw = (r as any).sweep_ids;
+        const isSweep = !!(sw && sw !== "[]");
+        return (
+          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}>
+            <span style={{
+              display: "inline-block", width: 10, height: 10, borderRadius: "50%",
+              background: isSweep ? "#faad14" : "#d9d9d9",
+                          }} title={isSweep ? "扫描任务" : "普通任务"} />
+          </div>
+        );
+      },
+    },
+    {
       title: "仿真时间",
       dataIndex: "sim_duration",
       key: "sim_duration",

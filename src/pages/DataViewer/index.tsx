@@ -48,9 +48,11 @@ function makeCursorLabels(container: HTMLElement, xUnit: string): Cursors {
 
 // ── 数据类型 ──
 
+type IterInfo = { name: string; expressions: { var: string; value: unknown }[] | { var: string; value: unknown } };
 type TaskInfo = {
   id: number; name: string; status: string; error: string;
   sigNames: string[]; fftNames: string[];
+  iterations: IterInfo[];
   cache: Record<string, number[] | null>;
 };
 
@@ -73,6 +75,7 @@ export default function DataViewer() {
   const [checked, setChecked] = useState<Record<string, boolean>>({});
   const [searchText, setSearchText] = useState("");
   const [taskExpanded, setTaskExpanded] = useState<Record<number, boolean>>({});
+  const [iterExpanded, setIterExpanded] = useState<Record<string, boolean>>({});
   const [leftWidth, setLeftWidth] = useState(260);
   const [exporting, setExporting] = useState(false);
   type IndicationTable = { key: string; label: string; headers: string[]; rows: string[][] };
@@ -137,16 +140,22 @@ export default function DataViewer() {
           const error = sr.success && sr.data ? sr.data.error || "" : "";
           let sigNames: string[] = [];
           let fftNames: string[] = [];
+          let iterations: IterInfo[] = [];
           if (status === "done") {
-            const cr = await getTaskDataColumns(id);
-            if (cr.success && cr.data) {
-              sigNames = (cr.data.column_names || []).filter((n: string) => n.toLowerCase() !== "time");
-              fftNames = (cr.data.fft_column_names || []).filter((n: string) => n.toLowerCase() !== "frequency");
-            }
+            try {
+              const cr = await getTaskDataColumns(id);
+              if (cr.success && cr.data) {
+                sigNames = (cr.data.column_names || []).filter((n: string) => n.toLowerCase() !== "time");
+                fftNames = (cr.data.fft_column_names || []).filter((n: string) => n.toLowerCase() !== "frequency");
+                iterations = ((cr.data as any).iterations || []) as IterInfo[];
+              }
+            } catch { /* signals_index.json 可能不存在 */ }
+            results.push({ id, name: `任务#${id}`, status, error, sigNames, fftNames, iterations, cache: {} });
+          } else {
+            results.push({ id, name: `任务#${id}`, status, error, sigNames: [], fftNames: [], iterations: [], cache: {} });
           }
-          results.push({ id, name: `任务#${id}`, status, error, sigNames, fftNames, cache: {} });
-        } catch {
-          results.push({ id, name: `任务#${id}`, status: "failed", error: "加载任务信息失败", sigNames: [], fftNames: [], cache: {} });
+        } catch (e) {
+          results.push({ id, name: `任务#${id}`, status: "failed", error: `加载任务信息失败: ${e}`, sigNames: [], fftNames: [], iterations: [], cache: {} });
         }
       }
       if (!cancelled) { setTasks(results); setChecked({}); setLoading(false); }
@@ -155,12 +164,13 @@ export default function DataViewer() {
   }, [ids]);
 
   // ── 获取单个信号 ──
-  async function fetchOne(taskId: number, sigName: string, domain: "time" | "fft") {
+  async function fetchOne(taskId: number, sigName: string, domain: "time" | "fft", iterName = "") {
     const task = tasks.find((t) => t.id === taskId);
     if (!task) return;
-    const cacheKey = domain === "fft" ? `fft::${sigName}` : sigName;
+    const base = iterName ? `${iterName}::${sigName}` : sigName;
+    const cacheKey = domain === "fft" ? `fft::${base}` : base;
     if (task.cache[cacheKey] !== undefined) return;
-    const r = await getTaskSignals(taskId, [sigName], domain, undefined, undefined, domain === "fft");
+    const r = await getTaskSignals(taskId, [sigName], domain, undefined, undefined, domain === "fft", iterName);
     const col = r.success && r.data ? r.data.columns.find((c: any) => c.name === sigName) : undefined;
     const data = col ? col.data.map((v: any) => (isNil(v) ? null : Number(v))) : null;
     setTasks((prev) => {
@@ -173,13 +183,12 @@ export default function DataViewer() {
   }
 
   // ── 勾选/取消信号 ──
-  function toggle(key: string, taskId: number, sigName: string, domain: "time" | "fft") {
+  function toggle(key: string, taskId: number, sigName: string, domain: "time" | "fft", iterName = "") {
     const newVal = !checked[key];
     setChecked((prev) => ({ ...prev, [key]: newVal }));
     if (!newVal) return;
-    // 缩放状态下勾选新信号 → 先还原全量
     if (izTimeRef.current) restoreFullCache();
-    fetchOne(taskId, sigName, domain);
+    fetchOne(taskId, sigName, domain, iterName);
   }
 
   function toggleAllOff() { setChecked({}); }
@@ -329,10 +338,12 @@ export default function DataViewer() {
 
     const plots: Plot[] = [];
     Object.entries(checked).filter(([k, v]) => v && !k.includes("::fft::")).forEach(([k], pi) => {
-      const [tidStr, sigName] = k.split("::");
+      const parts = k.split("::");
+      const tidStr = parts[0];
+      const cacheKey = parts.slice(1).join("::"); // "sigName" or "run_1::sigName"
       const tt = tasks.find((t) => t.id === Number(tidStr));
       if (!tt) return;
-      plots.push({ taskId: tt.id, label: `${tt.name}/${sigName}`, color: COLORS[pi % COLORS.length], data: tt.cache[sigName] ?? null });
+      plots.push({ taskId: tt.id, label: `${tt.name}/${cacheKey}`, color: COLORS[pi % COLORS.length], data: tt.cache[cacheKey] ?? null });
     });
     if (plots.length === 0) return;
 
@@ -374,10 +385,13 @@ export default function DataViewer() {
 
     const plots: Plot[] = [];
     Object.entries(checked).filter(([k, v]) => v && k.includes("::fft::")).forEach(([k], pi) => {
-      const m = k.match(/^(\d+)::fft::(.+)$/); if (!m) return;
-      const tt = tasks.find((t) => t.id === Number(m[1]));
+      const idx = k.indexOf("::fft::");
+      const tidStr = k.slice(0, idx);
+      const cachePart = k.slice(idx + 2); // "fft::sigName" or "fft::run_1::sigName"
+      const tt = tasks.find((t) => t.id === Number(tidStr));
       if (!tt) return;
-      plots.push({ taskId: tt.id, label: `${tt.name}/${m[2]}`, color: COLORS[pi % COLORS.length], data: tt.cache[`fft::${m[2]}`] ?? null });
+      const label = k.slice(tidStr.length + 2); // "sigName" or "fft::run_1::sigName"
+      plots.push({ taskId: tt.id, label: `${tt.name}/${label}`, color: COLORS[pi % COLORS.length], data: tt.cache[cachePart] ?? null });
     });
     if (plots.length === 0) return;
 
@@ -428,26 +442,29 @@ export default function DataViewer() {
     (async () => {
       const first = tasks.find((t) => t.status === "done");
       if (!first) return;
-      if (first.cache.time === undefined) {
-        const r = await getTaskSignals(first.id, ["time"], "time", undefined, undefined, false);
-        const col = r.success && r.data ? r.data.columns.find((c: any) => c.name === "time") : undefined;
-        setTasks((prev) => {
-          const idx = prev.findIndex((t) => t.id === first.id); if (idx < 0) return prev;
-          const next = [...prev];
-          next[idx] = { ...next[idx], cache: { ...next[idx].cache, time: col ? col.data.map((v: any) => (isNil(v) ? null : Number(v))) as number[] | null : null } };
-          return next;
-        });
-      }
-      if (first.cache.frequency === undefined) {
-        const r = await getTaskSignals(first.id, ["frequency"], "fft", undefined, undefined, true);
-        const col = r.success && r.data ? r.data.columns.find((c: any) => c.name === "frequency") : undefined;
-        setTasks((prev) => {
-          const idx = prev.findIndex((t) => t.id === first.id); if (idx < 0) return prev;
-          const next = [...prev];
-          next[idx] = { ...next[idx], cache: { ...next[idx].cache, frequency: col ? col.data.map((v: any) => (isNil(v) ? null : Number(v))) as number[] | null : null } };
-          return next;
-        });
-      }
+      try {
+        const iterName = first.iterations.length > 0 ? first.iterations[0].name : "";
+        if (first.cache.time === undefined) {
+          const r = await getTaskSignals(first.id, ["time"], "time", undefined, undefined, false, iterName);
+          const col = r.success && r.data ? r.data.columns.find((c: any) => c.name === "time") : undefined;
+          setTasks((prev) => {
+            const idx = prev.findIndex((t) => t.id === first.id); if (idx < 0) return prev;
+            const next = [...prev];
+            next[idx] = { ...next[idx], cache: { ...next[idx].cache, time: col ? col.data.map((v: any) => (isNil(v) ? null : Number(v))) as number[] | null : null } };
+            return next;
+          });
+        }
+        if (first.cache.frequency === undefined) {
+          const r = await getTaskSignals(first.id, ["frequency"], "fft", undefined, undefined, true, iterName);
+          const col = r.success && r.data ? r.data.columns.find((c: any) => c.name === "frequency") : undefined;
+          setTasks((prev) => {
+            const idx = prev.findIndex((t) => t.id === first.id); if (idx < 0) return prev;
+            const next = [...prev];
+            next[idx] = { ...next[idx], cache: { ...next[idx].cache, frequency: col ? col.data.map((v: any) => (isNil(v) ? null : Number(v))) as number[] | null : null } };
+            return next;
+          });
+        }
+      } catch { /* */ }
     })();
   }, [tasks]);
 
@@ -566,28 +583,60 @@ export default function DataViewer() {
                       </div>
                       <div className="flex-1 min-h-0 overflow-y-auto px-2.5 py-1.5" style={{ scrollbarGutter: "stable" }}>
                         {doneTasks.map((t) => {
+                          const isSweep = t.iterations.length > 0;
                           const names = t.sigNames.filter((n) => n.toLowerCase().includes(searchText.toLowerCase()));
                           const open = searchText ? names.length > 0 : taskExpanded[t.id] === true;
                           return (
                             <div key={t.id} className="mb-2">
                               <div className="flex items-center gap-1 text-[13px] font-semibold py-1 cursor-pointer select-none" onClick={() => setTaskExpanded((p) => ({ ...p, [t.id]: !open }))}>
                                 <span className="w-3 text-center text-[#999] shrink-0 text-[10px]">{open ? "▼︎" : "▶︎"}</span>
-                                <span className="inline-block shrink-0" style={{ width: 8, height: 8, borderRadius: 1, background: "#3b82f6", transform: "rotate(45deg)" }} />
+                                <span className="inline-block shrink-0" style={{ width: 8, height: 8, borderRadius: 1, background: isSweep ? "#f59e0b" : "#3b82f6", transform: "rotate(45deg)" }} />
                                 <span>{t.name}</span>
-                                <span className="text-[#999] text-xs font-normal">({t.sigNames.length})</span>
+                                {isSweep && <span className="text-[#f59e0b] text-xs font-normal">[扫描]</span>}
+                                <span className="text-[#999] text-xs font-normal">{isSweep ? `(${t.sigNames.length} × ${t.iterations.length})` : `(${t.sigNames.length})`}</span>
                               </div>
-                              {open && names.map((n) => {
-                                const key = `${t.id}::${n}`, fftKey = `${t.id}::fft::${n}`;
-                                return (
-                                  <label key={key} className="flex items-center gap-1 cursor-pointer text-[13px] py-0.5 pl-3">
-                                    <input type="checkbox" checked={checked[key] === true && checked[fftKey] === true}
-                                      onChange={() => { toggle(key, t.id, n, "time"); toggle(fftKey, t.id, n, "fft"); }}
-                                    />
-                                    <StockOutlined style={{ color: "#3b82f6", fontSize: 11 }} className="shrink-0" />
-                                    <span>{n}</span>
-                                  </label>
-                                );
-                              })}
+                              {open && (isSweep ? (
+                                t.iterations.map((iter) => {
+                                  const iterKey = `${t.id}_${iter.name}`;
+                                  const iterOpen = iterExpanded[iterKey] !== false;
+                                  const exprs = Array.isArray(iter.expressions) ? iter.expressions : iter.expressions ? [iter.expressions] : [];
+                                  const exprStr = exprs.map((e: any) => `${e.var}=${e.value}`).join(", ");
+                                  return (
+                                    <div key={iterKey} style={{ paddingLeft: 20 }}>
+                                      <div className="flex items-center gap-1 text-[12px] py-0.5 cursor-pointer select-none" onClick={() => setIterExpanded((p) => ({ ...p, [iterKey]: !iterOpen }))}>
+                                        <span className="w-2.5 text-center text-[#aaa] shrink-0 text-[10px]">{iterOpen ? "▼︎" : "▶︎"}</span>
+                                        <span className="text-[#888]">{iter.name}</span>
+                                        {exprStr && <span className="text-[#999] text-[10px]">{exprStr}</span>}
+                                      </div>
+                                      {iterOpen && names.map((n) => {
+                                        const key = `${t.id}::${iter.name}::${n}`, fftKey = `${t.id}::fft::${iter.name}::${n}`;
+                                        return (
+                                          <label key={key} className="flex items-center gap-1 cursor-pointer text-[13px] py-0.5 pl-6">
+                                            <input type="checkbox" checked={checked[key] === true && checked[fftKey] === true}
+                                              onChange={() => { toggle(key, t.id, n, "time", iter.name); toggle(fftKey, t.id, n, "fft", iter.name); }}
+                                            />
+                                            <StockOutlined style={{ color: "#3b82f6", fontSize: 11 }} className="shrink-0" />
+                                            <span>{n}</span>
+                                          </label>
+                                        );
+                                      })}
+                                    </div>
+                                  );
+                                })
+                              ) : (
+                                names.map((n) => {
+                                  const key = `${t.id}::${n}`, fftKey = `${t.id}::fft::${n}`;
+                                  return (
+                                    <label key={key} className="flex items-center gap-1 cursor-pointer text-[13px] py-0.5 pl-3">
+                                      <input type="checkbox" checked={checked[key] === true && checked[fftKey] === true}
+                                        onChange={() => { toggle(key, t.id, n, "time"); toggle(fftKey, t.id, n, "fft"); }}
+                                      />
+                                      <StockOutlined style={{ color: "#3b82f6", fontSize: 11 }} className="shrink-0" />
+                                      <span>{n}</span>
+                                    </label>
+                                  );
+                                })
+                              ))}
                             </div>
                           );
                         })}

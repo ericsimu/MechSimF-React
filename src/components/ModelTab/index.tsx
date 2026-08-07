@@ -121,7 +121,8 @@ function ModelTab({ caseId, caseName, caseDescription, onSaved }: Props, ref: Re
     {
       key: "sweep", label: "参数扫描",
       children: <SweepTab caseId={caseId} modelInfo={modelInfo}
-        modelVersion={editDraft.model_verison} sysName={editDraft.sys_name} />,
+        modelVersion={editDraft.model_verison} sysName={editDraft.sys_name}
+        enableSharding={!!editDraft.enable_sharding} />,
     },
   ], [systems, editDraft, modelInfo, setEditDraft, setActiveTab, onSysChange, handleDraftChange]);
 

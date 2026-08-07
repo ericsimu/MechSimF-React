@@ -2,16 +2,23 @@ import { useState, useMemo } from "react";
 import { Input, Button, Space, AutoComplete } from "antd";
 import { PlusOutlined, DeleteOutlined } from "@ant-design/icons";
 
-export function VarsEditor({ vars, onChange, allPaths, usedVars }: {
-  vars: string[]; onChange: (v: string[]) => void; allPaths: string[]; usedVars: Set<string>;
+export function VarsEditor({ vars, onChange, allPaths, labels, usedVars }: {
+  vars: string[]; onChange: (v: string[]) => void; allPaths: string[]; labels: Record<string, string>; usedVars: Set<string>;
 }) {
   const [text, setText] = useState("");
-  const [options, setOptions] = useState<{ value: string }[]>([]);
+  const [options, setOptions] = useState<{ value: string; label: React.ReactNode }[]>([]);
   const [dupeWarn, setDupeWarn] = useState(false);
   const validSet = useMemo(() => new Set(allPaths), [allPaths]);
   const handleSearch = (txt: string) => {
     if (!txt) { setOptions([]); return; }
-    setOptions(allPaths.filter((p) => p.toLowerCase().includes(txt.toLowerCase())).slice(0, 15).map((p) => ({ value: p })));
+    const lower = txt.toLowerCase();
+    const matches = allPaths.filter((p) => p.toLowerCase().includes(lower)).slice(0, 15);
+    // 也匹配已存在的变量（不在 modelInfo 中的）
+    for (const v of usedVars) { if (v.toLowerCase().includes(lower) && !matches.includes(v)) matches.push(v); }
+    setOptions(matches.map((p) => ({
+      value: p,
+      label: <span>{p}{labels[p] ? <span className="text-[#999] text-[11px] ml-1">— {labels[p]}</span> : usedVars.has(p) ? <span className="text-[#faad14] text-[11px] ml-1">— 已存在</span> : null}</span>,
+    })));
   };
   const [editingIdx, setEditingIdx] = useState<number | null>(null);
   const [editText, setEditText] = useState("");
@@ -54,7 +61,7 @@ export function VarsEditor({ vars, onChange, allPaths, usedVars }: {
           );
         })}
       </div>
-      {dupeWarn && <div className="text-[#ff4d4f] text-[11px] mb-1">该变量已存在，不能重复添加</div>}
+      {dupeWarn && <div className="text-[#ff4d4f] text-[11px] mb-1">该变量已在表中存在，不能重复添加</div>}
       <Space.Compact style={{ width: "100%" }}>
         <AutoComplete
           options={options}

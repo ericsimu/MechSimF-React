@@ -1,12 +1,11 @@
-import type { SweepRow, SweepItem, EditTarget, TreeRow } from "./types";
-import { message } from "antd";
+import type { SweepRow, EditTarget, TreeRow } from "./types";
 
 // ── Helpers ──
 
 export const FIXED_KEYS = new Set(["vars", "type", "initValue", "iterValue", "isSim", "simTraj"]);
 
 export function defaultRow(): SweepRow {
-  return { vars: [], type: "Q", initValue: "", iterValue: "", isSim: true, simTraj: true };
+  return { vars: [], type: "Q", initValue: "0", iterValue: "", isSim: true, simTraj: true };
 }
 
 export function coerceValue(v: string): unknown {
@@ -24,28 +23,6 @@ export function sameEdit(a: EditTarget | null, b: EditTarget | null): boolean {
     && a.field === (b as typeof a).field;
 }
 
-export function exportJson(data: SweepItem[]): void {
-  const clean = data.map(({ id, name, groups }) => ({
-    id,
-    name,
-    groups: groups.map((group) =>
-      group.map((row) => {
-        const out: Record<string, unknown> = {};
-        for (const key of Object.keys(row)) out[key] = row[key];
-        return out;
-      }),
-    ),
-  }));
-  const blob = new Blob([JSON.stringify(clean, null, 4)], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "SweepData.json";
-  a.click();
-  URL.revokeObjectURL(url);
-  message.success("导出成功");
-}
-
 /** SweepRow → TreeRow */
 export function rowToTreeRow(row: SweepRow, gi: number, ri: number): TreeRow {
   const extras: Record<string, unknown> = {};
@@ -61,10 +38,18 @@ export function rowToTreeRow(row: SweepRow, gi: number, ri: number): TreeRow {
 
 /** groups → antd tree dataSource */
 export function buildTreeData(groups: SweepRow[][]): TreeRow[] {
-  return groups.map((group, gi) => ({
-    key: `g${gi}`, isGroup: true, gi, ri: -1,
-    children: (group.length > 0 ? group : [defaultRow()]).map((row, ri) => rowToTreeRow(row, gi, ri)),
-  }));
+  const rows: TreeRow[] = [];
+  for (let gi = 0; gi < groups.length; gi++) {
+    const group = groups[gi];
+    if (group.length <= 1) {
+      rows.push(rowToTreeRow(group[0] ?? defaultRow(), gi, 0));
+    } else {
+      for (let ri = 0; ri < group.length; ri++) {
+        rows.push(rowToTreeRow(group[ri], gi, ri));
+      }
+    }
+  }
+  return rows;
 }
 
 /** 从 TreeRow 读取字段值（仅数据行） */
@@ -80,24 +65,43 @@ export function rowVal(record: TreeRow, field: string): unknown {
   }
 }
 
-/** 从 modelInfo[version][sysName].variables 中提取所有叶子路径 */
+/** 从 modelInfo[version][sysName].variables 中提取所有叶子路径及其中文标签 */
 export function extractParamPaths(
   modelInfo: Record<string, Record<string, { variables?: Record<string, unknown> }>> | undefined,
   version: string, sysName: string,
-): string[] {
-  if (!modelInfo || !sysName) return [];
+): { paths: string[]; labels: Record<string, string> } {
+  if (!modelInfo || !sysName) return { paths: [], labels: {} };
   const variables = modelInfo[version || "3X"]?.[sysName]?.variables;
-  if (!variables) return [];
+  if (!variables) return { paths: [], labels: {} };
   const paths: string[] = [];
+  const labels: Record<string, string> = {};
   function walk(obj: unknown, prefix: string) {
     if (!obj || typeof obj !== "object" || Array.isArray(obj)) return;
-    const entries = Object.entries(obj as Record<string, unknown>)
+    const rec = obj as Record<string, unknown>;
+    const labelMap = (rec._labels ?? {}) as Record<string, string>;
+    const entries = Object.entries(rec)
       .filter(([k]) => k !== "_labels" && k !== "_units");
-    if (entries.length === 0) { paths.push(prefix); return; }
+    if (entries.length === 0) {
+      if (prefix) paths.push(prefix);
+      return;
+    }
     const hasNested = entries.some(([, v]) => v && typeof v === "object" && !Array.isArray(v));
-    if (!hasNested) { paths.push(prefix); return; }
-    for (const [k, v] of entries) walk(v, prefix ? `${prefix}.${k}` : k);
+    if (!hasNested) {
+      // 叶子层：每个属性作为独立路径
+      for (const [k] of entries) {
+        const full = prefix ? `${prefix}.${k}` : k;
+        paths.push(full);
+        const l = labelMap[k];
+        if (l) labels[full] = l;
+      }
+      return;
+    }
+    for (const [k, v] of entries) {
+      const childPath = prefix ? `${prefix}.${k}` : k;
+      if (labelMap[k]) labels[childPath] = labelMap[k];
+      walk(v, childPath);
+    }
   }
   walk(variables, "");
-  return [...new Set(paths)].sort();
+  return { paths: [...new Set(paths)].sort(), labels };
 }

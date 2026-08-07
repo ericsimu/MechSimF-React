@@ -25,6 +25,8 @@ export interface CaseModel extends BaseModel {
   model_verison: string;
   model_productivity: string;
   model_param: string;
+  sweep_ids: string;
+  enable_sharding: boolean;
   flow_instance_id: string;
 }
 
@@ -59,6 +61,8 @@ export interface SimTask extends BaseModel {
   model_name: string;
   init_script: string;
   param_diff: string;
+  sweep_ids: string;
+  enable_sharding: boolean;
   sim_time: number | null;
   sim_step: number | null;
 }
